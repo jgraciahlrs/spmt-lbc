@@ -63,7 +63,7 @@ contains
          integer,intent(in)           :: nghost    ! # of ghost cells
          type(lb_block),intent(out)   :: lb_dom_tile
        end subroutine decompose_lb_block
-       !$CSS TASK
+       !$CSS TASK REDUCTION(lb_dom_fIn)
        subroutine recompose_lb_block_array(lb_dom_tile_fIn, tS1,tS2,tS3, tb, nghost, lx1,lx2,lx3, lb_dom_fIn)
          use lbm_functions
          implicit none
@@ -351,7 +351,7 @@ end module lbm_step_tiled
   end subroutine decompose_lb_block
 
 
-  !$CSS TASK
+  !$CSS TASK REDUCTION(lb_dom_fIn)
   subroutine recompose_lb_block_array(lb_dom_tile_fIn, tS1,tS2,tS3, tb, nghost, lx1,lx2,lx3, lb_dom_fIn)
 #ifdef USENOT_SMPSS_MODULES
     use lbm_functions

@@ -157,6 +157,15 @@ contains
        end do
 
        !$CSS BARRIER
+#ifndef SMPSS_NO_ARRAYS
+       do iTile = 1, nTiles  ! free memory
+           lb_dom_tile => lb_dom_tiles(iTile)
+           deallocate(lb_dom_tile%fIn)
+           deallocate(lb_dom_tile%fOut)
+           deallocate(lb_dom_tile%state)
+       end do
+#endif /* !SMPSS_NO_ARRAYS */
+
        ! copy boundaries from buffer to block and release memory
        lb_dom_buffer%fIn(NDX(:,0,:,:)) = lb_dom%fIn(NDX(:,0,:,:))
        lb_dom_buffer%fIn(NDX(:,:,0,:)) = lb_dom%fIn(NDX(:,:,0,:))
@@ -262,6 +271,11 @@ contains
     ! copy from block to tile; ignore ghost cell
     lb_dom%fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
          & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes 1 ghost cell
+
+    ! free memory
+    deallocate(lb_dom_tile%fIn)
+    deallocate(lb_dom_tile%fOut)
+    deallocate(lb_dom_tile%state)
 
     !write (*,*) '.... Done recomposing block!'
 

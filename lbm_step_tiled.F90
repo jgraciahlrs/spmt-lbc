@@ -59,9 +59,9 @@ contains
 #endif /* USENOT_SMPSS_MODULES */ 
          implicit none
          type(lb_block),intent(in)    :: lb_dom
-         integer,dimension(6),intent(in)  :: tb ! boundaries of given tile in parent block; sentinel to track dependencies
+         integer,dimension(6),intent(in)  :: tb ! boundaries of given tile in parent block
          integer,intent(in)           :: nghost    ! # of ghost cells
-         type(lb_block),intent(out)   :: lb_dom_tile
+         type(lb_block),intent(inout) :: lb_dom_tile
        end subroutine decompose_lb_block
        !$CSS TASK REDUCTION(lb_dom_fIn)
        subroutine recompose_lb_block_array(lb_dom_tile_fIn, tS1,tS2,tS3, tb, nghost, lx1,lx2,lx3, lb_dom_fIn)
@@ -111,7 +111,6 @@ contains
     nTiles = prc%nTiles
 
     ! tile boundaries within parent block 
-    call tile_bounds(tileSize, nTiles, nghost, bounds_tile)
     bounds_tile => prc%bounds_tile 
     ! bounds_tile needs to be pointer, otherwise will be overwritten -> race-condition
 
@@ -157,14 +156,6 @@ contains
        end do
 
        !$CSS BARRIER
-#ifndef SMPSS_NO_ARRAYS
-       do iTile = 1, nTiles  ! free memory
-           lb_dom_tile => lb_dom_tiles(iTile)
-           deallocate(lb_dom_tile%fIn)
-           deallocate(lb_dom_tile%fOut)
-           deallocate(lb_dom_tile%state)
-       end do
-#endif /* !SMPSS_NO_ARRAYS */
 
        ! copy boundaries from buffer to block and release memory
        lb_dom_buffer%fIn(NDX(:,0,:,:)) = lb_dom%fIn(NDX(:,0,:,:))
@@ -200,12 +191,16 @@ contains
 
   ! initialize machinery for tiles implementation
   subroutine init_tile(prc, lb_dom)
+    implicit none
     type(mpl_var),intent(inout)     :: prc
-    type(lb_block),intent(inout)       :: lb_dom
+    type(lb_block),intent(inout)    :: lb_dom
 
     integer                         :: alloc_stat
     integer                         :: iTile
-    
+    integer,dimension(6)            :: tb
+    type(lb_block),pointer          :: lb_dom_tile
+    integer                         :: lx, ly, lz
+
     ! calculate number of tiles for given size tileSize
     prc%tileSize = TILESIZE
     prc%nTiles = lb_dom%lx(1)/prc%tileSize * lb_dom%lx(2)/prc%tileSize * lb_dom%lx(3)/prc%tileSize
@@ -213,10 +208,28 @@ contains
     ! compute tile boundaries within parent block 
     call tile_bounds(prc%tileSize, prc%nTiles, prc%n_ghost_nodes, prc%bounds_tile)
     
-    !allocate space for a container of tile lb_blocks
+    ! allocate space for a container of tile lb_blocks
     allocate(prc%lb_dom_tiles(prc%nTiles),stat=alloc_stat)
     if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tiles"
     
+    ! allocate data fields of all tile lb_blocks
+    do iTile = 1, prc%nTiles
+       lb_dom_tile => prc%lb_dom_tiles(iTile)
+
+       ! set tile size from tile boundaries
+       tb = prc%bounds_tile(:,iTile)
+       lb_dom_tile%lx = (/ tb(2)-tb(1)-1, tb(4)-tb(3)-1, tb(6)-tb(5)-1 /)
+
+       ! allocate memory for tile arrays
+       lx = lb_dom_tile%lx(1); ly = lb_dom_tile%lx(2); lz = lb_dom_tile%lx(3); 
+       allocate(lb_dom_tile%fOut(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
+           if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
+       allocate(lb_dom_tile%fIn(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
+           if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
+       allocate(lb_dom_tile%state(1:lx,1:ly,1:lz),stat=alloc_stat)
+           if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
+    end do
+
   end subroutine init_tile
  
   ! calculates boundaries of tile with given number i within parent block    
@@ -271,11 +284,6 @@ contains
     ! copy from block to tile; ignore ghost cell
     lb_dom%fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
          & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes 1 ghost cell
-
-    ! free memory
-    deallocate(lb_dom_tile%fIn)
-    deallocate(lb_dom_tile%fOut)
-    deallocate(lb_dom_tile%state)
 
     !write (*,*) '.... Done recomposing block!'
 
@@ -337,23 +345,10 @@ end module lbm_step_tiled
     type(lb_block),intent(in)    :: lb_dom
     integer,dimension(6),intent(in)  :: tb ! boundaries of given tile in parent block
     integer,intent(in)           :: nghost    ! # of ghost cells
-    type(lb_block),intent(out)   :: lb_dom_tile
-
+    type(lb_block),intent(inout) :: lb_dom_tile
 
     integer                      :: lx,ly,lz  ! block sizes
     integer                      :: alloc_stat
-    
-    ! set tile size from tile boundaries
-    lb_dom_tile%lx = (/ tb(2)-tb(1)-1, tb(4)-tb(3)-1, tb(6)-tb(5)-1 /)
-
-    ! allocate memory for tile arrays
-    lx = lb_dom_tile%lx(1); ly = lb_dom_tile%lx(2); lz = lb_dom_tile%lx(3); 
-    allocate(lb_dom_tile%fOut(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
-      !if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
-    allocate(lb_dom_tile%fIn(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
-      !if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
-    allocate(lb_dom_tile%state(1:lx,1:ly,1:lz),stat=alloc_stat)
-      !if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
 
     ! copy from block to tile
     !lb_dom_tile%fOut  = lb_dom%fOut(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
@@ -373,7 +368,7 @@ end module lbm_step_tiled
     implicit none
     real(R8B),dimension(NDX(nnod,0:tS1+1,0:tS2+1,0:tS3+1)), intent(in) :: lb_dom_tile_fIn
     integer, intent(in)          :: tS1,tS2,tS3            ! tileSize excluding ghost cells
-    integer,dimension(6),intent(in)           :: tb        ! boundaries of given tile in parent block
+    integer,dimension(6),intent(in) :: tb  ! boundaries of given tile in parent block
     integer,intent(in)           :: nghost    ! # of ghost cells
     !integer,dimension(3),intent(in) :: lx
     integer,intent(in)               :: lx1,lx2,lx3

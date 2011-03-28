@@ -77,7 +77,7 @@ contains
          !real(R8B),dimension(NDX(nnod,0:65,0:65,0:65)),intent(inout) :: lb_dom_fIn
          real(R8B),dimension(NDX(nnod,0:lx1+1,0:lx2+1,0:lx3+1)),intent(inout) :: lb_dom_fIn
        end subroutine recompose_lb_block_array
-       !$CSS TASK
+       !$CSS TASK REDUCTION(meas)
        subroutine lb_step_tile_array(lx1,lx2,lx3, state, nxt, cur, s_par, prc, meas, tStep)
          use lbm_functions
          implicit none
@@ -88,8 +88,7 @@ contains
          real(R8B),target,dimension(NDX(nnod,0:lx1+1,0:lx2+1,0:lx3+1)), intent(inout) :: cur
          type(sim_parameter),intent(in)  :: s_par
          type(mpl_var),intent(in)        :: prc
-         !type(measure),intent(inout)     :: meas
-         type(measure),intent(in)         :: meas   ! this is cheating as it really is inout, wait for reduction
+         type(measure),intent(inout)         :: meas   ! this is cheating as it really is inout, wait for reduction
          integer, intent(in)             :: tStep
        end subroutine lb_step_tile_array
     end interface
@@ -396,7 +395,7 @@ end module lbm_step_tiled
 
   end subroutine recompose_lb_block_array
 
-  !$CSS TASK
+  !$CSS TASK REDUCTION(meas)
   subroutine lb_step_tile_array(lx1,lx2,lx3, state, nxt, cur, s_par, prc, meas, tStep)
 #ifdef USENOT_SMPSS_MODULES
     use lbm_functions

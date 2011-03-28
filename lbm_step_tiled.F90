@@ -16,8 +16,6 @@ module lbm_step_tiled
 contains
 
   ! TODO: 
-  !   * drop special treatment for first timeloop
-  !        if(s_par%initial .... 
   !   * assert TILESIZE and block dimensions are compatible
 
   ! lb_step() is called from the main time loop
@@ -77,12 +75,13 @@ contains
          real(R8B),dimension(NDX(nnod,0:lx1+1,0:lx2+1,0:lx3+1)),intent(inout) :: lb_dom_fIn
        end subroutine recompose_lb_block_array
        !$CSS TASK REDUCTION(meas)
-       subroutine lb_step_tile_array(lx1,lx2,lx3, state, nxt, cur, s_par, prc, meas, tStep)
+       subroutine lb_step_tile_array(lx1,lx2,lx3, state, u0, nxt, cur, s_par, prc, meas, tStep)
          use lbm_functions
          implicit none
          !integer,dimension(3),intent(in) :: lx
          integer,intent(in)               :: lx1,lx2,lx3
          integer,target,dimension(1:lx1,1:lx2,1:lx3),intent(in)        :: state
+         real(R8B),target,dimension(NDX(NDIM,0:lx1+1,0:lx2+1,0:lx3+1)),intent(in)     :: u0
          real(R8B),target,dimension(NDX(nnod,0:lx1+1,0:lx2+1,0:lx3+1)), intent(inout) :: nxt
          real(R8B),target,dimension(NDX(nnod,0:lx1+1,0:lx2+1,0:lx3+1)), intent(inout) :: cur
          type(sim_parameter),intent(in)  :: s_par
@@ -111,66 +110,57 @@ contains
     ! container of tile lb_blocks 
     lb_dom_tiles => prc%lb_dom_tiles
 
-    ! iterate over all tiles
-    if(s_par%initial .eqv. .false.) then
-       do iTile = 1, nTiles           ! decompose block into tiles
-          call decompose_lb_block(lb_dom, bounds_tile(:,iTile), nghost, lb_dom_tiles(iTile))
-       end do
-       ! $CSS BARRIER
+    do iTile = 1, nTiles           ! decompose block into tiles
+       call decompose_lb_block(lb_dom, bounds_tile(:,iTile), nghost, lb_dom_tiles(iTile))
+    end do
+    ! $CSS BARRIER
 
-       do iTile = 1, nTiles
-          ! select tile
-          lb_dom_tile => lb_dom_tiles(iTile)
-          ! $CSS WAIT ON(lb_dom_tile)
-          !$CSS WAIT ON(bounds_tile(:,iTile))
+    do iTile = 1, nTiles
+       ! select tile
+       lb_dom_tile => lb_dom_tiles(iTile)
+       ! $CSS WAIT ON(lb_dom_tile)
+       !$CSS WAIT ON(bounds_tile(:,iTile))
 
-          pnt_cur_tile => lb_dom_tile%fIn
-          pnt_nxt_tile => lb_dom_tile%fOut
+       pnt_cur_tile => lb_dom_tile%fIn
+       pnt_nxt_tile => lb_dom_tile%fOut
 
-          ! do a single tiled Lattice Boltzmann step
+       ! do a single tiled Lattice Boltzmann step
 #ifndef SMPSS_NO_ARRAYS /* version with arrays */
-          call lb_step_tile_array(lb_dom_tile%lx(1), lb_dom_tile%lx(2), lb_dom_tile%lx(3), &
-               &lb_dom_tile%state, pnt_nxt_tile, pnt_cur_tile, s_par, prc, meas, tStep)
+       call lb_step_tile_array(lb_dom_tile%lx(1), lb_dom_tile%lx(2), lb_dom_tile%lx(3), &
+            &lb_dom_tile%state, lb_dom_tile%u0, pnt_nxt_tile, pnt_cur_tile, s_par, prc, meas, tStep)
 #ifdef COMBINE_STREAM_COLLIDE
-          swapper => pnt_nxt_tile; pnt_nxt_tile => pnt_cur_tile; pnt_cur_tile => swapper
+       swapper => pnt_nxt_tile; pnt_nxt_tile => pnt_cur_tile; pnt_cur_tile => swapper
 #endif
-          lb_dom_tile%fIn => pnt_cur_tile; lb_dom_tile%fOut => pnt_nxt_tile    ! fix pointers, as above works with arrays
+       lb_dom_tile%fIn => pnt_cur_tile; lb_dom_tile%fOut => pnt_nxt_tile    ! fix pointers, as above works with arrays
 
-          ! reassemble block from tiles
-          call recompose_lb_block_array(lb_dom_tile%fIn, tileSize,tileSize,tileSize, &
-               & bounds_tile(:,iTile), nghost,&
-               & lb_dom%lx(1),lb_dom%lx(2),lb_dom%lx(3), lb_dom%fBuffer)
+       ! reassemble block from tiles
+       call recompose_lb_block_array(lb_dom_tile%fIn, tileSize,tileSize,tileSize, &
+            & bounds_tile(:,iTile), nghost,&
+            & lb_dom%lx(1),lb_dom%lx(2),lb_dom%lx(3), lb_dom%fBuffer)
 #else     /* version without arrays */
-          call lb_step_tile(lb_dom_tile, pnt_nxt_tile, pnt_cur_tile, s_par, prc, meas, tStep)
+       call lb_step_tile(lb_dom_tile, pnt_nxt_tile, pnt_cur_tile, s_par, prc, meas, tStep)
 #ifdef COMBINE_STREAM_COLLIDE
-          swapper => lb_dom_tile%fIn; lb_dom_tile%fIn => lb_dom_tile%fOut; lb_dom_tile%fOut => swapper
+       swapper => lb_dom_tile%fIn; lb_dom_tile%fIn => lb_dom_tile%fOut; lb_dom_tile%fOut => swapper
 #endif
-          call recompose_lb_block(lb_dom_tile, bounds_tile(:,iTile), nghost, lb_dom)
+       call recompose_lb_block(lb_dom_tile, bounds_tile(:,iTile), nghost, lb_dom)
 #endif
-       end do
+    end do
 
-       !$CSS BARRIER
+    !$CSS BARRIER
 
-       ! copy boundaries from buffer to block and swap pointers
-       lb_dom%fBuffer(NDX(:,0,:,:)) = lb_dom%fIn(NDX(:,0,:,:))
-       lb_dom%fBuffer(NDX(:,:,0,:)) = lb_dom%fIn(NDX(:,:,0,:))
-       lb_dom%fBuffer(NDX(:,:,:,0)) = lb_dom%fIn(NDX(:,:,:,0)) 
-       lb_dom%fBuffer(NDX(:,lb_dom%lx(1)+1,:,:)) = lb_dom%fIn(NDX(:,lb_dom%lx(1)+1,:,:))
-       lb_dom%fBuffer(NDX(:,:,lb_dom%lx(2)+1,:)) = lb_dom%fIn(NDX(:,:,lb_dom%lx(2)+1,:))
-       lb_dom%fBuffer(NDX(:,:,:,lb_dom%lx(3)+1)) = lb_dom%fIn(NDX(:,:,:,lb_dom%lx(3)+1))
-       swapper => lb_dom%fIn; lb_dom%fIn => lb_dom%fBuffer; lb_dom%fBuffer => swapper 
+    ! copy boundaries from buffer to block and swap pointers
+    lb_dom%fBuffer(NDX(:,0,:,:)) = lb_dom%fIn(NDX(:,0,:,:))
+    lb_dom%fBuffer(NDX(:,:,0,:)) = lb_dom%fIn(NDX(:,:,0,:))
+    lb_dom%fBuffer(NDX(:,:,:,0)) = lb_dom%fIn(NDX(:,:,:,0)) 
+    lb_dom%fBuffer(NDX(:,lb_dom%lx(1)+1,:,:)) = lb_dom%fIn(NDX(:,lb_dom%lx(1)+1,:,:))
+    lb_dom%fBuffer(NDX(:,:,lb_dom%lx(2)+1,:)) = lb_dom%fIn(NDX(:,:,lb_dom%lx(2)+1,:))
+    lb_dom%fBuffer(NDX(:,:,:,lb_dom%lx(3)+1)) = lb_dom%fIn(NDX(:,:,:,lb_dom%lx(3)+1))
+    swapper => lb_dom%fIn; lb_dom%fIn => lb_dom%fBuffer; lb_dom%fBuffer => swapper 
 
 
-       ! set cur/nxt pointers on block 
-       pnt_cur => lb_dom%fOut
-       pnt_nxt => lb_dom%fIn
-
-    else             ! no tiles in initial step
-       call lb_step_tile(lb_dom, pnt_nxt, pnt_cur, s_par, prc, meas, tStep)
-#ifdef COMBINE_STREAM_COLLIDE
-       swapper => lb_dom%fIn; lb_dom%fIn => lb_dom%fOut; lb_dom%fOut => swapper
-#endif
-    end if
+    ! set cur/nxt pointers on block 
+    pnt_cur => lb_dom%fOut
+    pnt_nxt => lb_dom%fIn
 
     ! do boundary conditions after stream and collide steps
     call set_nrbc_antibb(lb_dom,pnt_nxt,pnt_cur,s_par,prc,meas)
@@ -193,6 +183,7 @@ contains
     integer,dimension(6)            :: tb
     type(lb_block),pointer          :: lb_dom_tile
     integer                         :: lx, ly, lz
+    integer                         :: nghost
 
     ! calculate number of tiles for given size tileSize
     prc%tileSize = TILESIZE
@@ -212,6 +203,7 @@ contains
        ! set tile size from tile boundaries
        tb = prc%bounds_tile(:,iTile)
        lb_dom_tile%lx = (/ tb(2)-tb(1)-1, tb(4)-tb(3)-1, tb(6)-tb(5)-1 /)
+       nghost = prc%n_ghost_nodes
 
        ! allocate memory for tile arrays
        lx = lb_dom_tile%lx(1); ly = lb_dom_tile%lx(2); lz = lb_dom_tile%lx(3); 
@@ -221,6 +213,11 @@ contains
            if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
        allocate(lb_dom_tile%state(1:lx,1:ly,1:lz),stat=alloc_stat)
            if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
+       allocate(lb_dom_tile%u0(NDX(NDIM,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
+           if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
+
+       lb_dom_tile%state = lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)
+       lb_dom_tile%u0 = lb_dom%u0(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
     end do
 
   end subroutine init_tile
@@ -344,8 +341,6 @@ end module lbm_step_tiled
     integer                      :: alloc_stat
 
     ! copy from block to tile
-    !lb_dom_tile%fOut  = lb_dom%fOut(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
-    lb_dom_tile%state = lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)  ! read-only(?) && lbound==1 (no ghostcells) -> pointer is enough
     lb_dom_tile%fIN   = lb_dom%fIN(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
 
     !write (*,*) '.... Done decomposing block!'
@@ -390,7 +385,7 @@ end module lbm_step_tiled
   end subroutine recompose_lb_block_array
 
   !$CSS TASK REDUCTION(meas)
-  subroutine lb_step_tile_array(lx1,lx2,lx3, state, nxt, cur, s_par, prc, meas, tStep)
+  subroutine lb_step_tile_array(lx1,lx2,lx3, state, u0, nxt, cur, s_par, prc, meas, tStep)
 #ifdef USENOT_SMPSS_MODULES
     use lbm_functions
     use lbm_step_tiled
@@ -399,6 +394,7 @@ end module lbm_step_tiled
     !integer,dimension(3),intent(in) :: lx
     integer,intent(in) :: lx1,lx2,lx3
     integer,target,dimension(1:lx1,1:lx2,1:lx3),intent(in)        :: state
+    real(R8B),target,dimension(NDX(NDIM,0:lx1+1,0:lx2+1,0:lx3+1)),intent(in)     :: u0
     real(R8B),target,dimension(NDX(nnod,0:lx1+1,0:lx2+1,0:lx3+1)), intent(inout) :: nxt
     real(R8B),target,dimension(NDX(nnod,0:lx1+1,0:lx2+1,0:lx3+1)), intent(inout) :: cur
     type(sim_parameter),intent(in)  :: s_par
@@ -421,6 +417,7 @@ end module lbm_step_tiled
     dummy_lb_dom%fIn => dummy_pnt_cur
     dummy_lb_dom%fOut => dummy_pnt_nxt
     dummy_lb_dom%state => state
+    dummy_lb_dom%u0 => u0
 
     call lb_step_tile(dummy_lb_dom, dummy_pnt_nxt, dummy_pnt_cur, s_par, prc, meas, tStep)
 

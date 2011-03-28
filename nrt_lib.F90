@@ -128,6 +128,9 @@ module nrt_lib
 #ifdef F2003_ALLOC_DERIVED_TYPE
       real(R8B),dimension(:,:,:,:), allocatable :: u,u0
       real(R8B),dimension(:,:,:,:), pointer :: fOut => NULL()
+#ifdef USE_TILES
+      real(R8B),dimension(:,:,:,:), pointer :: fBuffer => NULL()
+#endif /* USE_TILES */
       real(R8B),dimension(:,:,:),   allocatable :: rho
 #ifdef SPONGE
       real(R8B),dimension(:,:,:),   allocatable :: omega,gomega
@@ -148,6 +151,9 @@ module nrt_lib
       real(R8B),pointer  :: fIn(:,:,:,:) => NULL()
 #else /* F2003_ALLOC_DERIVED_TYPE */
       real(R8B),dimension(:,:,:,:), pointer :: fOut => NULL(), u => NULL(), u0 => NULL() 
+#ifdef USE_TILES
+      real(R8B),dimension(:,:,:,:), pointer :: fBuffer => NULL()
+#endif /* USE_TILES */
       real(R8B),dimension(:,:,:),   pointer :: rho  => NULL(), rho_inc => NULL() 
 #ifdef SPONGE
       real(R8B),dimension(:,:,:),   pointer :: omega => NULL(), gomega => NULL() 

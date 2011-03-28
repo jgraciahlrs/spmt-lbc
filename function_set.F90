@@ -834,6 +834,10 @@ subroutine  dealloc_mem(lb_dom,s_par)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%fin "
    deallocate(lb_dom%fOut,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%fOut"
+#ifdef USE_TILES
+   deallocate(lb_dom%fBuffer,stat=alloc_stat)
+      if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%fBuffer"
+#endif
    deallocate(lb_dom%u,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%u  "
 if(s_par%tInitial > 0) then
@@ -1180,6 +1184,10 @@ subroutine alloc_mem(lb_dom,s_par,prc)
    if(prc%rk==0) call calc_mem(prc,lb_dom,s_par)
    allocate(lb_dom%fOut(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%fOut"
+#ifdef USE_TILES
+   allocate(lb_dom%fBuffer(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
+      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%fBuffer"
+#endif /* USE_TILES */
 
 !   if(associated(lb_dom%fOut)) write(*,*) "fOut OK"
 

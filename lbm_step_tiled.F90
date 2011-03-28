@@ -41,8 +41,7 @@ contains
     integer                         :: nTiles, iTile      ! total # of tiles, tile index
     integer,dimension(:,:),pointer  :: bounds_tile        ! boundaries of given tile in parent block
     type(lb_block),dimension(:),pointer                 :: lb_dom_tiles    ! lb_block's for tiles
-    type(lb_block),pointer          :: lb_dom_tile            ! 
-    type(lb_block)                  :: lb_dom_buffer
+    type(lb_block),pointer          :: lb_dom_tile         
     integer                         :: alloc_stat
     integer                         :: tileSize = TILESIZE, nghost
     real(R8B),pointer,dimension(:,:,:,:)                :: pnt_nxt_tile
@@ -101,10 +100,6 @@ contains
     !---------------------------
     ! Make small tasks for SMPSs by decomposing MPI lb_block into smaller tiles
 
-    ! allocate memory for buffer and init
-    allocate(lb_dom_buffer%fIn(NDX(nnod,0:(lb_dom%lx(1)+1),0:lb_dom%lx(2)+1,0:lb_dom%lx(3)+1)),stat=alloc_stat)
-      !if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_buffer%fIn"
-
     !  number of ghost cells and tiles
     nghost = prc%n_ghost_nodes
     nTiles = prc%nTiles
@@ -144,27 +139,26 @@ contains
           ! reassemble block from tiles
           call recompose_lb_block_array(lb_dom_tile%fIn, tileSize,tileSize,tileSize, &
                & bounds_tile(:,iTile), nghost,&
-               & lb_dom%lx(1),lb_dom%lx(2),lb_dom%lx(3), lb_dom_buffer%fIn)
+               & lb_dom%lx(1),lb_dom%lx(2),lb_dom%lx(3), lb_dom%fBuffer)
 #else     /* version without arrays */
           call lb_step_tile(lb_dom_tile, pnt_nxt_tile, pnt_cur_tile, s_par, prc, meas, tStep)
 #ifdef COMBINE_STREAM_COLLIDE
           swapper => lb_dom_tile%fIn; lb_dom_tile%fIn => lb_dom_tile%fOut; lb_dom_tile%fOut => swapper
 #endif
-          call recompose_lb_block(lb_dom_tile, bounds_tile(:,iTile), nghost, lb_dom_buffer)
+          call recompose_lb_block(lb_dom_tile, bounds_tile(:,iTile), nghost, lb_dom)
 #endif
        end do
 
        !$CSS BARRIER
 
-       ! copy boundaries from buffer to block and release memory
-       lb_dom_buffer%fIn(NDX(:,0,:,:)) = lb_dom%fIn(NDX(:,0,:,:))
-       lb_dom_buffer%fIn(NDX(:,:,0,:)) = lb_dom%fIn(NDX(:,:,0,:))
-       lb_dom_buffer%fIn(NDX(:,:,:,0)) = lb_dom%fIn(NDX(:,:,:,0)) 
-       lb_dom_buffer%fIn(NDX(:,lb_dom%lx(1)+1,:,:)) = lb_dom%fIn(NDX(:,lb_dom%lx(1)+1,:,:))
-       lb_dom_buffer%fIn(NDX(:,:,lb_dom%lx(2)+1,:)) = lb_dom%fIn(NDX(:,:,lb_dom%lx(2)+1,:))
-       lb_dom_buffer%fIn(NDX(:,:,:,lb_dom%lx(3)+1)) = lb_dom%fIn(NDX(:,:,:,lb_dom%lx(3)+1))
-       deallocate(lb_dom%fIn)
-       lb_dom%fIn => lb_dom_buffer%fIn 
+       ! copy boundaries from buffer to block and swap pointers
+       lb_dom%fBuffer(NDX(:,0,:,:)) = lb_dom%fIn(NDX(:,0,:,:))
+       lb_dom%fBuffer(NDX(:,:,0,:)) = lb_dom%fIn(NDX(:,:,0,:))
+       lb_dom%fBuffer(NDX(:,:,:,0)) = lb_dom%fIn(NDX(:,:,:,0)) 
+       lb_dom%fBuffer(NDX(:,lb_dom%lx(1)+1,:,:)) = lb_dom%fIn(NDX(:,lb_dom%lx(1)+1,:,:))
+       lb_dom%fBuffer(NDX(:,:,lb_dom%lx(2)+1,:)) = lb_dom%fIn(NDX(:,:,lb_dom%lx(2)+1,:))
+       lb_dom%fBuffer(NDX(:,:,:,lb_dom%lx(3)+1)) = lb_dom%fIn(NDX(:,:,:,lb_dom%lx(3)+1))
+       swapper => lb_dom%fIn; lb_dom%fIn => lb_dom%fBuffer; lb_dom%fBuffer => swapper 
 
 
        ! set cur/nxt pointers on block 
@@ -281,7 +275,7 @@ contains
 #endif
 
     ! copy from block to tile; ignore ghost cell
-    lb_dom%fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+    lb_dom%fBuffer(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
          & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes 1 ghost cell
 
     !write (*,*) '.... Done recomposing block!'

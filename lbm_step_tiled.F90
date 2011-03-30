@@ -216,8 +216,10 @@ contains
        allocate(lb_dom_tile%u0(NDX(NDIM,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
            if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
 
+       ! %state and %u0 could be pointers if run with SMPSS_NO_ARRAYS    
        lb_dom_tile%state = lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)
        lb_dom_tile%u0 = lb_dom%u0(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
+       lb_dom_tile%fIn = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
     end do
 
   end subroutine init_tile
@@ -340,8 +342,21 @@ end module lbm_step_tiled
     integer                      :: lx,ly,lz  ! block sizes
     integer                      :: alloc_stat
 
+    lx = lb_dom_tile%lx(1); ly = lb_dom_tile%lx(2); lz = lb_dom_tile%lx(3); 
+
     ! copy from block to tile
-    lb_dom_tile%fIN   = lb_dom%fIN(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
+    !lb_dom_tile%fIn(NDX(:,0:lx+1,0:ly+1,0:lz+1)) = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
+
+    ! copy ghost cells from block to tile, assumes 1 ghost cell only
+    lb_dom_tile%fIn(NDX(:,0,:,:)) = lb_dom%fIn(NDX(:,tb(1),tb(3):tb(4),tb(5):tb(6)))
+    lb_dom_tile%fIn(NDX(:,:,0,:)) = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3),tb(5):tb(6)))
+    lb_dom_tile%fIn(NDX(:,:,:,0)) = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5)))
+    lb_dom_tile%fIn(NDX(:,lx+1,:,:)) = lb_dom%fIn(NDX(:,tb(2),tb(3):tb(4),tb(5):tb(6)))
+    lb_dom_tile%fIn(NDX(:,:,ly+1,:)) = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(4),tb(5):tb(6)))
+    lb_dom_tile%fIn(NDX(:,:,:,lz+1)) = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(6)))
+
+    ! why is one extra node in y-direction necessary?
+    lb_dom_tile%fIn(NDX(:,:,ly,:)) = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(4)-1,tb(5):tb(6)))
 
     !write (*,*) '.... Done decomposing block!'
 
@@ -379,6 +394,19 @@ end module lbm_step_tiled
     lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
          & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes one ghost cell
 
+    ! copy first physical cell from block to tile, assumes one ghost cell
+    !lb_dom_fIn(NDX(:,tb(1)+nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+    !     & lb_dom_tile_fIn(NDX(:,lb(1)+1,lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
+    !lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost,tb(5)+nghost:tb(6)-nghost)) = &
+    !     & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1,lb(3)+1:lb(3)+tS(3)))
+    !lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost)) = &
+    !     & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1))
+    !lb_dom_fIn(NDX(:,tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+    !     & lb_dom_tile_fIn(NDX(:,lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
+    !lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+    !     & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
+    !lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(6)-nghost)) = &
+    !     & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+tS(3)))
 
     !write (*,*) '.... Done recomposing block!'
 

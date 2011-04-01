@@ -192,6 +192,10 @@ PROGRAM lbmain
       !---------------------------
       ! Output and error check 
       if(MOD(tStep,s_par%tOut)==0 .and. tStep >= s_par%tOutBeg) then
+#ifdef USE_TILES
+         !$CSS BARRIER
+         call gather_tiles(prc, lb_dom)
+#endif /* USE_TILES */
          ! calc macroscopic values (is also done in do_kinetic)
          call calc_macr_vals(lb_dom,lb_dom%u,lb_dom%rho,pnt_nxt,meas)
          countOut=countOut+1

@@ -116,22 +116,17 @@ contains
        lb_dom_tile%pnt_nxt_tile => lb_dom_tile%fOut
 
        ! do a single tiled Lattice Boltzmann step
-#ifndef SMPSS_NO_ARRAYS /* version with arrays */
        call lb_step_tile_sentinel(lb_dom_tile, bounds_tile(:,iTile), s_par, prc, meas, tStep)
 #ifdef COMBINE_STREAM_COLLIDE
        swapper => lb_dom_tile%pnt_nxt_tile; lb_dom_tile%pnt_nxt_tile => lb_dom_tile%pnt_cur_tile; lb_dom_tile%pnt_cur_tile => swapper
 #endif
-       lb_dom_tile%fIn => lb_dom_tile%pnt_cur_tile; lb_dom_tile%fOut => lb_dom_tile%pnt_nxt_tile    ! fix pointers, as above works with arrays
 
        ! reassemble block from tiles
+#ifndef SMPSS_NO_ARRAYS /* version with arrays */
        call recompose_lb_block_array(lb_dom_tile%fIn, tileSize,tileSize,tileSize, &
             & bounds_tile(:,iTile), nghost,&
             & lb_dom%lx(1),lb_dom%lx(2),lb_dom%lx(3), lb_dom%fBuffer)
 #else     /* version without arrays */
-       call lb_step_tile(lb_dom_tile, lb_dom_tile%pnt_nxt_tile, lb_dom_tile%pnt_cur_tile, s_par, prc, meas, tStep)
-#ifdef COMBINE_STREAM_COLLIDE
-       swapper => lb_dom_tile%fIn; lb_dom_tile%fIn => lb_dom_tile%fOut; lb_dom_tile%fOut => swapper
-#endif
        call recompose_lb_block(lb_dom_tile, bounds_tile(:,iTile), nghost, lb_dom)
 #endif
     end do
@@ -161,6 +156,7 @@ contains
 
 
 #ifdef USE_TILES
+
 
   ! initialize machinery for tiles implementation
   subroutine init_tile(prc, lb_dom)
@@ -213,6 +209,43 @@ contains
     end do
 
   end subroutine init_tile
+
+  ! gather data from tiles into block for output, etc.
+  subroutine gather_tiles(prc, lb_dom)
+    implicit none
+    type(mpl_var),intent(inout)     :: prc
+    type(lb_block),intent(inout)    :: lb_dom
+
+    integer                         :: alloc_stat
+    integer                         :: iTile
+    integer,dimension(6)            :: tb
+    type(lb_block),pointer          :: lb_dom_tile
+    integer                         :: lx, ly, lz
+    integer                         :: nghost
+    integer,dimension(4)            :: lb        ! lower index of physical cells in lb_dom_tile%fIn / %fOut
+    integer,dimension(4)            :: tS        ! tileSize excluding ghost cells
+
+    nghost = prc%n_ghost_nodes
+
+    do iTile = 1, prc%nTiles
+       lb_dom_tile => prc%lb_dom_tiles(iTile)
+
+       ! set tile size from tile boundaries
+       tb = prc%bounds_tile(:,iTile)
+       lb = lbound(lb_dom_tile%fIn)              ! get lower boundaries from buffer
+       tS = shape(lb_dom_tile%fIn)-nghost*2
+#ifdef LAYOUT_LIJK
+       lb(1:3) = lb(2:4)                         ! spatial indices should be in lb(1:3) regardless of LAYOUT_IJKL/LIJK
+       tS(1:3) = tS(2:4)
+#endif
+
+       ! copy data from tile to block, exclude ghost cells and first physical cell (aka boundary cell) as are invalid
+       lb_dom%fIn(NDX(:,tb(1)+nghost+1:tb(2)-nghost-1,tb(3)+nghost+1:tb(4)-nghost-1,tb(5)+nghost+1:tb(6)-nghost-1)) = &
+           & lb_dom_tile%fIn(NDX(:,lb(1)+nghost+1:lb(1)+tS(1)-1,lb(2)+nghost+1:lb(2)+tS(2)-1,lb(3)+nghost+1:lb(3)+tS(3)-1))
+    end do
+
+  end subroutine gather_tiles
+
  
   ! calculates boundaries of tile with given number i within parent block    
   subroutine tile_bounds(ts, nT, ng, tb)
@@ -345,9 +378,14 @@ end module lbm_step_tiled
     lb_dom_tile%fIn(NDX(:,:,ly+1,:)) = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(4),tb(5):tb(6)))
     lb_dom_tile%fIn(NDX(:,:,:,lz+1)) = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(6)))
 
-    ! why is one extra node in y-direction necessary?
+    ! copy first physical cell too
+    lb_dom_tile%fIn(NDX(:,1,:,:)) = lb_dom%fIn(NDX(:,tb(1)+1,tb(3):tb(4),tb(5):tb(6)))
+    lb_dom_tile%fIn(NDX(:,:,1,:)) = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3)+1,tb(5):tb(6)))
+    lb_dom_tile%fIn(NDX(:,:,:,1)) = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5)+1))
+    lb_dom_tile%fIn(NDX(:,lx,:,:)) = lb_dom%fIn(NDX(:,tb(2)-1,tb(3):tb(4),tb(5):tb(6)))
     lb_dom_tile%fIn(NDX(:,:,ly,:)) = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(4)-1,tb(5):tb(6)))
-
+    lb_dom_tile%fIn(NDX(:,:,:,lz)) = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(6)-1))
+ 
     !write (*,*) '.... Done decomposing block!'
 
   end subroutine decompose_lb_block
@@ -380,23 +418,23 @@ end module lbm_step_tiled
 #endif
     
 
-    ! copy from block to tile; ignore ghost cell
-    lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes one ghost cell
+    ! copy from tile to block; ignore ghost cell
+    !lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+    !     & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes one ghost cell
 
-    ! copy first physical cell from block to tile, assumes one ghost cell
-    !lb_dom_fIn(NDX(:,tb(1)+nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-    !     & lb_dom_tile_fIn(NDX(:,lb(1)+1,lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
-    !lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost,tb(5)+nghost:tb(6)-nghost)) = &
-    !     & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1,lb(3)+1:lb(3)+tS(3)))
-    !lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost)) = &
-    !     & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1))
-    !lb_dom_fIn(NDX(:,tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-    !     & lb_dom_tile_fIn(NDX(:,lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
-    !lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-    !     & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
-    !lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(6)-nghost)) = &
-    !     & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+tS(3)))
+    ! copy first physical cell from tile to block, assumes one ghost cell
+    lb_dom_fIn(NDX(:,tb(1)+nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+         & lb_dom_tile_fIn(NDX(:,lb(1)+1,lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
+    lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost,tb(5)+nghost:tb(6)-nghost)) = &
+         & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1,lb(3)+1:lb(3)+tS(3)))
+    lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost)) = &
+         & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1))
+    lb_dom_fIn(NDX(:,tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+         & lb_dom_tile_fIn(NDX(:,lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
+    lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+         & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
+    lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(6)-nghost)) = &
+         & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+tS(3)))
 
     !write (*,*) '.... Done recomposing block!'
 

@@ -127,6 +127,7 @@ contains
             & bounds_tile(:,iTile), nghost,&
             & lb_dom%lx(1),lb_dom%lx(2),lb_dom%lx(3), lb_dom%fBuffer)
 #else     /* version without arrays */
+       !$CSS WAIT ON(bounds_tile(:,iTile)) 
        call recompose_lb_block(lb_dom_tile, bounds_tile(:,iTile), nghost, lb_dom)
 #endif
     end do

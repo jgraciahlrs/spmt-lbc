@@ -112,9 +112,6 @@ contains
        ! select tile
        lb_dom_tile => lb_dom_tiles(iTile)
 
-       lb_dom_tile%pnt_cur_tile => lb_dom_tile%fIn
-       lb_dom_tile%pnt_nxt_tile => lb_dom_tile%fOut
-
        ! do a single tiled Lattice Boltzmann step
        call lb_step_tile_sentinel(lb_dom_tile, bounds_tile(:,iTile), s_par, prc, meas, tStep)
 #ifdef COMBINE_STREAM_COLLIDE
@@ -125,7 +122,7 @@ contains
 #ifndef SMPSS_NO_ARRAYS /* version with arrays */
        call recompose_lb_block_array(lb_dom_tile%fIn, tileSize,tileSize,tileSize, &
             & bounds_tile(:,iTile), nghost,&
-            & lb_dom%lx(1),lb_dom%lx(2),lb_dom%lx(3), lb_dom%fBuffer)
+            & lb_dom%lx(1),lb_dom%lx(2),lb_dom%lx(3), lb_dom%fOut)
 #else     /* version without arrays */
        !$CSS WAIT ON(bounds_tile(:,iTile)) 
        call recompose_lb_block(lb_dom_tile, bounds_tile(:,iTile), nghost, lb_dom)
@@ -135,13 +132,13 @@ contains
     !$CSS BARRIER
 
     ! copy boundaries from buffer to block and swap pointers
-    lb_dom%fBuffer(NDX(:,0,:,:)) = lb_dom%fIn(NDX(:,0,:,:))
-    lb_dom%fBuffer(NDX(:,:,0,:)) = lb_dom%fIn(NDX(:,:,0,:))
-    lb_dom%fBuffer(NDX(:,:,:,0)) = lb_dom%fIn(NDX(:,:,:,0)) 
-    lb_dom%fBuffer(NDX(:,lb_dom%lx(1)+1,:,:)) = lb_dom%fIn(NDX(:,lb_dom%lx(1)+1,:,:))
-    lb_dom%fBuffer(NDX(:,:,lb_dom%lx(2)+1,:)) = lb_dom%fIn(NDX(:,:,lb_dom%lx(2)+1,:))
-    lb_dom%fBuffer(NDX(:,:,:,lb_dom%lx(3)+1)) = lb_dom%fIn(NDX(:,:,:,lb_dom%lx(3)+1))
-    swapper => lb_dom%fIn; lb_dom%fIn => lb_dom%fBuffer; lb_dom%fBuffer => swapper 
+    lb_dom%fOut(NDX(:,0,:,:)) = lb_dom%fIn(NDX(:,0,:,:))
+    lb_dom%fOut(NDX(:,:,0,:)) = lb_dom%fIn(NDX(:,:,0,:))
+    lb_dom%fOut(NDX(:,:,:,0)) = lb_dom%fIn(NDX(:,:,:,0)) 
+    lb_dom%fOut(NDX(:,lb_dom%lx(1)+1,:,:)) = lb_dom%fIn(NDX(:,lb_dom%lx(1)+1,:,:))
+    lb_dom%fOut(NDX(:,:,lb_dom%lx(2)+1,:)) = lb_dom%fIn(NDX(:,:,lb_dom%lx(2)+1,:))
+    lb_dom%fOut(NDX(:,:,:,lb_dom%lx(3)+1)) = lb_dom%fIn(NDX(:,:,:,lb_dom%lx(3)+1))
+    swapper => lb_dom%fIn; lb_dom%fIn => lb_dom%fOut; lb_dom%fOut => swapper 
 
 
     ! set cur/nxt pointers on block 
@@ -198,15 +195,18 @@ contains
            if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
        allocate(lb_dom_tile%fIn(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
            if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
-       allocate(lb_dom_tile%state(1:lx,1:ly,1:lz),stat=alloc_stat)
-           if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
+       !allocate(lb_dom_tile%state(1:lx,1:ly,1:lz),stat=alloc_stat)
+       !    if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
        allocate(lb_dom_tile%u0(NDX(NDIM,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
            if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
 
-       ! %state and %u0 could be pointers if run with SMPSS_NO_ARRAYS    
-       lb_dom_tile%state = lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)
+       !  %u0 could be pointers if remapping of indices worked    
+       lb_dom_tile%state => lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)
        lb_dom_tile%u0 = lb_dom%u0(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
        lb_dom_tile%fIn = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
+
+       lb_dom_tile%pnt_cur_tile => lb_dom_tile%fIn
+       lb_dom_tile%pnt_nxt_tile => lb_dom_tile%fOut
     end do
 
   end subroutine init_tile
@@ -298,7 +298,7 @@ contains
 #endif
 
     ! copy from block to tile; ignore ghost cell
-    lb_dom%fBuffer(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
          & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes 1 ghost cell
 
     !write (*,*) '.... Done recomposing block!'

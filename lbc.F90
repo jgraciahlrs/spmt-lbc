@@ -129,7 +129,7 @@ PROGRAM lbmain
 
 !$CSS START
 #ifdef USE_TILES
-   call init_tile(prc, lb_dom)
+   call init_tile(lb_dom, s_par, prc)
 #endif /* USE_TILES */
 
    call cpu_time_measure(meas%tEnd)
@@ -212,7 +212,7 @@ PROGRAM lbmain
          ! Check for errors. If errors true, then exit after next iteration
          if(result_state == 0) then
             if(s_par%initial .eqv. .false.) &
-            call check_density(lb_dom,tStep,result_state,prc%rk)
+                 call check_density(lb_dom,tStep,result_state,prc%rk)
             call comm_res(result_state,prc)
          elseif(result_state ==-1 .and. s_par%goend .eqv. .true.) then
             write(*,*) "Result is errorous. Exiting..."

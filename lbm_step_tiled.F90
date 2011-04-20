@@ -16,8 +16,7 @@ module lbm_step_tiled
 contains
 
   ! TODO: 
-  !   * assert TILESIZE and block dimensions are compatible
-
+  !   
   ! lb_step() is called from the main time loop
   ! does one lbm step, ie. propagate & collide
   ! and possibly boundary conditions.
@@ -153,10 +152,11 @@ contains
 
 
   ! initialize machinery for tiles implementation
-  subroutine init_tile(prc, lb_dom)
+  subroutine init_tile(lb_dom, s_par, prc)
     implicit none
-    type(mpl_var),intent(inout)     :: prc
     type(lb_block),intent(inout)    :: lb_dom
+    type(sim_parameter), intent(inout)  :: s_par 
+    type(mpl_var),intent(inout)     :: prc
 
     integer                         :: alloc_stat
     integer                         :: iTile
@@ -168,6 +168,16 @@ contains
     ! calculate number of tiles for given size tileSize
     prc%tileSize = TILESIZE
     prc%nTiles = lb_dom%lx(1)/prc%tileSize * lb_dom%lx(2)/prc%tileSize * lb_dom%lx(3)/prc%tileSize
+
+    ! assert compatibility of tile size and domain size
+    if ((modulo(lb_dom%lx(1),prc%tileSize)/=0) &
+         &.or. (modulo(lb_dom%lx(2),prc%tileSize)/=0) & 
+         &.or. (modulo(lb_dom%lx(3),prc%tileSize)/=0)) then
+       write (*,*) "Fatal error: domain sizes must be and integer multiple of TILESIZE=", prc%tileSize
+       write (*,*) "Exiting ..."
+       s_par%goend = .true.        ! why is this not sufficient?
+       call abort()
+    end if
     
     ! compute tile boundaries within parent block 
     call tile_bounds(prc%tileSize, prc%nTiles, prc%n_ghost_nodes, prc%bounds_tile)
@@ -298,9 +308,23 @@ contains
 #endif
 
 
-    ! copy from block to tile; ignore ghost cell
-    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes 1 ghost cell
+    ! copy from tile to block; ignore ghost cell
+    !lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+    !     & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes one ghost cell
+
+    ! copy first physical cell from tile to block, assumes one ghost cell
+    lb_dom%fOut(NDX(:,tb(1)+nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+         & lb_dom_tile%fIn(NDX(:,lb(1)+1,lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
+    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost,tb(5)+nghost:tb(6)-nghost)) = &
+         & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1,lb(3)+1:lb(3)+tS(3)))
+    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost)) = &
+         & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1))
+    lb_dom%fOut(NDX(:,tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+         & lb_dom_tile%fIn(NDX(:,lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
+    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+         & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
+    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(6)-nghost)) = &
+         & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+tS(3)))
 
     !write (*,*) '.... Done recomposing block!'
 
@@ -398,6 +422,7 @@ end module lbm_step_tiled
   subroutine recompose_lb_block_sentinel(lb_dom_tile,tb, nghost, lb_dom,tb0)
 #ifdef USENOT_SMPSS_MODULES
     use lbm_functions
+    use lbm_step_tiled
 #endif /* USENOT_SMPSS_MODULES */
     implicit none
     type(lb_block),intent(inout)   :: lb_dom_tile          ! why is intent(in) not sufficient?
@@ -406,35 +431,7 @@ end module lbm_step_tiled
     type(lb_block),intent(inout)   :: lb_dom
     integer,dimension(6),intent(inout)      :: tb0         ! sentinel for dependency tracking
 
-    integer,dimension(4)         :: lb        ! lower index of physical cells in lb_dom_tile%fIn / %fOut
-    integer,dimension(4)         :: tS        ! tileSize excluding ghost cells
-
-    lb = lbound(lb_dom_tile%fIn)              ! get lower boundaries from buffer
-    tS = shape(lb_dom_tile%fIn)-nghost*2
-#ifdef LAYOUT_LIJK
-    lb(1:3) = lb(2:4)                         ! spatial indices should be in lb(1:3) regardless of LAYOUT_IJKL/LIJK
-    tS(1:3) = tS(2:4)
-#endif
-    
-    ! copy from tile to block; ignore ghost cell
-    !lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-    !     & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes one ghost cell
-
-    ! copy first physical cell from tile to block, assumes one ghost cell
-    lb_dom%fOut(NDX(:,tb(1)+nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile%fIn(NDX(:,lb(1)+1,lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
-    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1,lb(3)+1:lb(3)+tS(3)))
-    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost)) = &
-         & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1))
-    lb_dom%fOut(NDX(:,tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile%fIn(NDX(:,lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
-    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
-    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(6)-nghost)) = &
-         & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+tS(3)))
-
-    !write (*,*) '.... Done recomposing block!'
+    call recompose_lb_block(lb_dom_tile,tb, nghost, lb_dom)
 
   end subroutine recompose_lb_block_sentinel
 

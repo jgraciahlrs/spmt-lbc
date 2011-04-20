@@ -320,12 +320,12 @@ else
 	CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/smpss-cc/') 
       endif
 
-      F90_CFLAGS_DEBUG=$(SFDEF)-xf95-cpp-input -O0 -g $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer 
-      F90_LFLAGS_DEBUG=-O0 -g $(SLDEF)-fbounds-check $(SLDEF)-Wall $(SLDEF)-pedantic $(SLDEF)-fcray-pointer 
+      F90_CFLAGS_DEBUG=$(SFDEF)-xf95-cpp-input -O0 -g $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
+      F90_LFLAGS_DEBUG=-O0 -g $(SLDEF)-fbounds-check $(SLDEF)-Wall $(SLDEF)-pedantic $(SLDEF)-fcray-pointer $(SFDEF)-fwhole-file 
 
-      F90_CFLAGS_OPT=$(SFDEF)-xf95-cpp-input -O3 $(SFDEF)-fcray-pointer 
+      F90_CFLAGS_OPT=$(SFDEF)-xf95-cpp-input -O3 $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
 #-std=f2003  
-      F90_LFLAGS_OPT= -O3 $(SLDEF)-fcray-pointer 
+      F90_LFLAGS_OPT= -O3 $(SLDEF)-fcray-pointer $(SFDEF)-fwhole-file  
       #--------------------------------
       # PROFILING 
       ifeq ($(findstring profile,$(COMPILER)),profile)

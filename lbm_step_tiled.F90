@@ -53,27 +53,22 @@ contains
          use lbm_functions
 #endif /* USENOT_SMPSS_MODULES */ 
          implicit none
-         type(lb_block),intent(in)        :: lb_dom
-         integer,dimension(6),intent(in)  :: tb0   ! sentinel to track dependencies
-         integer,intent(in)               :: nghost    ! # of ghost cells
-         type(lb_block),intent(inout)     :: lb_dom_tile
-         integer,dimension(6),intent(in)  :: tb ! boundaries of given tile in parent block
+         type(lb_block),intent(in)           :: lb_dom
+         integer,dimension(6),intent(in)     :: tb0              ! sentinel to track dependencies
+         integer,intent(in)                  :: nghost           ! # of ghost cells
+         type(lb_block),intent(inout)        :: lb_dom_tile
+         integer,dimension(6),intent(inout)  :: tb               ! boundaries of given tile in parent block
        end subroutine decompose_lb_block
-       !$CSS TASK REDUCTION(lb_dom_fIn, tb0)
-       subroutine recompose_lb_block_array(lb_dom_tile_fIn, tS1,tS2,tS3, tb, nghost, lx1,lx2,lx3, lb_dom_fIn,tb0)
+       !$CSS TASK REDUCTION(lb_dom, tb0)
+       subroutine recompose_lb_block_sentinel(lb_dom_tile,tb, nghost, lb_dom,tb0)
          use lbm_functions
          implicit none
-         !type(lb_block),intent(in)   :: lb_dom_tile
-         real(R8B),dimension(NDX(nnod,0:tS1+1,0:tS2+1,0:tS3+1)), intent(in) :: lb_dom_tile_fIn
-         integer, intent(in)          :: tS1,tS2,tS3             ! tileSize excluding ghost cells
-         integer,dimension(6),intent(in)            :: tb        ! boundaries of given tile in parent block
-         integer,intent(in)           :: nghost    ! # of ghost cells
-         !integer,dimension(3),intent(in) :: lx
-         integer,intent(in)               :: lx1,lx2,lx3
-         real(R8B),dimension(NDX(nnod,0:lx1+1,0:lx2+1,0:lx3+1)),intent(inout) :: lb_dom_fIn
-         integer,dimension(6),intent(inout) :: tb0     ! sentinel for dependency tracking
-         !type(lb_block),intent(inout)   :: lb_dom
-       end subroutine recompose_lb_block_array
+         type(lb_block),intent(inout)   :: lb_dom_tile           ! why is intent(in) not sufficient?
+         integer,dimension(6),intent(inout)      :: tb           ! boundaries of given tile in parent block
+         integer,intent(in)             :: nghost                ! # of ghost cells
+         type(lb_block),intent(inout)   :: lb_dom
+         integer,dimension(6),intent(inout)      :: tb0          ! sentinel for dependency tracking
+       end subroutine recompose_lb_block_sentinel
        !$CSS TASK REDUCTION(meas)
        subroutine lb_step_tile_sentinel(lb_dom, tb, s_par, prc, meas, tStep)
          use lbm_functions
@@ -96,6 +91,10 @@ contains
          type(measure),intent(inout)            :: meas
          integer, intent(in)                    :: tStep
        end subroutine swap_and_set_bnd_sentinel
+       !$CSS TASK HIGHPRIORITY
+       subroutine dummy_dom(tb0)
+         integer,dimension(6),intent(inout)     :: tb0       ! sentinel for dependency tracking
+       end subroutine dummy_dom
     end interface
 #endif  /* USENOT_SMPSS_MODULES */
 
@@ -121,6 +120,7 @@ contains
        call decompose_lb_block(lb_dom, bounds_tile(:,0), nghost, lb_dom_tiles(iTile), bounds_tile(:,iTile))
     end do
 
+    call dummy_dom(bounds_tile(:,0))       ! just a dummy for clear temanejo output
     do iTile = 1, nTiles
        ! select tile
        lb_dom_tile => lb_dom_tiles(iTile)
@@ -133,9 +133,8 @@ contains
 
        ! reassemble block from tiles
 #ifndef SMPSS_NO_ARRAYS /* version with arrays */
-       call recompose_lb_block_array(lb_dom_tile%fIn, tileSize,tileSize,tileSize, &
-            & bounds_tile(:,iTile), nghost,&
-            & lb_dom%lx(1),lb_dom%lx(2),lb_dom%lx(3), lb_dom%fOut, bounds_tile(:,0))
+       call recompose_lb_block_sentinel(lb_dom_tile,bounds_tile(:,iTile), nghost,&
+            & lb_dom, bounds_tile(:,0))
 #else     /* version without arrays */
        !$CSS WAIT ON(bounds_tile(:,iTile)) 
        call recompose_lb_block(lb_dom_tile, bounds_tile(:,iTile), nghost, lb_dom)
@@ -298,6 +297,7 @@ contains
     tS(1:3) = tS(2:4)
 #endif
 
+
     ! copy from block to tile; ignore ghost cell
     lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
          & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes 1 ghost cell
@@ -359,14 +359,14 @@ end module lbm_step_tiled
     use lbm_functions
 #endif /* USENOT_SMPSS_MODULES */ 
     implicit none
-    type(lb_block),intent(in)        :: lb_dom
-    integer,dimension(6),intent(in)  :: tb0   ! sentinel to track dependencies
-    integer,intent(in)               :: nghost    ! # of ghost cells
-    type(lb_block),intent(inout)     :: lb_dom_tile
-    integer,dimension(6),intent(in)  :: tb ! boundaries of given tile in parent block
-
-    integer                      :: lx,ly,lz  ! block sizes
-    integer                      :: alloc_stat
+    type(lb_block),intent(in)           :: lb_dom
+    integer,dimension(6),intent(in)     :: tb0            ! sentinel to track dependencies
+    integer,intent(in)                  :: nghost         ! # of ghost cells
+    type(lb_block),intent(inout)        :: lb_dom_tile
+    integer,dimension(6),intent(inout)  :: tb             ! boundaries of given tile in parent block
+    
+    integer                             :: lx,ly,lz       ! block sizes
+    integer                             :: alloc_stat
 
     lx = lb_dom_tile%lx(1); ly = lb_dom_tile%lx(2); lz = lb_dom_tile%lx(3); 
 
@@ -394,55 +394,49 @@ end module lbm_step_tiled
   end subroutine decompose_lb_block
 
 
-  !$CSS TASK REDUCTION(lb_dom_fIn, tb0)
-  subroutine recompose_lb_block_array(lb_dom_tile_fIn, tS1,tS2,tS3, tb, nghost, lx1,lx2,lx3, lb_dom_fIn,tb0)
+  !$CSS TASK REDUCTION(lb_dom, tb0)
+  subroutine recompose_lb_block_sentinel(lb_dom_tile,tb, nghost, lb_dom,tb0)
 #ifdef USENOT_SMPSS_MODULES
     use lbm_functions
 #endif /* USENOT_SMPSS_MODULES */
     implicit none
-    !type(lb_block),intent(in)   :: lb_dom_tile
-    real(R8B),dimension(NDX(nnod,0:tS1+1,0:tS2+1,0:tS3+1)), intent(in) :: lb_dom_tile_fIn
-    integer, intent(in)          :: tS1,tS2,tS3            ! tileSize excluding ghost cells
-    integer,dimension(6),intent(in) :: tb  ! boundaries of given tile in parent block
-    integer,intent(in)           :: nghost    ! # of ghost cells
-    !integer,dimension(3),intent(in) :: lx
-    integer,intent(in)               :: lx1,lx2,lx3
-    real(R8B),dimension(NDX(nnod,0:lx1+1,0:lx2+1,0:lx3+1)),intent(inout) :: lb_dom_fIn
-    integer,dimension(6),intent(inout) :: tb0 ! sentinel for dependency tracking
-    !type(lb_block),intent(inout)   :: lb_dom
+    type(lb_block),intent(inout)   :: lb_dom_tile          ! why is intent(in) not sufficient?
+    integer,dimension(6),intent(inout)      :: tb          ! boundaries of given tile in parent block
+    integer,intent(in)             :: nghost               ! # of ghost cells
+    type(lb_block),intent(inout)   :: lb_dom
+    integer,dimension(6),intent(inout)      :: tb0         ! sentinel for dependency tracking
 
     integer,dimension(4)         :: lb        ! lower index of physical cells in lb_dom_tile%fIn / %fOut
     integer,dimension(4)         :: tS        ! tileSize excluding ghost cells
 
-    lb = lbound(lb_dom_tile_fIn)              ! get lower boundaries from buffer
-    tS = shape(lb_dom_tile_fIn)-nghost*2
+    lb = lbound(lb_dom_tile%fIn)              ! get lower boundaries from buffer
+    tS = shape(lb_dom_tile%fIn)-nghost*2
 #ifdef LAYOUT_LIJK
     lb(1:3) = lb(2:4)                         ! spatial indices should be in lb(1:3) regardless of LAYOUT_IJKL/LIJK
     tS(1:3) = tS(2:4)
 #endif
     
-
     ! copy from tile to block; ignore ghost cell
-    !lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-    !     & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes one ghost cell
+    !lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+    !     & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes one ghost cell
 
     ! copy first physical cell from tile to block, assumes one ghost cell
-    lb_dom_fIn(NDX(:,tb(1)+nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile_fIn(NDX(:,lb(1)+1,lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
-    lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1,lb(3)+1:lb(3)+tS(3)))
-    lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost)) = &
-         & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1))
-    lb_dom_fIn(NDX(:,tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile_fIn(NDX(:,lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
-    lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
-    lb_dom_fIn(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(6)-nghost)) = &
-         & lb_dom_tile_fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+tS(3)))
+    lb_dom%fOut(NDX(:,tb(1)+nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+         & lb_dom_tile%fIn(NDX(:,lb(1)+1,lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
+    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost,tb(5)+nghost:tb(6)-nghost)) = &
+         & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1,lb(3)+1:lb(3)+tS(3)))
+    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost)) = &
+         & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1))
+    lb_dom%fOut(NDX(:,tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+         & lb_dom_tile%fIn(NDX(:,lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
+    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
+         & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
+    lb_dom%fOut(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(6)-nghost)) = &
+         & lb_dom_tile%fIn(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+tS(3)))
 
     !write (*,*) '.... Done recomposing block!'
 
-  end subroutine recompose_lb_block_array
+  end subroutine recompose_lb_block_sentinel
 
   !$CSS TASK REDUCTION(meas)
   subroutine lb_step_tile_sentinel(lb_dom, tb, s_par, prc, meas, tStep)
@@ -501,6 +495,12 @@ end module lbm_step_tiled
     call set_bnd(lb_dom,lb_dom%state,pnt_nxt,lb_dom%rho,lb_dom%u,s_par,prc,meas,tStep)
 
   end subroutine swap_and_set_bnd_sentinel
+
+  !$CSS TASK HIGHPRIORITY
+  subroutine dummy_dom(tb0)
+    integer,dimension(6),intent(inout)     :: tb0       ! sentinel for dependency tracking
+  end subroutine dummy_dom
+
 
 
 #ifndef USENOT_SMPSS_MODULES

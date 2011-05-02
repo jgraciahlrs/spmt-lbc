@@ -46,14 +46,14 @@ contains
 #ifdef USENOT_SMPSS_MODULES
     ! need to declare explitic interfaces for StarSs tasks
     interface
-       !$CSS TASK
+       !$CSS TASK REDUCTION(lb_dom, tb0)
        subroutine decompose_lb_block(lb_dom, tb0, nghost, lb_dom_tile, tb)
 #ifdef USENOT_SMPSS_MODULES
          use lbm_functions
 #endif /* USENOT_SMPSS_MODULES */ 
          implicit none
-         type(lb_block),intent(in)           :: lb_dom
-         integer,dimension(6),intent(in)     :: tb0              ! sentinel to track dependencies
+         type(lb_block),intent(inout)           :: lb_dom
+         integer,dimension(6),intent(inout)     :: tb0              ! sentinel to track dependencies
          integer,intent(in)                  :: nghost           ! # of ghost cells
          type(lb_block),intent(inout)        :: lb_dom_tile
          integer,dimension(6),intent(inout)  :: tb               ! boundaries of given tile in parent block
@@ -141,7 +141,7 @@ contains
     end do
 
     call swap_and_set_bnd_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)
-    !$CSS WAIT ON(bounds_tile(:,0))
+    ! $CSS WAIT ON(bounds_tile(:,0))
 
 #endif  /* USE_TILES*/
 
@@ -377,14 +377,14 @@ contains
 end module lbm_step_tiled
 #endif /* USENOT_SMPSS_MODULES */
 
-  !$CSS TASK
+  !$CSS TASK REDUCTION(lb_dom, tb0)
   subroutine decompose_lb_block(lb_dom,tb0, nghost, lb_dom_tile, tb)
 #ifdef USENOT_SMPSS_MODULES
     use lbm_functions
 #endif /* USENOT_SMPSS_MODULES */ 
     implicit none
-    type(lb_block),intent(in)           :: lb_dom
-    integer,dimension(6),intent(in)     :: tb0            ! sentinel to track dependencies
+    type(lb_block),intent(inout)           :: lb_dom
+    integer,dimension(6),intent(inout)     :: tb0            ! sentinel to track dependencies
     integer,intent(in)                  :: nghost         ! # of ghost cells
     type(lb_block),intent(inout)        :: lb_dom_tile
     integer,dimension(6),intent(inout)  :: tb             ! boundaries of given tile in parent block

@@ -17,6 +17,7 @@
 #HPC_TYPE=sx9
 #HPC_TYPE=bwgrid
 #HPC_TYPE=cray
+#HPC_TYPE=xe6
 HPC_TYPE=nehalem
 #HPC_TYPE=bluegene
 
@@ -25,7 +26,7 @@ HPC_TYPE=nehalem
 
 # Add _debug for debugging and smpss for StarSs/SMPSs
 #COMPILER=gnu_debug
-COMPILER=gnu_smpss#_trace
+COMPILER=gnu_smpss#_trace#_debug
 #COMPILER=sx
 #COMPILER=vampir
 #COMPILER=intel_debug
@@ -307,18 +308,32 @@ else
 #--------------------------------
 # GNU
 
-   ifeq ($(findstring gnu,$(COMPILER)),gnu)
-      COMP=mpif90
-      CCOMP=mpicc
+    ifeq ($(findstring gnu,$(COMPILER)),gnu)
+	ifeq ($(findstring xe6,$(HPC_TYPE)),xe6)
+        COMP=ftn
+        CCOMP=cc
 
-      ifeq ($(findstring smpss,$(COMPILER)),smpss)
-        # find parameters with mpif90/cc -showme	
-	SFDEF=-Wf,
-	SCDEF=-Wc,
-	SLDEF=-Wl,
-	COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/smpss-cc/')
-	CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/smpss-cc/') 
-      endif
+        ifeq ($(findstring smpss,$(COMPILER)),smpss)
+          # find parameters with mpif90/cc -showme	
+	  SFDEF=-Wf,
+	  SCDEF=-Wc,
+	  SLDEF=-Wl,
+	  COMP=smpss-cc -I$(MPICH_DIR)/include
+	  CCOMP=smpss-cc -I$(MPICH_DIR)/include
+        endif
+	else
+        COMP=mpif90
+        CCOMP=mpicc
+
+        ifeq ($(findstring smpss,$(COMPILER)),smpss)
+          # find parameters with mpif90/cc -showme	
+	  SFDEF=-Wf,
+	  SCDEF=-Wc,
+	  SLDEF=-Wl,
+	  COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/smpss-cc/')
+	  CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/smpss-cc/') 
+        endif
+	endif
 
       F90_CFLAGS_DEBUG=$(SFDEF)-xf95-cpp-input -O0 -g $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
       F90_LFLAGS_DEBUG=-O0 -g $(SLDEF)-fbounds-check $(SLDEF)-Wall $(SLDEF)-pedantic $(SLDEF)-fcray-pointer $(SFDEF)-fwhole-file 

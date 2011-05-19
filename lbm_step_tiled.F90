@@ -90,10 +90,6 @@ contains
          type(measure),intent(inout)            :: meas
          integer, intent(in)                    :: tStep
        end subroutine swap_and_set_bnd_sentinel
-       !$CSS TASK HIGHPRIORITY
-       subroutine dummy_dom(tb0)
-         integer,dimension(6),intent(inout)     :: tb0       ! sentinel for dependency tracking
-       end subroutine dummy_dom
     end interface
 #endif  /* USENOT_SMPSS_MODULES */
 
@@ -119,7 +115,6 @@ contains
        call decompose_lb_block(lb_dom, bounds_tile(:,0), nghost, lb_dom_tiles(iTile), bounds_tile(:,iTile))
     end do
 
-    call dummy_dom(bounds_tile(:,0))       ! just a dummy for clear temanejo output
     do iTile = 1, nTiles
        ! select tile
        lb_dom_tile => lb_dom_tiles(iTile)
@@ -158,12 +153,23 @@ contains
     type(sim_parameter), intent(inout)  :: s_par 
     type(mpl_var),intent(inout)     :: prc
 
+#ifdef USENOT_SMPSS_MODULES
+    ! need to declare explitic interfaces for StarSs tasks
+    interface
+       !$CSS TASK 
+       subroutine allocate_tile(lb_dom, lb_dom_tile, tb, prc)
+         use lbm_functions
+         implicit none
+         type(lb_block),intent(in)       :: lb_dom
+         type(lb_block),intent(inout)    :: lb_dom_tile
+         integer,dimension(6),intent(in) :: tb
+         type(mpl_var),intent(in)        :: prc
+       end subroutine allocate_tile
+    end interface
+#endif /* USENOT_SMPSS_MODULES */
+
     integer                         :: alloc_stat
     integer                         :: iTile
-    integer,dimension(6)            :: tb
-    type(lb_block),pointer          :: lb_dom_tile
-    integer                         :: lx, ly, lz
-    integer                         :: nghost
 
     ! calculate number of tiles for given size tileSize
     prc%tileSize = TILESIZE
@@ -188,34 +194,10 @@ contains
     
     ! allocate data fields of all tile lb_blocks
     do iTile = 1, prc%nTiles
-       lb_dom_tile => prc%lb_dom_tiles(iTile)
-
-       ! set tile size from tile boundaries
-       tb = prc%bounds_tile(:,iTile)
-       lb_dom_tile%lx = (/ tb(2)-tb(1)-1, tb(4)-tb(3)-1, tb(6)-tb(5)-1 /)
-       nghost = prc%n_ghost_nodes
-
-       ! allocate memory for tile arrays
-       lx = lb_dom_tile%lx(1); ly = lb_dom_tile%lx(2); lz = lb_dom_tile%lx(3); 
-       allocate(lb_dom_tile%fOut(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
-           if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
-       allocate(lb_dom_tile%fIn(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
-           if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
-       !allocate(lb_dom_tile%state(1:lx,1:ly,1:lz),stat=alloc_stat)
-       !    if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
-       allocate(lb_dom_tile%u0(NDX(NDIM,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
-           if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
-
-       ! %u0 could be pointer if remapping of indices worked
-       lb_dom_tile%state => lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)
-       lb_dom_tile%u0 = lb_dom%u0(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
-       lb_dom_tile%fIn = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
-
-       lb_dom_tile%pnt_cur_tile => lb_dom_tile%fIn
-       lb_dom_tile%pnt_nxt_tile => lb_dom_tile%fOut
+       call allocate_tile(lb_dom, prc%lb_dom_tiles(iTile), prc%bounds_tile(:,iTile), prc) 
     end do
-
   end subroutine init_tile
+
 
   ! gather data from tiles into block for output, etc.
   subroutine gather_tiles(prc, lb_dom)
@@ -417,7 +399,6 @@ end module lbm_step_tiled
 
   end subroutine decompose_lb_block
 
-
   !$CSS TASK REDUCTION(lb_dom, tb0)
   subroutine recompose_lb_block_sentinel(lb_dom_tile,tb, nghost, lb_dom,tb0)
 #ifdef USENOT_SMPSS_MODULES
@@ -434,7 +415,6 @@ end module lbm_step_tiled
     call recompose_lb_block(lb_dom_tile,tb, nghost, lb_dom)
 
   end subroutine recompose_lb_block_sentinel
-
   !$CSS TASK REDUCTION(meas)
   subroutine lb_step_tile_sentinel(lb_dom, tb, s_par, prc, meas, tStep)
 #ifdef USENOT_SMPSS_MODULES
@@ -493,11 +473,46 @@ end module lbm_step_tiled
 
   end subroutine swap_and_set_bnd_sentinel
 
-  !$CSS TASK HIGHPRIORITY
-  subroutine dummy_dom(tb0)
-    integer,dimension(6),intent(inout)     :: tb0       ! sentinel for dependency tracking
-  end subroutine dummy_dom
+  ! allocate memory for tiles and init them
+  !$CSS TASK 
+  subroutine allocate_tile(lb_dom, lb_dom_tile, tb, prc)
+    use lbm_functions
+    implicit none
+    type(lb_block),intent(in)       :: lb_dom
+    type(lb_block),intent(inout)    :: lb_dom_tile
+    integer,dimension(6),intent(in) :: tb
+    type(mpl_var),intent(in)        :: prc
+    
+    integer                         :: alloc_stat
+    integer                         :: lx, ly, lz
+    integer                         :: nghost
+    
+    
+    ! set tile size from tile boundaries
+    lb_dom_tile%lx = (/ tb(2)-tb(1)-1, tb(4)-tb(3)-1, tb(6)-tb(5)-1 /)
+    nghost = prc%n_ghost_nodes
+    
+    ! allocate memory for tile arrays
+    lx = lb_dom_tile%lx(1); ly = lb_dom_tile%lx(2); lz = lb_dom_tile%lx(3); 
+    allocate(lb_dom_tile%fOut(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
+        if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
+    allocate(lb_dom_tile%fIn(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
+        if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fIn"
+    allocate(lb_dom_tile%state(1:lx,1:ly,1:lz),stat=alloc_stat)
+        if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
+    allocate(lb_dom_tile%u0(NDX(NDIM,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
+        if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
+    
+    ! %u0 could be pointer if remapping of indices worked
+    lb_dom_tile%state = lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)
+    lb_dom_tile%u0 = lb_dom%u0(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
+    lb_dom_tile%fIn = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
+    lb_dom_tile%fOut = 0.  ! first touch
 
+    lb_dom_tile%pnt_cur_tile => lb_dom_tile%fIn
+    lb_dom_tile%pnt_nxt_tile => lb_dom_tile%fOut
+    
+  end subroutine allocate_tile
 
 
 #ifndef USENOT_SMPSS_MODULES

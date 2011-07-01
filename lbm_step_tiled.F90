@@ -186,7 +186,8 @@ contains
     end if
     
     ! compute tile boundaries within parent block 
-    call tile_bounds(prc%tileSize, prc%nTiles, prc%n_ghost_nodes, prc%bounds_tile)
+    !call tile_bounds(prc%tileSize, prc%nTiles, prc%n_ghost_nodes, prc%bounds_tile)
+    call tile_bounds(prc%tileSize, prc%nTiles, lb_dom%lx, prc%n_ghost_nodes, prc%bounds_tile)
     
     ! allocate space for a container of tile lb_blocks
     allocate(prc%lb_dom_tiles(prc%nTiles),stat=alloc_stat)
@@ -237,36 +238,41 @@ contains
 
  
   ! calculates boundaries of tile with given number i within parent block    
-  subroutine tile_bounds(ts, nT, ng, tb)
+  subroutine tile_bounds(ts, nT, lx, ng, tb)
     implicit none
-    integer,intent(in)           :: ts, nT, ng       ! tile size, and # of ghostcells  
+    integer,intent(in)           :: ts, nT, lx(3), ng        ! tile size, tile number, domain size and # of ghostcells  
     integer,intent(out),dimension(:,:),pointer          :: tb               ! tile boundaries   
     
-    integer                      :: i,n,xl,xu,yl,yu,zl,zu,tx,ty,tz
+    integer                      :: i,nx,ny,nz,xl,xu,yl,yu,zl,zu,tx,ty,tz
     integer                      :: alloc_stat
+
+
 
     ! allocate memory for tile boundaries tb(:,1..nT) and "all tiles" tb(:,0)
     allocate(tb(6,0:nT), stat=alloc_stat)
 
-    n = nT**(1./3.)                              ! number of tiles in each direction
+    nx = lx(1)/ts; write (*,*) "nx", nx
+    ny = lx(2)/ts; write (*,*) "ny", ny
+    nz = lx(3)/ts; write (*,*) "nz", nz
 
     ! set boundaries of whole block
-    tb(:,0) = (/ 0, ts*n+2*ng, 0, ts*n+2*ng, 0, ts*n+2*ng /)
+    tb(:,0) = (/ 0, ts*nx+2*ng, 0, ts*ny+2*ng, 0, ts*nz+2*ng /)
     write (*,*) tb(:,0)
 
-    do i = 1, nT                         ! loop over all tiles
-       tx = mod( i-1, n) + 1                     ! (i-1) % ntiles + 1
-       ty = mod( (i-1)/n, n) + 1                 ! ( (i-1)//ntiles ) % ntiles + 1
-       tz = (i-1) / (n*n) + 1                    ! (i-1) // (ntiles*ntiles) + 1
-       !write (*,*) '...tilebounds i,tx,ty,tz: ', i, tx,ty,tz
+    i = 1
+    do tx = 1, nx
+       do ty = 1, ny
+          do tz = 1, nz
+             ! tile boundaries including ghostcells
+             xl = (tx-1)*ts; xu = xl + ts+2*ng - 1     ! fields are zero based in spatial coords?
+             yl = (ty-1)*ts; yu = yl + ts+2*ng - 1
+             zl = (tz-1)*ts; zu = zl + ts+2*ng - 1
+             !write (*,*) '...tilebounds tx,ty,tz,xl,yl,zl: ', tx,ty,tz, xl,yl,zl
 
-       ! tile boundaries including ghostcells
-       xl = (tx-1)*ts; xu = xl + ts+2*ng - 1     ! fields are zero based in spatial coords?
-       yl = (ty-1)*ts; yu = yl + ts+2*ng - 1
-       zl = (tz-1)*ts; zu = zl + ts+2*ng - 1
-       !write (*,*) '...tilebounds i,xl,yl,zl: ', i, xl,yl,zl
-
-       tb(1,i)=xl;tb(2,i)=xu; tb(3,i)=yl;tb(4,i)=yu; tb(5,i)=zl;tb(6,i)=zu
+             tb(1,i)=xl;tb(2,i)=xu; tb(3,i)=yl;tb(4,i)=yu; tb(5,i)=zl;tb(6,i)=zu
+             i = i+1
+          end do
+       end do
     end do
     !write (*,*) tb
 

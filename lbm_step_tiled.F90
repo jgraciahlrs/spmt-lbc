@@ -251,13 +251,13 @@ contains
     ! allocate memory for tile boundaries tb(:,1..nT) and "all tiles" tb(:,0)
     allocate(tb(6,0:nT), stat=alloc_stat)
 
-    nx = lx(1)/ts; write (*,*) "nx", nx
-    ny = lx(2)/ts; write (*,*) "ny", ny
-    nz = lx(3)/ts; write (*,*) "nz", nz
+    nx = lx(1)/ts
+    ny = lx(2)/ts
+    nz = lx(3)/ts
 
     ! set boundaries of whole block
     tb(:,0) = (/ 0, ts*nx+2*ng, 0, ts*ny+2*ng, 0, ts*nz+2*ng /)
-    write (*,*) tb(:,0)
+    !write (*,*) tb(:,0)
 
     i = 1
     do tx = 1, nx

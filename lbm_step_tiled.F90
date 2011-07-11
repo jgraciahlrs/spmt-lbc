@@ -8,7 +8,7 @@
 !! $HEADER$
 !!
 
-
+#ifdef USE_TILES    /* all the file */
 module lbm_step_tiled
   use lbm_functions
 
@@ -525,3 +525,4 @@ end module lbm_step_tiled
 end module lbm_step_tiled
 #endif /* !USENOT_SMPSS_MODULES */
 
+#endif /* USE_TILES (all the file) */ 

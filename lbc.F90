@@ -132,6 +132,8 @@ PROGRAM lbmain
    call init_tile(lb_dom, s_par, prc)
 #endif /* USE_TILES */
 
+! for timing
+!$CSS BARRIER
    call cpu_time_measure(meas%tEnd)
    meas%init_duration = real(meas%tEnd,8) - real(meas%tStart,8)
 !------------------------------------------------------------------------
@@ -142,11 +144,13 @@ PROGRAM lbmain
      write(*,*) "  Starting main time loop"; write(*,*)
    endif
 
+   !time main loop
+   call cpu_time_measure(meas%tStart)
+  
    tstep_cnt = 0 
    do tStep = 1,s_par%tMax
    pnt_nxt => lb_dom%fIn
 
-      call cpu_time_measure(meas%tStart)
       !---------------------------
       ! Set Boundaries on fIn  
       call treat_initial(lb_dom,s_par,tstep,prc)
@@ -179,21 +183,22 @@ PROGRAM lbmain
       !---------------------------
       ! Exchange between domains 
       if(prc%size > 1) then
-         call mpl_exchange(lb_dom,pnt_cur,prc,meas)
-      end if
+        !$CSS BARRIER
+        call mpl_exchange(lb_dom,pnt_cur,prc,meas)
+       end if
 
 
       ! do a single Lattice Boltzmann step
       call lb_step(lb_dom, pnt_nxt, pnt_cur, s_par, prc, meas, tStep)
 
-      call cpu_time_measure(meas%tEnd)
-      meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
-
       !---------------------------
       ! Output and error check 
       if(MOD(tStep,s_par%tOut)==0 .and. tStep >= s_par%tOutBeg) then
 #ifdef USE_TILES
-         !$CSS BARRIER
+         !$CSS WAIT ON(lb_dom)
+         ! time main loop at barrier, excluding output
+         call cpu_time_measure(meas%tEnd)
+         meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
          call gather_tiles(prc, lb_dom)
 #endif /* USE_TILES */
          ! calc macroscopic values (is also done in do_kinetic)
@@ -223,6 +228,7 @@ PROGRAM lbmain
             write(*,*) "Stop has been requested by stopfile 'Stop'"
             exit
          endif
+         call cpu_time_measure(meas%tStart)
 
       endif
 
@@ -233,7 +239,11 @@ PROGRAM lbmain
       endif
 #endif
    end do
+
 !$CSS FINISH
+! finish timing main loop
+call cpu_time_measure(meas%tEnd)
+meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
 
 !------------------------------------------------------------------------
 ! Done with Main loop 

@@ -61,6 +61,17 @@ PROGRAM lbmain
    integer,pointer      :: tstep_cnt 
    logical              :: stop_request    
    real(R8B),pointer,dimension(:,:,:,:) :: pnt_cur,pnt_nxt
+   
+   interface
+      !$CSS TASK
+      subroutine mpl_exchange_smpss(lb_dom,prc,meas)
+        use nrt_lib
+        use mpl_lib
+        type(lb_block),intent(inout) :: lb_dom
+        type(mpl_var),intent(in)     :: prc
+        type(measure),intent(inout)  :: meas
+      end subroutine mpl_exchange_smpss
+   end interface
 
    countOut             = 0
    result_state         = 0
@@ -183,8 +194,14 @@ PROGRAM lbmain
       !---------------------------
       ! Exchange between domains 
       if(prc%size > 1) then
+#ifdef USE_TILES
+        ! $CSS WAIT ON(lb_dom)
+        lb_dom%pnt_cur_tile => pnt_cur
+        call mpl_exchange_smpss(lb_dom,prc,meas)
+#else
         !$CSS BARRIER
         call mpl_exchange(lb_dom,pnt_cur,prc,meas)
+#endif
        end if
 
 

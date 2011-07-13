@@ -633,10 +633,7 @@ clean:
 	@echo '==============================================================='
 
 cleanall:
-	- rm -f *.o *.mod *.i *.i90 lbc *.mf95ss smpss_*.F90
-	for dir in amr_headers amr_mpi_source amr_source; do \
-	$(MAKE) -C ./$$dir -f Makefile.gnu clean; \
-	done
+	- rm -f *.o *.mod *.i *.i90 lbc *.mf95ss smpss_*.{F,f}90 *-registration.c *-adapters.c *.tasks
 	@echo '==============================================================='
 	@echo '=  c l e a n e d     u p    a l l                             ='
 	@echo '==============================================================='

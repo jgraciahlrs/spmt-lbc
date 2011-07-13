@@ -136,7 +136,7 @@ contains
     end do
 
     call swap_and_set_bnd_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)
-    ! $CSS WAIT ON(bounds_tile(:,0))
+    !$CSS WAIT ON(bounds_tile(:,0))
 
 #endif  /* USE_TILES*/
 

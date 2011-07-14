@@ -81,7 +81,6 @@ PARALLEL += $(FDEF)-DCOMM_REDUCED      # Only Exchange necessary densities
 # StarSs options
 PARALLEL += $(FDEF)-DUSE_SMPSS $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32
 PARALLEL += $(FDEF)-DUSENOT_SMPSS_MODULES     # use to address bug in smpss, that does not allow to define tasks in fortran modules
-#PARALLEL += $(FDEF)-DSMPSS_NO_ARRAYS
 #-----------------------------------------------------
 # Model arguments 
 # Lattice Boltzmann Model: 

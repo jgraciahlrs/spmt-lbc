@@ -126,13 +126,8 @@ contains
 #endif
 
        ! reassemble block from tiles
-#ifndef SMPSS_NO_ARRAYS /* version with arrays */
        call recompose_lb_block_sentinel(lb_dom_tile,bounds_tile(:,iTile), nghost,&
             & lb_dom, bounds_tile(:,0))
-#else     /* version without arrays */
-       !$CSS WAIT ON(bounds_tile(:,iTile)) 
-       call recompose_lb_block(lb_dom_tile, bounds_tile(:,iTile), nghost, lb_dom)
-#endif
     end do
 
     call swap_and_set_bnd_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)

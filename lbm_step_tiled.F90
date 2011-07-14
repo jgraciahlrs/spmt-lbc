@@ -41,7 +41,6 @@ contains
     type(lb_block),pointer          :: lb_dom_tile         
     integer                         :: alloc_stat
     integer                         :: tileSize = TILESIZE, nghost
-    real(R8B),pointer,dimension(:,:,:,:)                :: swapper
 
 #ifdef USENOT_SMPSS_MODULES
     ! need to declare explitic interfaces for StarSs tasks
@@ -121,9 +120,6 @@ contains
 
        ! do a single tiled Lattice Boltzmann step
        call lb_step_tile_sentinel(lb_dom_tile, bounds_tile(:,iTile), s_par, prc, meas, tStep)
-#ifdef COMBINE_STREAM_COLLIDE
-       swapper => lb_dom_tile%pnt_nxt_tile; lb_dom_tile%pnt_nxt_tile => lb_dom_tile%pnt_cur_tile; lb_dom_tile%pnt_cur_tile => swapper
-#endif
 
        ! reassemble block from tiles
        call recompose_lb_block_sentinel(lb_dom_tile,bounds_tile(:,iTile), nghost,&
@@ -416,6 +412,7 @@ end module lbm_step_tiled
     call recompose_lb_block(lb_dom_tile,tb, nghost, lb_dom)
 
   end subroutine recompose_lb_block_sentinel
+
   !$CSS TASK REDUCTION(meas)
   subroutine lb_step_tile_sentinel(lb_dom, tb, s_par, prc, meas, tStep)
 #ifdef USENOT_SMPSS_MODULES
@@ -432,13 +429,17 @@ end module lbm_step_tiled
 
     real(R8B),pointer,dimension(:,:,:,:)                 :: dummy_pnt_nxt
     real(R8B),pointer,dimension(:,:,:,:)                 :: dummy_pnt_cur
-    
+    real(R8B),pointer,dimension(:,:,:,:)                 :: swapper    
 
     ! unpack pointers to cur and nxt field
     dummy_pnt_cur => lb_dom%pnt_cur_tile
     dummy_pnt_nxt => lb_dom%pnt_nxt_tile
 
     call lb_step_tile(lb_dom, dummy_pnt_nxt, dummy_pnt_cur, s_par, prc, meas, tStep)
+
+#ifdef COMBINE_STREAM_COLLIDE
+       swapper=>lb_dom%pnt_nxt_tile; lb_dom%pnt_nxt_tile=>lb_dom%pnt_cur_tile; lb_dom%pnt_cur_tile=>swapper
+#endif
 
   end subroutine lb_step_tile_sentinel
 

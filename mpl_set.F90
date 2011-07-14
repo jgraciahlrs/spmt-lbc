@@ -2314,4 +2314,20 @@ end subroutine mpl_set_nodes_to_send
 
 end module mpl_set
 
+#ifdef USE_SMPSS
+!$CSS TASK
+subroutine mpl_exchange_smpss(lb_dom,prc,meas)
+  use nrt_lib
+  use mpl_set
+  type(lb_block),intent(inout) :: lb_dom
+  type(mpl_var),intent(in)     :: prc
+  type(measure),intent(inout)  :: meas
 
+  real(R8B),pointer,dimension(:,:,:,:)    :: pnt_cur
+  
+  !pnt_cur => lb_dom%pnt_cur_tile
+  pnt_cur => lb_dom%fIn
+  call mpl_exchange(lb_dom,pnt_cur,prc,meas)
+
+end subroutine mpl_exchange_smpss
+#endif  /* USE_SMPSS */

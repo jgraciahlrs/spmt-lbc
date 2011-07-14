@@ -61,6 +61,17 @@ PROGRAM lbmain
    integer,pointer      :: tstep_cnt 
    logical              :: stop_request    
    real(R8B),pointer,dimension(:,:,:,:) :: pnt_cur,pnt_nxt
+   
+   interface
+      !$CSS TASK
+      subroutine mpl_exchange_smpss(lb_dom,prc,meas)
+        use nrt_lib
+        use mpl_lib
+        type(lb_block),intent(inout) :: lb_dom
+        type(mpl_var),intent(in)     :: prc
+        type(measure),intent(inout)  :: meas
+      end subroutine mpl_exchange_smpss
+   end interface
 
    countOut             = 0
    result_state         = 0
@@ -144,13 +155,18 @@ PROGRAM lbmain
      write(*,*) "  Starting main time loop"; write(*,*)
    endif
 
-   !time main loop
+#ifdef USE_SMPSS
+   ! time main loop
    call cpu_time_measure(meas%tStart)
+#endif /* USE_SMPSS */
   
    tstep_cnt = 0 
    do tStep = 1,s_par%tMax
    pnt_nxt => lb_dom%fIn
 
+#ifndef USE_SMPSS
+      call cpu_time_measure(meas%tStart)
+#endif /* Not USE_SMPSS */
       !---------------------------
       ! Set Boundaries on fIn  
       call treat_initial(lb_dom,s_par,tstep,prc)
@@ -183,13 +199,24 @@ PROGRAM lbmain
       !---------------------------
       ! Exchange between domains 
       if(prc%size > 1) then
+#ifdef USE_TILES
+        ! $CSS WAIT ON(lb_dom)
+        lb_dom%pnt_cur_tile => pnt_cur
+        call mpl_exchange_smpss(lb_dom,prc,meas)
+#else
         !$CSS BARRIER
         call mpl_exchange(lb_dom,pnt_cur,prc,meas)
+#endif
        end if
 
 
       ! do a single Lattice Boltzmann step
       call lb_step(lb_dom, pnt_nxt, pnt_cur, s_par, prc, meas, tStep)
+
+#ifndef USE_SMPSS
+      call cpu_time_measure(meas%tEnd)
+      meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
+#endif /* Not USE_SMPSS */
 
       !---------------------------
       ! Output and error check 
@@ -198,8 +225,10 @@ PROGRAM lbmain
          !$CSS WAIT ON(lb_dom)
          ! time main loop at barrier, excluding output
          call cpu_time_measure(meas%tEnd)
+#ifdef USE_SMPSS
          meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
          call gather_tiles(prc, lb_dom)
+#endif /* USE_SMPSS */
 #endif /* USE_TILES */
          ! calc macroscopic values (is also done in do_kinetic)
          call calc_macr_vals(lb_dom,lb_dom%u,lb_dom%rho,pnt_nxt,meas)
@@ -228,7 +257,9 @@ PROGRAM lbmain
             write(*,*) "Stop has been requested by stopfile 'Stop'"
             exit
          endif
+#ifdef USE_SMPSS
          call cpu_time_measure(meas%tStart)
+#endif /* USE_SMPSS */
 
       endif
 

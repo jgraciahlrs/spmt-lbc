@@ -26,7 +26,7 @@ HPC_TYPE=nehalem
 
 # Add _debug for debugging and smpss for StarSs/SMPSs
 #COMPILER=gnu_debug
-COMPILER=gnu_smpss#_trace#_debug
+COMPILER=gnu_omp#_smpss#_trace#_debug
 #COMPILER=sx
 #COMPILER=vampir
 #COMPILER=intel_debug
@@ -334,6 +334,8 @@ else
         endif
 	endif
 
+	
+
       F90_CFLAGS_DEBUG=$(SFDEF)-xf95-cpp-input -O0 -g $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
       F90_LFLAGS_DEBUG=-O0 -g $(SLDEF)-fbounds-check $(SLDEF)-Wall $(SLDEF)-pedantic $(SLDEF)-fcray-pointer $(SFDEF)-fwhole-file 
 
@@ -341,6 +343,13 @@ else
 #-std=f2003  
       F90_LFLAGS_OPT= -O3 $(SLDEF)-fcray-pointer $(SFDEF)-fwhole-file  
       #--------------------------------
+      # OpenMP
+      ifeq ($(findstring omp,$(COMPILER)),omp)
+	 F90_CFLAGS_DEBUG += -fopenmp
+         F90_LFLAGS_DEBUG += -fopenmp
+         F90_CFLAGS_OPT   += -fopenmp
+         F90_LFLAGS_OPT   += -fopenmp    
+      endif 	
       # PROFILING 
       ifeq ($(findstring profile,$(COMPILER)),profile)
          F90_CFLAGS_DEBUG+=$(SFDEF)-pg
@@ -362,6 +371,7 @@ else
 	  F90_LFLAGS_OPT   += -t -k
         endif
      endif
+
    endif
 
 #--------------------------------

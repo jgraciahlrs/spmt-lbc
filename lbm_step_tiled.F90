@@ -12,6 +12,8 @@
 module lbm_step_tiled
   use lbm_functions
 
+  use omp_lib
+
 #include "include/replace.h"
 contains
 
@@ -110,10 +112,19 @@ contains
     ! container of tile lb_blocks 
     lb_dom_tiles => prc%lb_dom_tiles
 
+!$omp parallel	
+!$omp do
     do iTile = 1, nTiles           ! decompose block into tiles
+       ! $ omp task private(iTile)
+       !write (*,*) "Running iTile", iTile, " on thread ", omp_get_thread_num()	
        call decompose_lb_block(lb_dom, bounds_tile(:,0), nghost, lb_dom_tiles(iTile), bounds_tile(:,iTile))
+       ! $ omp end task
     end do
+!$omp end do
 
+!$omp barrier
+
+!$omp do private(lb_dom_tile)
     do iTile = 1, nTiles
        ! select tile
        lb_dom_tile => lb_dom_tiles(iTile)
@@ -125,6 +136,9 @@ contains
        call recompose_lb_block_sentinel(lb_dom_tile,bounds_tile(:,iTile), nghost,&
             & lb_dom, bounds_tile(:,0))
     end do
+!$omp end do
+!$omp end parallel	
+
 
     call swap_and_set_bnd_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)
     !$CSS WAIT ON(bounds_tile(:,0))

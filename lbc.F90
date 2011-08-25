@@ -60,7 +60,7 @@ PROGRAM lbmain
    integer              :: i,j,k
    integer,pointer      :: tstep_cnt 
    logical              :: stop_request    
-   real(R8B),pointer,dimension(:,:,:,:) :: pnt_cur,pnt_nxt
+   real(R8B),pointer,dimension(:,:,:,:) :: pnt_cur,pnt_nxt,swapper
    
    interface
       !$CSS TASK
@@ -160,9 +160,9 @@ PROGRAM lbmain
    call cpu_time_measure(meas%tStart)
 #endif /* USE_SMPSS */
   
-   tstep_cnt = 0 
+   tstep_cnt = 0
+   pnt_nxt => lb_dom%fIn; pnt_cur => lb_dom%fOut    ! init work arrays 
    do tStep = 1,s_par%tMax
-   pnt_nxt => lb_dom%fIn
 
 #ifndef USE_SMPSS
       call cpu_time_measure(meas%tStart)
@@ -174,27 +174,19 @@ PROGRAM lbmain
       tstep_cnt = tstep_cnt+1
 
       call ramp_u(s_par,tstep)
+      ! swap work array pointers
+      swapper => pnt_cur; pnt_cur => pnt_nxt; pnt_nxt => swapper
+#ifdef USE_ADCL
 #ifdef COMBINE_STREAM_COLLIDE
       if(mod(tStep,2)==0) then
-      pnt_nxt => lb_dom%fIn
-      pnt_cur => lb_dom%fOut
-#ifdef USE_ADCL
       prc%adcl_active_req=1
-#endif /*USE_ADCL*/
       else
-      pnt_cur => lb_dom%fIn
-      pnt_nxt => lb_dom%fOut
-#ifdef USE_ADCL
       prc%adcl_active_req=0
-#endif /*USE_ADCL*/
       endif
 #else
-      pnt_cur => lb_dom%fIn
-#ifdef USE_ADCL
       prc%adcl_active_req=0
-#endif /*USE_ADCL*/
-      pnt_nxt => lb_dom%fOut
 #endif
+#endif /*USE_ADCL*/
 
       !---------------------------
       ! Exchange between domains 

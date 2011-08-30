@@ -60,7 +60,7 @@ PROGRAM lbmain
    integer              :: i,j,k
    integer,pointer      :: tstep_cnt 
    logical              :: stop_request    
-   real(R8B),pointer,dimension(:,:,:,:) :: pnt_cur,pnt_nxt,swapper
+   real(R8B),pointer,dimension(:,:,:,:) :: swapper
    
    interface
       !$CSS TASK
@@ -161,7 +161,7 @@ PROGRAM lbmain
 #endif /* USE_SMPSS */
   
    tstep_cnt = 0
-   pnt_nxt => lb_dom%fIn; pnt_cur => lb_dom%fOut    ! init work arrays 
+   lb_dom%pnt_nxt => lb_dom%fIn; lb_dom%pnt_cur => lb_dom%fOut    ! init work arrays 
    do tStep = 1,s_par%tMax
 
 #ifndef USE_SMPSS
@@ -175,7 +175,7 @@ PROGRAM lbmain
 
       call ramp_u(s_par,tstep)
       ! swap work array pointers
-      swapper => pnt_cur; pnt_cur => pnt_nxt; pnt_nxt => swapper
+      swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
 #ifdef USE_ADCL
 #ifdef COMBINE_STREAM_COLLIDE
       if(mod(tStep,2)==0) then
@@ -193,17 +193,16 @@ PROGRAM lbmain
       if(prc%size > 1) then
 #ifdef USE_TILES
         ! $CSS WAIT ON(lb_dom)
-        lb_dom%pnt_cur_tile => pnt_cur
         call mpl_exchange_smpss(lb_dom,prc,meas)
 #else
         !$CSS BARRIER
-        call mpl_exchange(lb_dom,pnt_cur,prc,meas)
+        call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
 #endif
        end if
 
 
       ! do a single Lattice Boltzmann step
-      call lb_step(lb_dom, pnt_nxt, pnt_cur, s_par, prc, meas, tStep)
+      call lb_step(lb_dom, lb_dom%pnt_nxt, lb_dom%pnt_cur, s_par, prc, meas, tStep)
 
 #ifndef USE_SMPSS
       call cpu_time_measure(meas%tEnd)
@@ -223,9 +222,9 @@ PROGRAM lbmain
 #endif /* USE_SMPSS */
 #endif /* USE_TILES */
          ! calc macroscopic values (is also done in do_kinetic)
-         call calc_macr_vals(lb_dom,lb_dom%u,lb_dom%rho,pnt_nxt,meas)
+         call calc_macr_vals(lb_dom,lb_dom%u,lb_dom%rho,lb_dom%pnt_nxt,meas)
          countOut=countOut+1
-         call calc_rho_ges(lb_dom,pnt_nxt,s_par%rhoges,tStep,prc)
+         call calc_rho_ges(lb_dom,lb_dom%pnt_nxt,s_par%rhoges,tStep,prc)
          if(tStep > s_par%tMax-s_par%tOut  ) s_par%goend=.true. 
          if(result_state == -1) s_par%goend=.true. 
          if(stop_request .eqv. .true.) s_par%goend=.true. 

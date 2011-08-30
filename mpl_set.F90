@@ -2325,9 +2325,7 @@ subroutine mpl_exchange_smpss(lb_dom,prc,meas)
 
   real(R8B),pointer,dimension(:,:,:,:)    :: pnt_cur
   
-  !pnt_cur => lb_dom%pnt_cur_tile
-  pnt_cur => lb_dom%fIn
-  call mpl_exchange(lb_dom,pnt_cur,prc,meas)
+  call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
 
 end subroutine mpl_exchange_smpss
 #endif  /* USE_SMPSS */

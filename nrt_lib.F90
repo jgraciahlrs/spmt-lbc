@@ -132,6 +132,8 @@ module nrt_lib
       real(R8B),dimension(:,:,:,:), pointer :: pnt_cur_tile => NULL()
       real(R8B),dimension(:,:,:,:), pointer :: pnt_nxt_tile => NULL()
 #endif /* USE_TILES */
+      real(R8B),dimension(:,:,:,:), pointer :: pnt_cur => NULL()
+      real(R8B),dimension(:,:,:,:), pointer :: pnt_nxt => NULL()
       real(R8B),dimension(:,:,:),   allocatable :: rho
 #ifdef SPONGE
       real(R8B),dimension(:,:,:),   allocatable :: omega,gomega
@@ -156,6 +158,8 @@ module nrt_lib
       real(R8B),dimension(:,:,:,:), pointer :: pnt_cur_tile => NULL()
       real(R8B),dimension(:,:,:,:), pointer :: pnt_nxt_tile => NULL()
 #endif /* USE_TILES */
+      real(R8B),dimension(:,:,:,:), pointer :: pnt_cur => NULL()
+      real(R8B),dimension(:,:,:,:), pointer :: pnt_nxt => NULL()
       real(R8B),dimension(:,:,:),   pointer :: rho  => NULL(), rho_inc => NULL() 
 #ifdef SPONGE
       real(R8B),dimension(:,:,:),   pointer :: omega => NULL(), gomega => NULL() 

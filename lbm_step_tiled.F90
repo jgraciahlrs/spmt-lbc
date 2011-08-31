@@ -45,14 +45,13 @@ contains
 #ifdef USENOT_SMPSS_MODULES
     ! need to declare explitic interfaces for StarSs tasks
     interface
-       !$CSS TASK REDUCTION(lb_dom, tb0)
+       ! reduction(lb_dom) due to false renaming user type bug #57
+       !$CSS TASK REDUCTION(lb_dom)
        subroutine decompose_lb_block(lb_dom, tb0, nghost, lb_dom_tile, tb)
-#ifdef USENOT_SMPSS_MODULES
          use lbm_functions
-#endif /* USENOT_SMPSS_MODULES */ 
          implicit none
-         type(lb_block),intent(inout)           :: lb_dom
-         integer,dimension(6),intent(inout)     :: tb0              ! sentinel to track dependencies
+         type(lb_block),intent(inout)        :: lb_dom           ! inout due to false renaming user type bug #57
+         integer,dimension(6),intent(in)     :: tb0              ! sentinel to track dependencies
          integer,intent(in)                  :: nghost           ! # of ghost cells
          type(lb_block),intent(inout)        :: lb_dom_tile
          integer,dimension(6),intent(inout)  :: tb               ! boundaries of given tile in parent block
@@ -61,8 +60,8 @@ contains
        subroutine recompose_lb_block_sentinel(lb_dom_tile,tb, nghost, lb_dom,tb0)
          use lbm_functions
          implicit none
-         type(lb_block),intent(inout)   :: lb_dom_tile           ! why is intent(in) not sufficient?
-         integer,dimension(6),intent(inout)      :: tb           ! boundaries of given tile in parent block
+         type(lb_block),intent(inout)   :: lb_dom_tile           ! inout due to false renaming user type bug #57
+         integer,dimension(6),intent(in)         :: tb           ! boundaries of given tile in parent block
          integer,intent(in)             :: nghost                ! # of ghost cells
          type(lb_block),intent(inout)   :: lb_dom
          integer,dimension(6),intent(inout)      :: tb0          ! sentinel for dependency tracking
@@ -110,16 +109,20 @@ contains
     ! container of tile lb_blocks 
     lb_dom_tiles => prc%lb_dom_tiles
 
-    do iTile = 1, nTiles           ! decompose block into tiles
+    do iTile = 1, nTiles
+       ! select tile
+       lb_dom_tile => lb_dom_tiles(iTile)
+
+       ! decompose block into tiles
        call decompose_lb_block(lb_dom, bounds_tile(:,0), nghost, lb_dom_tiles(iTile), bounds_tile(:,iTile))
+
+       ! do a single tiled Lattice Boltzmann step
+       call lb_step_tile_sentinel(lb_dom_tile, bounds_tile(:,iTile), s_par, prc, meas, tStep)
     end do
 
     do iTile = 1, nTiles
        ! select tile
        lb_dom_tile => lb_dom_tiles(iTile)
-
-       ! do a single tiled Lattice Boltzmann step
-       call lb_step_tile_sentinel(lb_dom_tile, bounds_tile(:,iTile), s_par, prc, meas, tStep)
 
        ! reassemble block from tiles
        call recompose_lb_block_sentinel(lb_dom_tile,bounds_tile(:,iTile), nghost,&
@@ -356,19 +359,20 @@ contains
 end module lbm_step_tiled
 #endif /* USENOT_SMPSS_MODULES */
 
-  !$CSS TASK REDUCTION(lb_dom, tb0)
+  ! reduction(lb_dom) due to false renaming user type bug #57
+  !$CSS TASK REDUCTION(lb_dom)
   subroutine decompose_lb_block(lb_dom,tb0, nghost, lb_dom_tile, tb)
 #ifdef USENOT_SMPSS_MODULES
     use lbm_functions
 #endif /* USENOT_SMPSS_MODULES */ 
     implicit none
-    type(lb_block),intent(inout)           :: lb_dom
-    integer,dimension(6),intent(inout)     :: tb0            ! sentinel to track dependencies
-    integer,intent(in)                  :: nghost         ! # of ghost cells
+    type(lb_block),intent(inout)        :: lb_dom           ! inout due to false renaming user type bug #57
+    integer,dimension(6),intent(in)     :: tb0              ! sentinel to track dependencies
+    integer,intent(in)                  :: nghost           ! # of ghost cells
     type(lb_block),intent(inout)        :: lb_dom_tile
-    integer,dimension(6),intent(inout)  :: tb             ! boundaries of given tile in parent block
+    integer,dimension(6),intent(inout)  :: tb               ! boundaries of given tile in parent block
     
-    integer                             :: lx,ly,lz       ! block sizes
+    integer                             :: lx,ly,lz         ! block sizes
     integer                             :: alloc_stat
 
     lx = lb_dom_tile%lx(1); ly = lb_dom_tile%lx(2); lz = lb_dom_tile%lx(3); 
@@ -403,8 +407,8 @@ end module lbm_step_tiled
     use lbm_step_tiled
 #endif /* USENOT_SMPSS_MODULES */
     implicit none
-    type(lb_block),intent(inout)   :: lb_dom_tile          ! why is intent(in) not sufficient?
-    integer,dimension(6),intent(inout)      :: tb          ! boundaries of given tile in parent block
+    type(lb_block),intent(inout)   :: lb_dom_tile          ! inout due to false renaming user type bug #57
+    integer,dimension(6),intent(in)         :: tb          ! boundaries of given tile in parent block
     integer,intent(in)             :: nghost               ! # of ghost cells
     type(lb_block),intent(inout)   :: lb_dom
     integer,dimension(6),intent(inout)      :: tb0         ! sentinel for dependency tracking

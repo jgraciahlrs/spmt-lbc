@@ -45,12 +45,11 @@ contains
 #ifdef USENOT_SMPSS_MODULES
     ! need to declare explitic interfaces for StarSs tasks
     interface
-       ! reduction(lb_dom) due to false renaming user type bug #57
-       !$CSS TASK REDUCTION(lb_dom)
+       !$CSS TASK
        subroutine decompose_lb_block(lb_dom, tb0, nghost, lb_dom_tile, tb)
          use lbm_functions
          implicit none
-         type(lb_block),intent(inout)        :: lb_dom           ! inout due to false renaming user type bug #57
+         type(lb_block),intent(in)           :: lb_dom(1)        ! array (1) due to false renaming user type bug #57
          integer,dimension(6),intent(in)     :: tb0              ! sentinel to track dependencies
          integer,intent(in)                  :: nghost           ! # of ghost cells
          type(lb_block),intent(inout)        :: lb_dom_tile
@@ -60,7 +59,7 @@ contains
        subroutine recompose_lb_block_sentinel(lb_dom_tile,tb, nghost, lb_dom,tb0)
          use lbm_functions
          implicit none
-         type(lb_block),intent(inout)   :: lb_dom_tile           ! inout due to false renaming user type bug #57
+         type(lb_block),intent(in)      :: lb_dom_tile(1)        ! array (1) due to false renaming user type bug #57
          integer,dimension(6),intent(in)         :: tb           ! boundaries of given tile in parent block
          integer,intent(in)             :: nghost                ! # of ghost cells
          type(lb_block),intent(inout)   :: lb_dom
@@ -366,7 +365,7 @@ end module lbm_step_tiled
     use lbm_functions
 #endif /* USENOT_SMPSS_MODULES */ 
     implicit none
-    type(lb_block),intent(inout)        :: lb_dom           ! inout due to false renaming user type bug #57
+    type(lb_block),intent(in)           :: lb_dom           ! parent block
     integer,dimension(6),intent(in)     :: tb0              ! sentinel to track dependencies
     integer,intent(in)                  :: nghost           ! # of ghost cells
     type(lb_block),intent(inout)        :: lb_dom_tile
@@ -407,7 +406,7 @@ end module lbm_step_tiled
     use lbm_step_tiled
 #endif /* USENOT_SMPSS_MODULES */
     implicit none
-    type(lb_block),intent(inout)   :: lb_dom_tile          ! inout due to false renaming user type bug #57
+    type(lb_block),intent(in)      :: lb_dom_tile
     integer,dimension(6),intent(in)         :: tb          ! boundaries of given tile in parent block
     integer,intent(in)             :: nghost               ! # of ghost cells
     type(lb_block),intent(inout)   :: lb_dom

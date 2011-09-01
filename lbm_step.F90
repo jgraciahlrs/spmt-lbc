@@ -25,6 +25,8 @@ contains
     type(measure)                   :: meas  
     integer, intent(in)             :: tStep
 
+    real(R8B),pointer,dimension(:,:,:,:)                :: swapper
+
 #ifdef COMBINE_STREAM_COLLIDE
       !---------------------------
       ! Combined Stream-collide Routine
@@ -38,10 +40,8 @@ contains
     ! Propagation fIn => fOut 
     call propagate(lb_dom,pnt_nxt,pnt_cur,lb_dom%state,meas)
     
-    ! pnt_nxt : fOut: post-propagation, pnt_cur: fIn: post-collision
-    
-    pnt_nxt => lb_dom%fIn
-    pnt_cur => lb_dom%fOut
+    ! swap work array pointers; pnt_nxt: post-propagation, pnt_cur: post-collision
+    swapper => pnt_cur; pnt_cur => pnt_nxt; pnt_nxt => swapper
 
     !---------------------------
     ! Collision routine fOut => fIn, excluding solid nodes 

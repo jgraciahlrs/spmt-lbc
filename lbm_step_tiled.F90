@@ -456,18 +456,22 @@ end module lbm_step_tiled
     type(measure),intent(inout)            :: meas
     integer, intent(in)                    :: tStep
     
-    real(R8B),pointer,dimension(:,:,:,:)                :: swapper, pnt_nxt, pnt_cur
+    real(R8B),pointer,dimension(:,:,:,:)                :: swapper
     
     ! swap pointers for work arrays
     swapper => lb_dom%fIn; lb_dom%fIn => lb_dom%fOut; lb_dom%fOut => swapper 
     
-    ! set cur/nxt pointers on block 
-    pnt_cur => lb_dom%fOut
-    pnt_nxt => lb_dom%fIn
-    
+    !! set cur/nxt pointers on block 
+    !pnt_cur => lb_dom%fOut
+    !pnt_nxt => lb_dom%fIn
+    !
+    !! do boundary conditions after stream and collide steps
+    !call set_nrbc_antibb(lb_dom,pnt_nxt,pnt_cur,s_par,prc,meas)
+    !call set_bnd(lb_dom,lb_dom%state,pnt_nxt,lb_dom%rho,lb_dom%u,s_par,prc,meas,tStep)
+
     ! do boundary conditions after stream and collide steps
-    call set_nrbc_antibb(lb_dom,pnt_nxt,pnt_cur,s_par,prc,meas)
-    call set_bnd(lb_dom,lb_dom%state,pnt_nxt,lb_dom%rho,lb_dom%u,s_par,prc,meas,tStep)
+    call set_nrbc_antibb(lb_dom,lb_dom%pnt_nxt,lb_dom%pnt_cur,s_par,prc,meas)
+    call set_bnd(lb_dom,lb_dom%state,lb_dom%pnt_nxt,lb_dom%rho,lb_dom%u,s_par,prc,meas,tStep)
 
   end subroutine swap_and_set_bnd_sentinel
 

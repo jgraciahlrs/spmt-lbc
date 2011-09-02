@@ -458,13 +458,7 @@ end module lbm_step_tiled
     
     real(R8B),pointer,dimension(:,:,:,:)                :: swapper, pnt_nxt, pnt_cur
     
-    ! copy boundaries from buffer to block and swap pointers
-    lb_dom%fOut(NDX(:,0,:,:)) = lb_dom%fIn(NDX(:,0,:,:))
-    lb_dom%fOut(NDX(:,:,0,:)) = lb_dom%fIn(NDX(:,:,0,:))
-    lb_dom%fOut(NDX(:,:,:,0)) = lb_dom%fIn(NDX(:,:,:,0)) 
-    lb_dom%fOut(NDX(:,lb_dom%lx(1)+1,:,:)) = lb_dom%fIn(NDX(:,lb_dom%lx(1)+1,:,:))
-    lb_dom%fOut(NDX(:,:,lb_dom%lx(2)+1,:)) = lb_dom%fIn(NDX(:,:,lb_dom%lx(2)+1,:))
-    lb_dom%fOut(NDX(:,:,:,lb_dom%lx(3)+1)) = lb_dom%fIn(NDX(:,:,:,lb_dom%lx(3)+1))
+    ! swap pointers for work arrays
     swapper => lb_dom%fIn; lb_dom%fIn => lb_dom%fOut; lb_dom%fOut => swapper 
     
     ! set cur/nxt pointers on block 

@@ -358,8 +358,7 @@ contains
 end module lbm_step_tiled
 #endif /* USENOT_SMPSS_MODULES */
 
-  ! reduction(lb_dom) due to false renaming user type bug #57
-  !$CSS TASK REDUCTION(lb_dom)
+  !$CSS TASK
   subroutine decompose_lb_block(lb_dom,tb0, nghost, lb_dom_tile, tb)
 #ifdef USENOT_SMPSS_MODULES
     use lbm_functions

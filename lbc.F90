@@ -175,6 +175,7 @@ PROGRAM lbmain
 
       call ramp_u(s_par,tstep)
       ! swap work array pointers
+!$CSS WAIT ON(lb_dom)
       swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
 #ifdef USE_ADCL
 #ifdef COMBINE_STREAM_COLLIDE

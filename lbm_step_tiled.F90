@@ -378,22 +378,16 @@ end module lbm_step_tiled
     ! copy from block to tile
     !lb_dom_tile%pnt_cur_tile(NDX(:,0:lx+1,0:ly+1,0:lz+1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
 
-    ! copy ghost cells from block to tile, assumes 1 ghost cell only
-    lb_dom_tile%pnt_cur_tile(NDX(:,0,:,:)) = lb_dom%pnt_cur(NDX(:,tb(1),tb(3):tb(4),tb(5):tb(6)))
-    lb_dom_tile%pnt_cur_tile(NDX(:,:,0,:)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(3),tb(5):tb(6)))
-    lb_dom_tile%pnt_cur_tile(NDX(:,:,:,0)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5)))
-    lb_dom_tile%pnt_cur_tile(NDX(:,lx+1,:,:)) = lb_dom%pnt_cur(NDX(:,tb(2),tb(3):tb(4),tb(5):tb(6)))
-    lb_dom_tile%pnt_cur_tile(NDX(:,:,ly+1,:)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(4),tb(5):tb(6)))
-    lb_dom_tile%pnt_cur_tile(NDX(:,:,:,lz+1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(6)))
+    ! copy from block to tile, assumes 1 ghost cell only
+    ! copy ghost cell (index 0) and first physical cell (index 1) at the same time
+    ! avoid copying corners/edges more than once (:lxyz-1); why does this work only for first three lines? 
+    lb_dom_tile%pnt_cur_tile(NDX(:,0:1,:ly-1,:lz-1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(1)+1,tb(3):tb(4)-2,tb(5):tb(6)-2))
+    lb_dom_tile%pnt_cur_tile(NDX(:,:lx-1,0:1,:lz-1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2)-2,tb(3):tb(3)+1,tb(5):tb(6)-2))
+    lb_dom_tile%pnt_cur_tile(NDX(:,:lx-1,:ly-1,0:1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2)-2,tb(3):tb(4)-2,tb(5):tb(5)+1))
+    lb_dom_tile%pnt_cur_tile(NDX(:,lx:lx+1,:ly-1,:lz-1)) = lb_dom%pnt_cur(NDX(:,tb(2)-1:tb(2),tb(3):tb(4)-2,tb(5):tb(6)-2))
+    lb_dom_tile%pnt_cur_tile(NDX(:,:,ly:ly+1,:lz-1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(4)-1:tb(4),tb(5):tb(6)-2))
+    lb_dom_tile%pnt_cur_tile(NDX(:,:,:,lz:lz+1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(6)-1:tb(6)))
 
-    ! copy first physical cell too
-    lb_dom_tile%pnt_cur_tile(NDX(:,1,:,:)) = lb_dom%pnt_cur(NDX(:,tb(1)+1,tb(3):tb(4),tb(5):tb(6)))
-    lb_dom_tile%pnt_cur_tile(NDX(:,:,1,:)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(3)+1,tb(5):tb(6)))
-    lb_dom_tile%pnt_cur_tile(NDX(:,:,:,1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5)+1))
-    lb_dom_tile%pnt_cur_tile(NDX(:,lx,:,:)) = lb_dom%pnt_cur(NDX(:,tb(2)-1,tb(3):tb(4),tb(5):tb(6)))
-    lb_dom_tile%pnt_cur_tile(NDX(:,:,ly,:)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(4)-1,tb(5):tb(6)))
-    lb_dom_tile%pnt_cur_tile(NDX(:,:,:,lz)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(6)-1))
- 
     !write (*,*) '.... Done decomposing block!'
 
   end subroutine decompose_lb_block

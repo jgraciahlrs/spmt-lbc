@@ -386,7 +386,7 @@ end module lbm_step_tiled
     lb_dom_tile%pnt_cur_tile(NDX(:,0:1,2:ly-1,2:lz-1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(1)+1,tb(3)+2:tb(4)-2,tb(5)+2:tb(6)-2))
     lb_dom_tile%pnt_cur_tile(NDX(:,:,:,lz:lz+1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(6)-1:tb(6)))
     lb_dom_tile%pnt_cur_tile(NDX(:,:,ly:ly+1,2:lz-1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(4)-1:tb(4),tb(5)+2:tb(6)-2))
-    lb_dom_tile%pnt_cur_tile(NDX(:,lx:lx+1,2:ly-1,2:lz-1)) = lb_dom%pnt_cur(NDX(:,tb(2)-1:tb(2),tb(3)+2:tb(4)-2,tb(5)+2:tb(6))-2)
+    lb_dom_tile%pnt_cur_tile(NDX(:,lx:lx+1,2:ly-1,2:lz-1)) = lb_dom%pnt_cur(NDX(:,tb(2)-1:tb(2),tb(3)+2:tb(4)-2,tb(5)+2:tb(6)-2))
 
     !write (*,*) '.... Done decomposing block!'
 

@@ -294,16 +294,16 @@ contains
     !     & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes one ghost cell
 
     ! copy first physical cell from tile to block, assumes one ghost cell
-    lb_dom%pnt_nxt(NDX(:,tb(1)+nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1,lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
-    lb_dom%pnt_nxt(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1,lb(3)+1:lb(3)+tS(3)))
+    lb_dom%pnt_nxt(NDX(:,tb(1)+nghost,tb(3)+nghost+1:tb(4)-nghost-1,tb(5)+nghost+1:tb(6)-nghost-1)) = &
+         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1,lb(2)+1+1:lb(2)+tS(2)-1,lb(3)+1+1:lb(3)+tS(3)-1))
+    lb_dom%pnt_nxt(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost,tb(5)+nghost+1:tb(6)-nghost-1)) = &
+         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1,lb(3)+1+1:lb(3)+tS(3)-1))
     lb_dom%pnt_nxt(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost)) = &
          & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1))
-    lb_dom%pnt_nxt(NDX(:,tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
-    lb_dom%pnt_nxt(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+tS(2),lb(3)+1:lb(3)+tS(3)))
+    lb_dom%pnt_nxt(NDX(:,tb(2)-nghost,tb(3)+nghost+1:tb(4)-nghost-1,tb(5)+nghost+1:tb(6)-nghost-1)) = &
+         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+tS(1),lb(2)+1+1:lb(2)+tS(2)-1,lb(3)+1+1:lb(3)+tS(3)-1))
+    lb_dom%pnt_nxt(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(4)-nghost,tb(5)+nghost+1:tb(6)-nghost-1)) = &
+         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+tS(2),lb(3)+1+1:lb(3)+tS(3)-1))
     lb_dom%pnt_nxt(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(6)-nghost)) = &
          & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+tS(3)))
 

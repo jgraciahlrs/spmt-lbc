@@ -502,6 +502,17 @@ end module lbm_step_tiled
     
   end subroutine allocate_tile
 
+  !$CSS TASK
+  subroutine swap_lb_dom_pnts_smpss(lb_dom)
+    use nrt_lib
+    implicit none
+    type(lb_block),intent(inout)       :: lb_dom     ! array (1) due to false renaming user type bug #57
+
+    real(R8B),pointer,dimension(:,:,:,:)                :: swapper
+
+    swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
+
+  end subroutine swap_lb_dom_pnts_smpss
 
 #ifndef USENOT_SMPSS_MODULES
 end module lbm_step_tiled

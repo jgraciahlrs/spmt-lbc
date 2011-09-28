@@ -71,6 +71,12 @@ PROGRAM lbmain
         type(mpl_var),intent(in)     :: prc
         type(measure),intent(inout)  :: meas
       end subroutine mpl_exchange_smpss
+      !$CSS TASK
+      subroutine swap_lb_dom_pnts_smpss(lb_dom)
+        use nrt_lib
+        implicit none
+        type(lb_block),intent(inout)       :: lb_dom(1)     ! array (1) due to false renaming user type bug #57
+      end subroutine swap_lb_dom_pnts_smpss
    end interface
 
    countOut             = 0
@@ -175,8 +181,12 @@ PROGRAM lbmain
 
       call ramp_u(s_par,tstep)
       ! swap work array pointers
+#ifdef USE_TILES
+      call swap_lb_dom_pnts_smpss(lb_dom)
+#else
 !$CSS WAIT ON(lb_dom)
       swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
+#endif
 #ifdef USE_ADCL
 #ifdef COMBINE_STREAM_COLLIDE
       if(mod(tStep,2)==0) then

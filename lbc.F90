@@ -202,7 +202,7 @@ PROGRAM lbmain
       !---------------------------
       ! Exchange between domains 
       if(prc%size > 1) then
-#ifdef USE_TILES
+#ifdef USE_SMPSS
         ! $CSS WAIT ON(lb_dom)
         call mpl_exchange_smpss(lb_dom,prc,meas)
 #else

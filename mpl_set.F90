@@ -2323,7 +2323,6 @@ subroutine mpl_exchange_smpss(lb_dom,prc,meas)
   type(mpl_var),intent(in)     :: prc
   type(measure),intent(inout)  :: meas
 
-  real(R8B),pointer,dimension(:,:,:,:)    :: pnt_cur
   
   call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
 

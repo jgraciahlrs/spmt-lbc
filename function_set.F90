@@ -832,8 +832,10 @@ subroutine  dealloc_mem(lb_dom,s_par)
 
    deallocate(lb_dom%fIn,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%fin "
+#ifndef USE_TILES
    deallocate(lb_dom%fOut,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%fOut"
+#endif /* !USE_TILES */
    deallocate(lb_dom%u,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%u  "
 if(s_par%tInitial > 0) then

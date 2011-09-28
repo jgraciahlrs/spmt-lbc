@@ -573,6 +573,10 @@ CPP=cpp -C -traditional-cpp
 %.o: %.f90
 	$(COMP) $(CPPDEFINES) $(F90CFLAGS) -c $< $(INCLUDES) $(LIB_CAF)  
 
+# dummy rule to override implicit rule in GNU make; sigh!
+%.o : %.mod
+	;
+
 # Targets:
 # --------
 #echo:

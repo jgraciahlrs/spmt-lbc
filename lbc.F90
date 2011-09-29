@@ -62,6 +62,7 @@ PROGRAM lbmain
    logical              :: stop_request    
    real(R8B),pointer,dimension(:,:,:,:) :: swapper
    
+#ifdef USENOT_SMPSS_MODULES   
    interface
       !$CSS TASK
       subroutine mpl_exchange_smpss(lb_dom,prc,meas)
@@ -78,6 +79,7 @@ PROGRAM lbmain
         type(lb_block),intent(inout)       :: lb_dom(1)     ! array (1) due to false renaming user type bug #57
       end subroutine swap_lb_dom_pnts_smpss
    end interface
+#endif /* USENOT_SMPSS_MODULES */
 
    countOut             = 0
    result_state         = 0

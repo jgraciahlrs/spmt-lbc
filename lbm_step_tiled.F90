@@ -119,7 +119,6 @@ contains
        call lb_step_tile_sentinel(lb_dom_tile, bounds_tile(:,iTile), s_par, prc, meas, tStep)
     end do
 
-    !$CSS WAIT ON(lb_dom)
     do iTile = 1, nTiles
        ! select tile
        lb_dom_tile => lb_dom_tiles(iTile)

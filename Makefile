@@ -329,17 +329,17 @@ else
 	  SFDEF=-Wf,
 	  SCDEF=-Wc,
 	  SLDEF=-Wl,
-	  COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/smpss-cc/')
-	  CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/smpss-cc/') 
+	  COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/smpss-cc2/')
+	  CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/smpss-cc2/') 
         endif
 	endif
 
-      F90_CFLAGS_DEBUG=$(SFDEF)-xf95-cpp-input -O0 -g $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
-      F90_LFLAGS_DEBUG=-O0 -g $(SLDEF)-fbounds-check $(SLDEF)-Wall $(SLDEF)-pedantic $(SLDEF)-fcray-pointer $(SFDEF)-fwhole-file 
+      F90_CFLAGS_DEBUG=$(SFDEF)-xf95-cpp-input -O0 -g $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhile-file
+      F90_LFLAGS_DEBUG=-O0 -g $(SLDEF)-Wall
 
       F90_CFLAGS_OPT=$(SFDEF)-xf95-cpp-input -O3 $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
 #-std=f2003  
-      F90_LFLAGS_OPT= -O3 $(SLDEF)-fcray-pointer $(SFDEF)-fwhole-file  
+      F90_LFLAGS_OPT= -O3
       #--------------------------------
       # PROFILING 
       ifeq ($(findstring profile,$(COMPILER)),profile)

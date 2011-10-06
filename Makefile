@@ -116,15 +116,15 @@ LBMODEL += $(FDEF)-DD3Q19
 
 # Performance issues (optional)
 # Combine stream and collide routine, split relaxation 
-LBMODEL += $(FDEF)-DCOMBINE_STREAM_COLLIDE
+#LBMODEL += $(FDEF)-DCOMBINE_STREAM_COLLIDE
 #LBMODEL += $(FDEF)-DSPLITLOOPS
 
 # Memory layout:
 # Choose ONE of the following
 # save array in memory as x-,y-,z- component and l as density (1...9 / 1...19)
-#LBMODEL += $(FDEF)-DLAYOUT_IJKL
+LBMODEL += $(FDEF)-DLAYOUT_IJKL
 #  save array in memory as l as density (1...9 / 1...19) and x-,y-,z- component 
-LBMODEL += $(FDEF)-DLAYOUT_LIJK
+#LBMODEL += $(FDEF)-DLAYOUT_LIJK
 
 # Initialization of geometry and boundaries (for parallel execution)
 #  First process assigns geometry and distributes to other processes

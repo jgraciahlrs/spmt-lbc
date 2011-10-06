@@ -113,7 +113,7 @@ contains
        lb_dom_tile => lb_dom_tiles(iTile)
 
        ! decompose block into tiles
-       !call decompose_lb_block(lb_dom, bounds_tile(:,0), nghost, lb_dom_tiles(iTile), bounds_tile(:,iTile))
+       call decompose_lb_block(lb_dom, bounds_tile(:,0), nghost, lb_dom_tiles(iTile), bounds_tile(:,iTile))
 
        ! do a single tiled Lattice Boltzmann step
        call lb_step_tile_sentinel(lb_dom_tile, bounds_tile(:,iTile), s_par, prc, meas, tStep)
@@ -124,8 +124,8 @@ contains
        lb_dom_tile => lb_dom_tiles(iTile)
 
        ! reassemble block from tiles
-       !call recompose_lb_block_sentinel(lb_dom_tile,bounds_tile(:,iTile), nghost,&
-       !     & lb_dom, bounds_tile(:,0))
+       call recompose_lb_block_sentinel(lb_dom_tile,bounds_tile(:,iTile), nghost,&
+            & lb_dom, bounds_tile(:,0))
     end do
 
     call swap_and_set_bnd_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)
@@ -486,12 +486,16 @@ end module lbm_step_tiled
         if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
     allocate(lb_dom_tile%fIn(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
         if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fIn"
-
-    ! %u0 could be pointer if remapping of indices worked. It does with GNU 4.6
-    lb_dom_tile%u0(NDX(1:,0:,0:,0:)) => lb_dom%u0(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
-    lb_dom_tile%state(1:,1:,1:) => lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)
-    lb_dom_tile%fIn(NDX(1:,0:,0:,0:)) => lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
-    lb_dom_tile%fOut(NDX(1:,0:,0:,0:)) => lb_dom%fOut(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
+    allocate(lb_dom_tile%state(1:lx,1:ly,1:lz),stat=alloc_stat)
+        if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
+    allocate(lb_dom_tile%u0(NDX(NDIM,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
+        if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
+    
+    ! %u0 could be pointer if remapping of indices worked
+    lb_dom_tile%state = lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)
+    lb_dom_tile%u0 = lb_dom%u0(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
+    lb_dom_tile%fIn = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
+    lb_dom_tile%fOut = 0.  ! first touch
 
     lb_dom_tile%pnt_cur_tile => lb_dom_tile%fIn
     lb_dom_tile%pnt_nxt_tile => lb_dom_tile%fOut

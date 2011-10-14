@@ -107,6 +107,11 @@ PROGRAM lbmain
 !------------------------------------------------------------------------
 ! Initialize data and distribute to processes
 !
+#ifdef USE_TILES
+   call localize_block(lb_dom, s_par, prc)
+!$CSS BARRIER   
+#endif /* USE_TILES */
+
 #ifdef D2Q9
    lb_dom%fIn(NDX(1,:,:,:))=0.4444444444444d0
    lb_dom%fIn(NDX(2:5,:,:,:))=0.111111111111d0

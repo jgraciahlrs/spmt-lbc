@@ -139,6 +139,57 @@ contains
 #ifdef USE_TILES
 
 
+  subroutine localize_block(lb_dom, s_par, prc) 
+    implicit none
+    type(lb_block),intent(inout)    :: lb_dom
+    type(sim_parameter), intent(inout)  :: s_par 
+    type(mpl_var),intent(inout)     :: prc
+
+#ifdef USENOT_SMPSS_MODULES
+    ! need to declare explitic interfaces for StarSs tasks
+    interface
+!$CSS TASK REDUCTION(lb_dom)
+       subroutine localize_tile(lb_dom, tb, prc)
+         use lbm_functions
+         implicit none
+         type(lb_block),intent(inout)    :: lb_dom
+         integer,dimension(6),intent(in) :: tb
+         type(mpl_var),intent(in)        :: prc
+       end subroutine localize_tile
+    end interface
+#endif /* USENOT_SMPSS_MODULES */
+
+    integer                         :: alloc_stat
+    integer                         :: iTile
+
+    ! calculate number of tiles for given size tileSize
+    prc%tileSize = TILESIZE
+    prc%nTiles = lb_dom%lx(1)/prc%tileSize * lb_dom%lx(2)/prc%tileSize * lb_dom%lx(3)/prc%tileSize
+
+    ! assert compatibility of tile size and domain size
+    if ((modulo(lb_dom%lx(1),prc%tileSize)/=0) &
+         &.or. (modulo(lb_dom%lx(2),prc%tileSize)/=0) & 
+         &.or. (modulo(lb_dom%lx(3),prc%tileSize)/=0)) then
+       write (*,*) "Fatal error: domain sizes must be and integer multiple of TILESIZE=", prc%tileSize
+       write (*,*) "Exiting ..."
+       s_par%goend = .true.        ! why is this not sufficient?
+       call abort()
+    end if
+    
+    ! compute tile boundaries within parent block 
+    call tile_bounds(prc%tileSize, prc%nTiles, lb_dom%lx, prc%n_ghost_nodes, prc%bounds_tile)
+    
+    ! allocate space for a container of tile lb_blocks
+    allocate(prc%lb_dom_tiles(prc%nTiles),stat=alloc_stat)
+    if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tiles"
+    
+    ! allocate data fields of all tile lb_blocks
+    do iTile = 1, prc%nTiles
+       call localize_tile(lb_dom, prc%bounds_tile(:,iTile), prc) 
+    end do
+  end subroutine localize_block
+
+
   ! initialize machinery for tiles implementation
   subroutine init_tile(lb_dom, s_par, prc)
     implicit none
@@ -501,6 +552,26 @@ end module lbm_step_tiled
     lb_dom_tile%pnt_nxt_tile => lb_dom_tile%fOut
     
   end subroutine allocate_tile
+
+  !$CSS TASK REDUCTION(lb_dom)
+  subroutine localize_tile(lb_dom, tb, prc)
+    use lbm_functions
+    implicit none
+    type(lb_block),intent(inout)    :: lb_dom
+    integer,dimension(6),intent(in) :: tb
+    type(mpl_var),intent(in)        :: prc
+    
+    integer                         :: nghost
+    
+    
+    nghost = prc%n_ghost_nodes
+    ! do first touch in tasks to localize array's pages
+    lb_dom%u0(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6))) = 0.0
+    lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost) = 0.0
+    lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6))) = 0.0
+    lb_dom%fOut(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6))) = 0.0
+    
+  end subroutine localize_tile
 
   !$CSS TASK
   subroutine swap_lb_dom_pnts_smpss(lb_dom)

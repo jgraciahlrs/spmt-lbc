@@ -90,6 +90,7 @@ PROGRAM lbmain
 !------------------------------------------------------------------------
 ! Initialize environment
 
+!$CSS START
    call mpl_init(meas,prc)
    call cpu_time_measure(total_start)
    call cpu_time_measure(meas%tStart)
@@ -106,6 +107,11 @@ PROGRAM lbmain
 !------------------------------------------------------------------------
 ! Initialize data and distribute to processes
 !
+#ifdef USE_TILES
+   call localize_block(lb_dom, s_par, prc)
+!$CSS BARRIER   
+#endif /* USE_TILES */
+
 #ifdef D2Q9
    lb_dom%fIn(NDX(1,:,:,:))=0.4444444444444d0
    lb_dom%fIn(NDX(2:5,:,:,:))=0.111111111111d0
@@ -146,7 +152,6 @@ PROGRAM lbmain
 
    call set_bnd(lb_dom,lb_dom%state,lb_dom%fIn,lb_dom%rho,lb_dom%u,s_par,prc,meas,0)
 
-!$CSS START
 #ifdef USE_TILES
    call init_tile(lb_dom, s_par, prc)
 #endif /* USE_TILES */

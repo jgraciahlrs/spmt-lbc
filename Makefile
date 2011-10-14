@@ -334,8 +334,8 @@ else
         endif
 	endif
 
-      F90_CFLAGS_DEBUG=$(SFDEF)-xf95-cpp-input -O0 -g $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhile-file
-      F90_LFLAGS_DEBUG=-O0 -g $(SLDEF)-Wall
+      F90_CFLAGS_DEBUG=$(SFDEF)-xf95-cpp-input -O0 -g $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file
+      F90_LFLAGS_DEBUG=-O0 -g
 
       F90_CFLAGS_OPT=$(SFDEF)-xf95-cpp-input -O3 $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
 #-std=f2003  

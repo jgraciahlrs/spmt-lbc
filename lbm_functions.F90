@@ -33,9 +33,9 @@ contains
    implicit none
    type(lb_block),intent(in)    :: lb_dom
    type(measure),intent(inout)  :: meas  
-   real(R8B), intent(in)        :: fIn(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
-   real(R8B), intent(out)       :: fOut(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
-   integer, intent(in)          :: state(lb_dom%lx(1),lb_dom%lx(2),lb_dom%lx(3))
+   real(R8B),pointer,dimension(:,:,:,:),intent(in)        :: fIn
+   real(R8B),pointer,dimension(:,:,:,:),intent(out)       :: fOut
+   integer,pointer,dimension(:,:,:),intent(in)            :: state
    integer                      :: i,j,k,l,count_err
    real(R8B)                    :: ftmp(nnod)
 
@@ -121,8 +121,8 @@ endif
     implicit none
     type(lb_block),intent(inout)  :: lb_dom
     real(R8B) , intent(in)  :: omega
-    real(R8B), intent(out)     :: fOut(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
-    real(R8B), intent(inout)   :: fIn(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
+    real(R8B),pointer,dimension(:,:,:,:),intent(out)     :: fOut
+    real(R8B),pointer,dimension(:,:,:,:),intent(inout)   :: fIn
 
     integer i_ct,i,j,k,lx(3),l
     real(R8B) ftmp(nnod) 
@@ -452,8 +452,8 @@ end subroutine stream_collide_trt
       real(R8B)                  :: weps,wepsj,wxx,rholoc_inv 
       real(R8B)                  :: ux(3),rholoc,fEq(nnod),t2cs4inv,t2cs2inv,jx(3)
       real(R8B)                  :: rho0,inv_rho0 
-      real(R8B), intent(out)     :: fOut(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
-      real(R8B), intent(inout)   :: fIn(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
+      real(R8B),pointer,dimension(:,:,:,:),intent(out)     :: fOut
+      real(R8B),pointer,dimension(:,:,:,:),intent(inout)   :: fIn
       integer                    :: i,j,k,l,ll
 #ifdef MRT_MASS_MOMENTUM 
       real(R8B)  :: check_rho,check_jx,check_jy,check_jz 
@@ -755,8 +755,8 @@ stop
       real(R8B)                  :: usq,omega
       real(R8B)                  :: ux(3),rholoc,fEq(nnod),t2cs4inv,t2cs2inv,rholoc_inv,jx(3)
       real(R8B)                  :: rho0 ,inv_rho0 
-      real(R8B), intent(out)     :: fOut(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
-      real(R8B), intent(inout)   :: fIn(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
+      real(R8B),pointer,dimension(:,:,:,:),intent(out)     :: fOut
+      real(R8B),pointer,dimension(:,:,:,:),intent(inout)   :: fIn
       integer                    :: i,j,k,l
       ! MRT Variables
       real(R8B)                  :: meq(nnod),mneq(nnod),mout(nnod),s_mrt(nnod)
@@ -1116,8 +1116,8 @@ endif
       real(R8B)                  :: weps,wepsj,wxx,rholoc_inv 
       real(R8B)                  :: ux(3),rholoc,fEq(nnod),t2cs4inv,t2cs2inv,jx(3)
       real(R8B)                  :: rho0,inv_rho0 
-      real(R8B), intent(out)     :: fOut(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
-      real(R8B), intent(inout)   :: fIn(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
+      real(R8B),pointer,dimension(:,:,:,:),intent(out)     :: fOut
+      real(R8B),pointer,dimension(:,:,:,:),intent(inout)   :: fIn
       integer                    :: i,j,k,l,ll
 #ifdef MRT_MASS_MOMENTUM 
       real(R8B)  :: check_rho,check_jx,check_jy,check_jz 
@@ -1356,8 +1356,8 @@ call pdf_to_macro(fOut(NDX(:,i,j,k)),rhot,ut)
       real(R8B)                  :: usq,omega
       real(R8B)                  :: u(3),rholoc,fEq(nnod),t2cs4inv,t2cs2inv
       real(R8B)                  :: rho0 
-      real(R8B), intent(out)     :: fOut(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
-      real(R8B), intent(inout)   :: fIn(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
+      real(R8B),pointer,dimension(:,:,:,:),intent(out)     :: fOut
+      real(R8B),pointer,dimension(:,:,:,:),intent(inout)   :: fIn
       integer                    :: i,j,k,l
 #ifdef LES_SMAGORINSKY
       integer                    :: is,js,ks,ls
@@ -1709,8 +1709,8 @@ endif
       type(sim_parameter),intent(in)  :: s_par
       type(measure)              :: meas  
       real (R8B)                 :: t2cs4inv,t2cs2inv
-      real(R8B), intent(out)     :: fOut(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
-      real(R8B), intent(inout)   ::  fIn(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
+      real(R8B),pointer,dimension(:,:,:,:),intent(out)     :: fOut
+      real(R8B),pointer,dimension(:,:,:,:),intent(inout)   ::  fIn
       integer                    :: i,j,k,l
 #ifdef SPLITLOOPS
 #define INDEXVAR i
@@ -2053,8 +2053,8 @@ subroutine bounceback(lb_dom,fOut,fIn,meas,s_par,prc) !
    type(sim_parameter),intent(inout)  :: s_par
    type(mpl_var),intent(inout)  :: prc
    type(lb_block),intent(inout)  :: lb_dom
-   real(R8B), intent(in)     :: fIn(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
-   real(R8B), intent(inout)  :: fOut(NDX(nnod,0:(lb_dom%lx(1)+1),0:(lb_dom%lx(2)+1),0:(lb_dom%lx(3)+1)))
+   real(R8B),pointer,dimension(:,:,:,:),intent(in)     :: fIn
+   real(R8B),pointer,dimension(:,:,:,:),intent(inout)  :: fOut
    type(measure )                :: meas  
    integer                 :: ii
    integer                 :: cdx(3)

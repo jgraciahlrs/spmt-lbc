@@ -112,20 +112,8 @@ contains
        ! select tile
        lb_dom_tile => lb_dom_tiles(iTile)
 
-       ! decompose block into tiles
-       call decompose_lb_block(lb_dom, bounds_tile(:,0), nghost, lb_dom_tiles(iTile), bounds_tile(:,iTile))
-
        ! do a single tiled Lattice Boltzmann step
        call lb_step_tile_sentinel(lb_dom_tile, bounds_tile(:,iTile), s_par, prc, meas, tStep)
-    end do
-
-    do iTile = 1, nTiles
-       ! select tile
-       lb_dom_tile => lb_dom_tiles(iTile)
-
-       ! reassemble block from tiles
-       call recompose_lb_block_sentinel(lb_dom_tile,bounds_tile(:,iTile), nghost,&
-            & lb_dom, bounds_tile(:,0))
     end do
 
     call swap_and_set_bnd_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)

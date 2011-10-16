@@ -116,7 +116,7 @@ LBMODEL += $(FDEF)-DD3Q19
 
 # Performance issues (optional)
 # Combine stream and collide routine, split relaxation 
-#LBMODEL += $(FDEF)-DCOMBINE_STREAM_COLLIDE
+LBMODEL += $(FDEF)-DCOMBINE_STREAM_COLLIDE
 #LBMODEL += $(FDEF)-DSPLITLOOPS
 
 # Memory layout:

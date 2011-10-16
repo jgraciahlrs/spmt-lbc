@@ -530,23 +530,14 @@ end module lbm_step_tiled
     ! set tile size from tile boundaries
     lb_dom_tile%lx = (/ tb(2)-tb(1)-1, tb(4)-tb(3)-1, tb(6)-tb(5)-1 /)
     nghost = prc%n_ghost_nodes
-    
-    ! allocate memory for tile arrays
     lx = lb_dom_tile%lx(1); ly = lb_dom_tile%lx(2); lz = lb_dom_tile%lx(3); 
-    allocate(lb_dom_tile%fOut(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
-        if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
-    allocate(lb_dom_tile%fIn(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
-        if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fIn"
-    allocate(lb_dom_tile%state(1:lx,1:ly,1:lz),stat=alloc_stat)
-        if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
-    allocate(lb_dom_tile%u0(NDX(NDIM,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)
-        if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tile%fOut"
-    
-    ! %u0 could be pointer if remapping of indices worked
-    lb_dom_tile%state = lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)
-    lb_dom_tile%u0 = lb_dom%u0(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
-    lb_dom_tile%fIn = lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
-    lb_dom_tile%fOut = 0.  ! first touch
+
+    ! map lb_dom subarrays to tiles
+    ! %u0 could be pointer if remapping of indices worked. Works as of GNU 4.6
+    lb_dom_tile%u0(NDX(1:,0:,0:,0:)) => lb_dom%u0(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
+    lb_dom_tile%state => lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)
+    lb_dom_tile%fIn(NDX(1:,0:,0:,0:)) => lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
+    lb_dom_tile%fOut(NDX(1:,0:,0:,0:)) => lb_dom%fOut(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
 
     lb_dom_tile%pnt_cur_tile => lb_dom_tile%fIn
     lb_dom_tile%pnt_nxt_tile => lb_dom_tile%fOut

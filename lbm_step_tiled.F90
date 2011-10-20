@@ -127,7 +127,8 @@ contains
 #ifdef USE_TILES
 
 
-  subroutine localize_block(lb_dom, s_par, prc) 
+  ! initialize machinery for tiles implementation
+  subroutine init_tile(lb_dom, s_par, prc) 
     implicit none
     type(lb_block),intent(inout)    :: lb_dom
     type(sim_parameter), intent(inout)  :: s_par 
@@ -141,60 +142,16 @@ contains
          use lbm_functions
          implicit none
          type(lb_block),intent(inout)    :: lb_dom
-         integer,dimension(6),intent(in) :: tb
+         integer,dimension(6),intent(inout) :: tb  ! inout: serves also as sentinel to track deps, as lb_dom_tile not in args
          type(mpl_var),intent(in)        :: prc
        end subroutine localize_tile
-    end interface
-#endif /* USENOT_SMPSS_MODULES */
-
-    integer                         :: alloc_stat
-    integer                         :: iTile
-
-    ! calculate number of tiles for given size tileSize
-    prc%tileSize = TILESIZE
-    prc%nTiles = lb_dom%lx(1)/prc%tileSize * lb_dom%lx(2)/prc%tileSize * lb_dom%lx(3)/prc%tileSize
-
-    ! assert compatibility of tile size and domain size
-    if ((modulo(lb_dom%lx(1),prc%tileSize)/=0) &
-         &.or. (modulo(lb_dom%lx(2),prc%tileSize)/=0) & 
-         &.or. (modulo(lb_dom%lx(3),prc%tileSize)/=0)) then
-       write (*,*) "Fatal error: domain sizes must be and integer multiple of TILESIZE=", prc%tileSize
-       write (*,*) "Exiting ..."
-       s_par%goend = .true.        ! why is this not sufficient?
-       call abort()
-    end if
-    
-    ! compute tile boundaries within parent block 
-    call tile_bounds(prc%tileSize, prc%nTiles, lb_dom%lx, prc%n_ghost_nodes, prc%bounds_tile)
-    
-    ! allocate space for a container of tile lb_blocks
-    allocate(prc%lb_dom_tiles(prc%nTiles),stat=alloc_stat)
-    if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tiles"
-    
-    ! allocate data fields of all tile lb_blocks
-    do iTile = 1, prc%nTiles
-       call localize_tile(lb_dom, prc%bounds_tile(:,iTile), prc) 
-    end do
-  end subroutine localize_block
-
-
-  ! initialize machinery for tiles implementation
-  subroutine init_tile(lb_dom, s_par, prc)
-    implicit none
-    type(lb_block),intent(inout)    :: lb_dom
-    type(sim_parameter), intent(inout)  :: s_par 
-    type(mpl_var),intent(inout)     :: prc
-
-#ifdef USENOT_SMPSS_MODULES
-    ! need to declare explitic interfaces for StarSs tasks
-    interface
-       !$CSS TASK 
+!$CSS TASK
        subroutine allocate_tile(lb_dom, lb_dom_tile, tb, prc)
          use lbm_functions
          implicit none
          type(lb_block),intent(in)       :: lb_dom
          type(lb_block),intent(inout)    :: lb_dom_tile
-         integer,dimension(6),intent(in) :: tb
+         integer,dimension(6),intent(inout) :: tb
          type(mpl_var),intent(in)        :: prc
        end subroutine allocate_tile
     end interface
@@ -218,13 +175,22 @@ contains
     end if
     
     ! compute tile boundaries within parent block 
-    !call tile_bounds(prc%tileSize, prc%nTiles, prc%n_ghost_nodes, prc%bounds_tile)
     call tile_bounds(prc%tileSize, prc%nTiles, lb_dom%lx, prc%n_ghost_nodes, prc%bounds_tile)
     
     ! allocate space for a container of tile lb_blocks
     allocate(prc%lb_dom_tiles(prc%nTiles),stat=alloc_stat)
     if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tiles"
     
+    ! localize data fields of all tile lb_blocks
+    do iTile = 1, prc%nTiles
+       call localize_tile(lb_dom, prc%bounds_tile(:,iTile), prc) 
+       write (*,"(Z20 Z20)") loc(lb_dom), loc(prc%bounds_tile(:,iTile))
+    end do
+    
+    !$CSS WAIT ON(lb_dom)
+    ! not sure why I need this WAIT ON here, otherwise seg fault. Maybe bug #57?
+
+    ! CSS: do not merge these two loops (above and below) or will serialize 
     ! allocate data fields of all tile lb_blocks
     do iTile = 1, prc%nTiles
        call allocate_tile(lb_dom, prc%lb_dom_tiles(iTile), prc%bounds_tile(:,iTile), prc) 
@@ -507,7 +473,7 @@ end module lbm_step_tiled
     implicit none
     type(lb_block),intent(in)       :: lb_dom
     type(lb_block),intent(inout)    :: lb_dom_tile
-    integer,dimension(6),intent(in) :: tb
+    integer,dimension(6),intent(inout) :: tb
     type(mpl_var),intent(in)        :: prc
     
     integer                         :: alloc_stat
@@ -537,7 +503,7 @@ end module lbm_step_tiled
     use lbm_functions
     implicit none
     type(lb_block),intent(inout)    :: lb_dom
-    integer,dimension(6),intent(in) :: tb
+    integer,dimension(6),intent(inout) :: tb    ! inout: serves also as sentinel to track deps, as lb_dom_tile not in args
     type(mpl_var),intent(in)        :: prc
     
     integer                         :: nghost

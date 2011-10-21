@@ -245,6 +245,7 @@ module nrt_lib
 #ifdef USE_TILES
       integer                                          :: tileSize          ! size of tiles without ghost cells
       integer                                          :: nTiles            ! total # of tiles
+      integer                                          :: nOuterTiles            ! total # of outer tiles
       integer,dimension(:,:),pointer                   :: bounds_tile       ! holds boundaries of tiles
       type(lb_block),dimension(:),pointer              :: lb_dom_tiles      ! lb_block's for tiles
 #endif /* USE_TILES */

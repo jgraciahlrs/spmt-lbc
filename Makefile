@@ -356,10 +356,10 @@ else
 	F90_CFLAGS_OPT   += -g
 	F90_LFLAGS_OPT   += -g
 	ifeq ($(findstring smpss,$(COMPILER)),smpss)  # smpss events
-	  F90_CFLAGS_DEBUG += -t -k
-	  F90_LFLAGS_DEBUG += -t -k
-	  F90_CFLAGS_OPT   += -t -k
-	  F90_LFLAGS_OPT   += -t -k
+	  F90_CFLAGS_DEBUG += -p -k
+	  F90_LFLAGS_DEBUG += -p -k
+	  F90_CFLAGS_OPT   += -p -k
+	  F90_LFLAGS_OPT   += -p -k
         endif
      endif
    endif

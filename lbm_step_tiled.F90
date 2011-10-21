@@ -21,9 +21,9 @@ contains
   ! does one lbm step, ie. propagate & collide
   ! and possibly boundary conditions.
   !
-  ! The block lb_dom owned by every MPI rank is first decomposed
-  ! into smaller "tiles" lb_dom_tile, which are then passed on to
-  ! lb_step_tile() do to th actual calculations as SMPSs tasks.
+  ! The lb_step() is not done on the block lb_dom owned by every MPI
+  ! rank, but instead on smaller "tiles" lb_dom_tile as SMPSs tasks
+  ! in the subroutine lb_step_tile().
   subroutine lb_step(lb_dom, pnt_nxt, pnt_cur, s_par, prc, meas, tStep)
     implicit none
     type(lb_block),intent(inout)    :: lb_dom
@@ -38,33 +38,10 @@ contains
     integer                         :: nTiles, iTile      ! total # of tiles, tile index
     integer,dimension(:,:),pointer  :: bounds_tile        ! boundaries of given tile in parent block
     type(lb_block),dimension(:),pointer                 :: lb_dom_tiles    ! lb_block's for tiles
-    type(lb_block),pointer          :: lb_dom_tile         
-    integer                         :: alloc_stat
-    integer                         :: tileSize = TILESIZE, nghost
 
 #ifdef USENOT_SMPSS_MODULES
     ! need to declare explitic interfaces for StarSs tasks
     interface
-       !$CSS TASK
-       subroutine decompose_lb_block(lb_dom, tb0, nghost, lb_dom_tile, tb)
-         use lbm_functions
-         implicit none
-         type(lb_block),intent(in)           :: lb_dom(1)        ! array (1) due to false renaming user type bug #57
-         integer,dimension(6),intent(in)     :: tb0              ! sentinel to track dependencies
-         integer,intent(in)                  :: nghost           ! # of ghost cells
-         type(lb_block),intent(inout)        :: lb_dom_tile
-         integer,dimension(6),intent(inout)  :: tb               ! boundaries of given tile in parent block
-       end subroutine decompose_lb_block
-       !$CSS TASK REDUCTION(lb_dom, tb0)
-       subroutine recompose_lb_block_sentinel(lb_dom_tile,tb, nghost, lb_dom,tb0)
-         use lbm_functions
-         implicit none
-         type(lb_block),intent(in)      :: lb_dom_tile(1)        ! array (1) due to false renaming user type bug #57
-         integer,dimension(6),intent(in)         :: tb           ! boundaries of given tile in parent block
-         integer,intent(in)             :: nghost                ! # of ghost cells
-         type(lb_block),intent(inout)   :: lb_dom
-         integer,dimension(6),intent(inout)      :: tb0          ! sentinel for dependency tracking
-       end subroutine recompose_lb_block_sentinel
        !$CSS TASK REDUCTION(meas)
        subroutine lb_step_tile_sentinel(lb_dom, tb, s_par, prc, meas, tStep)
          use lbm_functions
@@ -77,7 +54,7 @@ contains
          integer, intent(in)                 :: tStep
        end subroutine lb_step_tile_sentinel
        !$CSS TASK
-       subroutine swap_and_set_bnd_sentinel(lb_dom, tb0, s_par, prc, meas, tStep)
+       subroutine set_bnds_sentinel(lb_dom, tb0, s_par, prc, meas, tStep)
          use lbm_functions
          implicit none
          type(lb_block), intent(inout)          :: lb_dom
@@ -86,7 +63,7 @@ contains
          type(mpl_var),intent(in)               :: prc
          type(measure),intent(inout)            :: meas
          integer, intent(in)                    :: tStep
-       end subroutine swap_and_set_bnd_sentinel
+       end subroutine set_bnds_sentinel
     end interface
 #endif  /* USENOT_SMPSS_MODULES */
 
@@ -95,10 +72,9 @@ contains
     !endif
 
     !---------------------------
-    ! Make small tasks for SMPSs by decomposing MPI lb_block into smaller tiles
+    ! Work on SMPSs tiles rather than on the MPI lb_block
 
-    !  number of ghost cells and tiles
-    nghost = prc%n_ghost_nodes
+    !  number of tiles
     nTiles = prc%nTiles
 
     ! tile boundaries within parent block 
@@ -109,15 +85,13 @@ contains
     lb_dom_tiles => prc%lb_dom_tiles
 
     do iTile = 1, nTiles
-       ! select tile
-       lb_dom_tile => lb_dom_tiles(iTile)
-
+       ! select a tile and
        ! do a single tiled Lattice Boltzmann step
-       call lb_step_tile_sentinel(lb_dom_tile, bounds_tile(:,iTile), s_par, prc, meas, tStep)
+       call lb_step_tile_sentinel(lb_dom_tiles(iTile), bounds_tile(:,iTile), s_par, prc, meas, tStep)
     end do
 
-    call swap_and_set_bnd_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)
-    ! $CSS WAIT ON(bounds_tile(:,0))
+    ! appply physical boundary conditions
+    call set_bnds_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)
 
 #endif  /* USE_TILES*/
 
@@ -184,7 +158,7 @@ contains
     ! localize data fields of all tile lb_blocks
     do iTile = 1, prc%nTiles
        call localize_tile(lb_dom, prc%bounds_tile(:,iTile), prc) 
-       write (*,"(Z20 Z20)") loc(lb_dom), loc(prc%bounds_tile(:,iTile))
+       !write (*,"(Z20 Z20)") loc(lb_dom), loc(prc%bounds_tile(:,iTile))
     end do
     
     !$CSS WAIT ON(lb_dom)
@@ -275,46 +249,6 @@ contains
     !write (*,*) tb
 
   end subroutine tile_bounds
-
-  subroutine recompose_lb_block(lb_dom_tile, tb, nghost, lb_dom)
-    implicit none
-    type(lb_block),intent(in)    :: lb_dom_tile
-    integer,dimension(6),intent(in)           :: tb        ! boundaries of given tile in parent block
-    integer,intent(in)           :: nghost    ! # of ghost cells
-    type(lb_block),intent(inout) :: lb_dom
-
-    integer,dimension(4)         :: lb        ! lower index of physical cells in lb_dom_tile%pnt_cur/nxt
-    integer,dimension(4)         :: tS        ! tileSize excluding ghost cells
-
-    lb = lbound(lb_dom_tile%pnt_cur_tile)     ! get lower boundaries from buffer
-    tS = shape(lb_dom_tile%pnt_cur_tile)-nghost*2
-#ifdef LAYOUT_LIJK
-    lb(1:3) = lb(2:4)                         ! spatial indices should be in lb(1:3) regardless of LAYOUT_IJKL/LIJK
-    tS(1:3) = tS(2:4)
-#endif
-
-
-    ! copy from tile to block; ignore ghost cell
-    !lb_dom%pnt_nxt(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost)) = &
-    !     & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1:lb(3)+tS(3))) ! assumes one ghost cell
-
-    ! copy first physical cell from tile to block, assumes one ghost cell
-    lb_dom%pnt_nxt(NDX(:,tb(1)+nghost,tb(3)+nghost+1:tb(4)-nghost-1,tb(5)+nghost+1:tb(6)-nghost-1)) = &
-         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1,lb(2)+1+1:lb(2)+tS(2)-1,lb(3)+1+1:lb(3)+tS(3)-1))
-    lb_dom%pnt_nxt(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost,tb(5)+nghost+1:tb(6)-nghost-1)) = &
-         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1,lb(3)+1+1:lb(3)+tS(3)-1))
-    lb_dom%pnt_nxt(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost)) = &
-         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+1))
-    lb_dom%pnt_nxt(NDX(:,tb(2)-nghost,tb(3)+nghost+1:tb(4)-nghost-1,tb(5)+nghost+1:tb(6)-nghost-1)) = &
-         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+tS(1),lb(2)+1+1:lb(2)+tS(2)-1,lb(3)+1+1:lb(3)+tS(3)-1))
-    lb_dom%pnt_nxt(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(4)-nghost,tb(5)+nghost+1:tb(6)-nghost-1)) = &
-         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+tS(2),lb(3)+1+1:lb(3)+tS(3)-1))
-    lb_dom%pnt_nxt(NDX(:,tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(6)-nghost)) = &
-         & lb_dom_tile%pnt_cur_tile(NDX(:,lb(1)+1:lb(1)+tS(1),lb(2)+1:lb(2)+tS(2),lb(3)+tS(3)))
-
-    !write (*,*) '.... Done recomposing block!'
-
-  end subroutine recompose_lb_block
 #endif  /* USE_TILES*/
 
   subroutine lb_step_tile(lb_dom, pnt_nxt, pnt_cur, s_par, prc, meas, tStep)
@@ -363,57 +297,6 @@ contains
 end module lbm_step_tiled
 #endif /* USENOT_SMPSS_MODULES */
 
-  !$CSS TASK
-  subroutine decompose_lb_block(lb_dom,tb0, nghost, lb_dom_tile, tb)
-#ifdef USENOT_SMPSS_MODULES
-    use lbm_functions
-#endif /* USENOT_SMPSS_MODULES */ 
-    implicit none
-    type(lb_block),intent(in)           :: lb_dom           ! parent block
-    integer,dimension(6),intent(in)     :: tb0              ! sentinel to track dependencies
-    integer,intent(in)                  :: nghost           ! # of ghost cells
-    type(lb_block),intent(inout)        :: lb_dom_tile
-    integer,dimension(6),intent(inout)  :: tb               ! boundaries of given tile in parent block
-    
-    integer                             :: lx,ly,lz         ! block sizes
-    integer                             :: alloc_stat
-
-    lx = lb_dom_tile%lx(1); ly = lb_dom_tile%lx(2); lz = lb_dom_tile%lx(3); 
-
-    ! copy from block to tile
-    !lb_dom_tile%pnt_cur_tile(NDX(:,0:lx+1,0:ly+1,0:lz+1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6)))
-
-    ! copy from block to tile, assumes 1 ghost cell only
-    ! copy ghost cell (index 0) and first physical cell (index 1) at the same time
-    ! avoid copying corners/edges more than once (:lxyz-1)
-    lb_dom_tile%pnt_cur_tile(NDX(:,:,:,0:1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(5)+1))
-    lb_dom_tile%pnt_cur_tile(NDX(:,:,0:1,2:lz-1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(3):tb(3)+1,tb(5)+2:tb(6)-2))
-    lb_dom_tile%pnt_cur_tile(NDX(:,0:1,2:ly-1,2:lz-1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(1)+1,tb(3)+2:tb(4)-2,tb(5)+2:tb(6)-2))
-    lb_dom_tile%pnt_cur_tile(NDX(:,:,:,lz:lz+1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(6)-1:tb(6)))
-    lb_dom_tile%pnt_cur_tile(NDX(:,:,ly:ly+1,2:lz-1)) = lb_dom%pnt_cur(NDX(:,tb(1):tb(2),tb(4)-1:tb(4),tb(5)+2:tb(6)-2))
-    lb_dom_tile%pnt_cur_tile(NDX(:,lx:lx+1,2:ly-1,2:lz-1)) = lb_dom%pnt_cur(NDX(:,tb(2)-1:tb(2),tb(3)+2:tb(4)-2,tb(5)+2:tb(6)-2))
-
-    !write (*,*) '.... Done decomposing block!'
-
-  end subroutine decompose_lb_block
-
-  !$CSS TASK REDUCTION(lb_dom, tb0)
-  subroutine recompose_lb_block_sentinel(lb_dom_tile,tb, nghost, lb_dom,tb0)
-#ifdef USENOT_SMPSS_MODULES
-    use lbm_functions
-    use lbm_step_tiled
-#endif /* USENOT_SMPSS_MODULES */
-    implicit none
-    type(lb_block),intent(in)      :: lb_dom_tile
-    integer,dimension(6),intent(in)         :: tb          ! boundaries of given tile in parent block
-    integer,intent(in)             :: nghost               ! # of ghost cells
-    type(lb_block),intent(inout)   :: lb_dom
-    integer,dimension(6),intent(inout)      :: tb0         ! sentinel for dependency tracking
-
-    call recompose_lb_block(lb_dom_tile,tb, nghost, lb_dom)
-
-  end subroutine recompose_lb_block_sentinel
-
   !$CSS TASK REDUCTION(meas)
   subroutine lb_step_tile_sentinel(lb_dom, tb, s_par, prc, meas, tStep)
 #ifdef USENOT_SMPSS_MODULES
@@ -445,7 +328,7 @@ end module lbm_step_tiled
   end subroutine lb_step_tile_sentinel
 
 !$CSS TASK
-  subroutine swap_and_set_bnd_sentinel(lb_dom, tb0, s_par, prc, meas, tStep)
+  subroutine set_bnds_sentinel(lb_dom, tb0, s_par, prc, meas, tStep)
     use lbm_functions
     implicit none
     type(lb_block), intent(inout)          :: lb_dom
@@ -455,16 +338,11 @@ end module lbm_step_tiled
     type(measure),intent(inout)            :: meas
     integer, intent(in)                    :: tStep
     
-    !real(R8B),pointer,dimension(:,:,:,:)                :: swapper
-    
-    ! swap pointers for work arrays
-    !swapper => lb_dom%fIn; lb_dom%fIn => lb_dom%fOut; lb_dom%fOut => swapper 
-
     ! do boundary conditions after stream and collide steps
     call set_nrbc_antibb(lb_dom,lb_dom%pnt_nxt,lb_dom%pnt_cur,s_par,prc,meas)
     call set_bnd(lb_dom,lb_dom%state,lb_dom%pnt_nxt,lb_dom%rho,lb_dom%u,s_par,prc,meas,tStep)
 
-  end subroutine swap_and_set_bnd_sentinel
+  end subroutine set_bnds_sentinel
 
   ! allocate memory for tiles and init them
   !$CSS TASK 

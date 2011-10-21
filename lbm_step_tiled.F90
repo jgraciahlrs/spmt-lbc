@@ -89,10 +89,14 @@ contains
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
        call lb_step_tile_sentinel(lb_dom_tiles(iTile), bounds_tile(:,iTile), s_par, prc, meas, tStep)
+
+       if (iTile == prc%nOuterTiles) then
+          ! appply physical boundary conditions
+          call set_bnds_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)
+       end if
     end do
 
-    ! appply physical boundary conditions
-    call set_bnds_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)
+    !call set_bnds_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)
 
 #endif  /* USE_TILES*/
   end subroutine lb_step

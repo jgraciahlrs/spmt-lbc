@@ -37,7 +37,7 @@ contains
 #ifdef USE_TILES
     integer                         :: nTiles, iTile      ! total # of tiles, tile index
     integer,dimension(:,:),pointer  :: bounds_tile        ! boundaries of given tile in parent block
-    type(lb_block),dimension(:),pointer                 :: lb_dom_tiles    ! lb_block's for tiles
+    type(lb_block),dimension(:),pointer                 :: lb_dom_tiles    ! lb_blocks for tiles
 
 #ifdef USENOT_SMPSS_MODULES
     ! need to declare explitic interfaces for StarSs tasks
@@ -94,7 +94,6 @@ contains
     call set_bnds_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)
 
 #endif  /* USE_TILES*/
-
   end subroutine lb_step
 
 
@@ -263,33 +262,16 @@ contains
 
     real(R8B),pointer,dimension(:,:,:,:)                :: swapper
 
-#ifdef COMBINE_STREAM_COLLIDE
       !---------------------------
       ! Combined Stream-collide Routine
+#ifndef COMBINE_STREAM_COLLIDE
+#error "The tiled version of lbc necessarily requires to set -DCOMBINE_STREAM_COLLIDE in the Makefile."
+#endif 
+    
 #ifdef TRT
     call stream_collide_trt(lb_dom,pnt_nxt,pnt_cur,s_par%omega)
 #else
     call stream_collide_bgk( lb_dom,pnt_nxt,pnt_cur,s_par,meas)
-#endif
-#else
-    !---------------------------
-    ! Propagation fIn => fOut 
-    call propagate(lb_dom,pnt_nxt,pnt_cur,lb_dom%state,meas)
-    
-    ! swap work array pointers; pnt_nxt: post-propagation, pnt_cur: post-collision
-    swapper => pnt_cur; pnt_cur => pnt_nxt; pnt_nxt => swapper
-
-    !---------------------------
-    ! Collision routine fOut => fIn, excluding solid nodes 
-#ifdef TRT
-    call collide_trt(lb_dom,pnt_nxt,pnt_cur,s_par%omega)
-#else
-#ifdef MRT
-    call collide_mrt( lb_dom,pnt_nxt,pnt_cur,s_par,meas)
-#else
-    call collide_bgk( lb_dom,pnt_nxt,pnt_cur,s_par,meas)
-#endif
-#endif
 #endif
   end subroutine lb_step_tile
 
@@ -321,9 +303,7 @@ end module lbm_step_tiled
 
     call lb_step_tile(lb_dom, dummy_pnt_nxt, dummy_pnt_cur, s_par, prc, meas, tStep)
 
-#ifdef COMBINE_STREAM_COLLIDE
-       swapper=>lb_dom%pnt_nxt_tile; lb_dom%pnt_nxt_tile=>lb_dom%pnt_cur_tile; lb_dom%pnt_cur_tile=>swapper
-#endif
+    swapper=>lb_dom%pnt_nxt_tile; lb_dom%pnt_nxt_tile=>lb_dom%pnt_cur_tile; lb_dom%pnt_cur_tile=>swapper
 
   end subroutine lb_step_tile_sentinel
 

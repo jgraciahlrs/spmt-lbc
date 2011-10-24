@@ -53,7 +53,7 @@ contains
          type(measure),intent(inout)         :: meas
          integer, intent(in)                 :: tStep
        end subroutine lb_step_tile_sentinel
-       !$CSS TASK
+       !$CSS TASK REDUCTION(meas)
        subroutine set_bnds_sentinel(lb_dom, tb0, s_par, prc, meas, tStep)
          use lbm_functions
          implicit none
@@ -307,7 +307,7 @@ end module lbm_step_tiled
 
   end subroutine lb_step_tile_sentinel
 
-!$CSS TASK
+!$CSS TASK REDUCTION(meas)
   subroutine set_bnds_sentinel(lb_dom, tb0, s_par, prc, meas, tStep)
     use lbm_functions
     implicit none

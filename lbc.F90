@@ -64,7 +64,7 @@ PROGRAM lbmain
    
 #ifdef USENOT_SMPSS_MODULES   
    interface
-      !$CSS TASK
+      !$CSS TASK REDUCTION(meas)
       subroutine mpl_exchange_smpss(lb_dom,prc,meas)
         use nrt_lib
         use mpl_lib

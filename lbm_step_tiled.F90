@@ -36,6 +36,7 @@ contains
     
 #ifdef USE_TILES
     integer                         :: nTiles, iTile      ! total # of tiles, tile index
+    integer                         :: nOuterTiles        ! total # of outer tiles
     integer,dimension(:,:),pointer  :: bounds_tile        ! boundaries of given tile in parent block
     type(lb_block),dimension(:),pointer                 :: lb_dom_tiles    ! lb_blocks for tiles
     integer,dimension(:),pointer    :: sentinel           ! sentinel to distinguish between, inner, outer, and all tiles
@@ -90,10 +91,14 @@ contains
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
        call lb_step_tile_sentinel(lb_dom_tiles(iTile), sentinel, s_par, prc, meas, tStep)
+
+       if (iTile == prc%nOuterTiles) then
+          ! appply physical boundary conditions
+          call set_bnds_sentinel(lb_dom, sentinel, s_par,prc,meas, tStep)
+       end if
     end do
 
-    ! appply physical boundary conditions
-    call set_bnds_sentinel(lb_dom, sentinel, s_par,prc,meas, tStep)
+    !call set_bnds_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)
 
 #endif  /* USE_TILES*/
   end subroutine lb_step
@@ -150,8 +155,8 @@ contains
     end if
     
     ! compute tile boundaries within parent block 
-    call tile_bounds(prc%tileSize, prc%nTiles, lb_dom%lx, prc%n_ghost_nodes, prc%bounds_tile)
-    
+    call tile_bounds(prc%tileSize, prc%nTiles, lb_dom%lx, prc%n_ghost_nodes, prc%bounds_tile, prc%nOuterTiles)
+
     ! allocate space for a container of tile lb_blocks
     allocate(prc%lb_dom_tiles(prc%nTiles),stat=alloc_stat)
     if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tiles"
@@ -208,10 +213,11 @@ contains
 
  
   ! calculates boundaries of tile with given number i within parent block    
-  subroutine tile_bounds(ts, nT, lx, ng, tb)
+  subroutine tile_bounds(ts, nT, lx, ng, tb, nOT)
     implicit none
     integer,intent(in)           :: ts, nT, lx(3), ng        ! tile size, tile number, domain size and # of ghostcells  
     integer,intent(out),dimension(:,:),pointer          :: tb               ! tile boundaries   
+    integer,intent(out)          :: nOT                      ! number of outer tiles
     
     integer                      :: i,nx,ny,nz,xl,xu,yl,yu,zl,zu,tx,ty,tz
     integer                      :: alloc_stat
@@ -230,14 +236,61 @@ contains
     !write (*,*) tb(:,0)
 
     i = 1
-    do tx = 1, nx
+    ! outer tiles first, upper and lower tx
+    do tx=1,nx,max(1,nx-1)
        do ty = 1, ny
           do tz = 1, nz
              ! tile boundaries including ghostcells
              xl = (tx-1)*ts; xu = xl + ts+2*ng - 1     ! fields are zero based in spatial coords?
              yl = (ty-1)*ts; yu = yl + ts+2*ng - 1
              zl = (tz-1)*ts; zu = zl + ts+2*ng - 1
-             !write (*,*) '...tilebounds tx,ty,tz,xl,yl,zl: ', tx,ty,tz, xl,yl,zl
+             
+             tb(1,i)=xl;tb(2,i)=xu; tb(3,i)=yl;tb(4,i)=yu; tb(5,i)=zl;tb(6,i)=zu
+             i = i+1
+          end do
+       end do
+    end do
+    
+    ! next upper and lower ty
+    do ty=1,ny,max(1,ny-1) 
+       do tx = 2,nx-1
+          do tz = 1, nz
+             ! tile boundaries including ghostcells
+             xl = (tx-1)*ts; xu = xl + ts+2*ng - 1     ! fields are zero based in spatial coords?
+             yl = (ty-1)*ts; yu = yl + ts+2*ng - 1
+             zl = (tz-1)*ts; zu = zl + ts+2*ng - 1
+
+             tb(1,i)=xl;tb(2,i)=xu; tb(3,i)=yl;tb(4,i)=yu; tb(5,i)=zl;tb(6,i)=zu
+             i = i+1
+          end do
+       end do
+    end do
+
+    ! finally upper and lower tz
+    do tz=1,nz,max(1,nz-1) 
+       do tx = 2,nx-1
+          do ty = 2,ny-1
+             ! tile boundaries including ghostcells
+             xl = (tx-1)*ts; xu = xl + ts+2*ng - 1     ! fields are zero based in spatial coords?
+             yl = (ty-1)*ts; yu = yl + ts+2*ng - 1
+             zl = (tz-1)*ts; zu = zl + ts+2*ng - 1
+
+             tb(1,i)=xl;tb(2,i)=xu; tb(3,i)=yl;tb(4,i)=yu; tb(5,i)=zl;tb(6,i)=zu
+             i = i+1
+          end do
+       end do
+    end do
+    nOT = i-1
+    !write (*,*) "# outer tiles:", nOT 
+
+    ! now inner tiles
+    do tx = 2, nx-1
+       do ty = 2, ny-1
+          do tz = 2, nz-1
+             ! tile boundaries including ghostcells
+             xl = (tx-1)*ts; xu = xl + ts+2*ng - 1     ! fields are zero based in spatial coords?
+             yl = (ty-1)*ts; yu = yl + ts+2*ng - 1
+             zl = (tz-1)*ts; zu = zl + ts+2*ng - 1
 
              tb(1,i)=xl;tb(2,i)=xu; tb(3,i)=yl;tb(4,i)=yu; tb(5,i)=zl;tb(6,i)=zu
              i = i+1

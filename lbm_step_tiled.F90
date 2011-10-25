@@ -162,9 +162,6 @@ contains
        !write (*,"(Z20 Z20)") loc(lb_dom), loc(prc%bounds_tile(:,iTile))
     end do
     
-    ! $ CSS WAIT ON(lb_dom)
-    ! not sure why I need this WAIT ON here, otherwise seg fault. Maybe bug #57?
-
     ! CSS: do not merge these two loops (above and below) or will serialize 
     ! allocate data fields of all tile lb_blocks
     do iTile = 1, prc%nTiles

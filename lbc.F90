@@ -77,7 +77,7 @@ PROGRAM lbmain
       subroutine swap_lb_dom_pnts_smpss(lb_dom)
         use nrt_lib
         implicit none
-        type(lb_block),intent(inout)       :: lb_dom(1)     ! array (1) due to false renaming user type bug #57
+        type(lb_block),intent(inout)       :: lb_dom
       end subroutine swap_lb_dom_pnts_smpss
    end interface
 #endif /* USENOT_SMPSS_MODULES */

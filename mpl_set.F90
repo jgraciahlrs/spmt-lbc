@@ -2316,15 +2316,16 @@ end module mpl_set
 
 #ifdef USE_SMPSS
 !$CSS TASK REDUCTION(meas)
-subroutine mpl_exchange_smpss(lb_dom,prc,meas)
+subroutine mpl_exchange_sentinel(lb_dom,sentinel,prc,meas)
   use nrt_lib
   use mpl_set
   type(lb_block),intent(inout) :: lb_dom
+  integer,dimension(6),intent(inout)  :: sentinel
   type(mpl_var),intent(in)     :: prc
   type(measure),intent(inout)  :: meas
 
   
   call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
 
-end subroutine mpl_exchange_smpss
+end subroutine mpl_exchange_sentinel
 #endif  /* USE_SMPSS */

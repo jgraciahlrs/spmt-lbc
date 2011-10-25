@@ -38,27 +38,28 @@ contains
     integer                         :: nTiles, iTile      ! total # of tiles, tile index
     integer,dimension(:,:),pointer  :: bounds_tile        ! boundaries of given tile in parent block
     type(lb_block),dimension(:),pointer                 :: lb_dom_tiles    ! lb_blocks for tiles
+    integer,dimension(:),pointer    :: sentinel           ! sentinel to distinguish between, inner, outer, and all tiles
 
 #ifdef USENOT_SMPSS_MODULES
     ! need to declare explitic interfaces for StarSs tasks
     interface
-       !$CSS TASK REDUCTION(meas)
-       subroutine lb_step_tile_sentinel(lb_dom, tb, s_par, prc, meas, tStep)
+       !$CSS TASK REDUCTION(meas, sentinel)
+       subroutine lb_step_tile_sentinel(lb_dom, sentinel, s_par, prc, meas, tStep)
          use lbm_functions
          implicit none
          type(lb_block),intent(inout)        :: lb_dom
-         integer,dimension(6),intent(inout)  :: tb        ! sentinel for dependency tracking
+         integer,dimension(6),intent(inout)  :: sentinel  ! sentinel for dependency tracking
          type(sim_parameter),intent(in)      :: s_par
          type(mpl_var),intent(in)            :: prc
          type(measure),intent(inout)         :: meas
          integer, intent(in)                 :: tStep
        end subroutine lb_step_tile_sentinel
        !$CSS TASK REDUCTION(meas)
-       subroutine set_bnds_sentinel(lb_dom, tb0, s_par, prc, meas, tStep)
+       subroutine set_bnds_sentinel(lb_dom, sentinel, s_par, prc, meas, tStep)
          use lbm_functions
          implicit none
          type(lb_block), intent(inout)          :: lb_dom
-         integer,dimension(6),intent(inout)     :: tb0       ! sentinel for dependency tracking
+         integer,dimension(6),intent(inout)     :: sentinel       ! sentinel for dependency tracking
          type(sim_parameter),intent(in)         :: s_par
          type(mpl_var),intent(in)               :: prc
          type(measure),intent(inout)            :: meas
@@ -84,14 +85,15 @@ contains
     ! container of tile lb_blocks 
     lb_dom_tiles => prc%lb_dom_tiles
 
+    sentinel => bounds_tile(:,0)   ! set sentinel to "all tiles"
     do iTile = 1, nTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
-       call lb_step_tile_sentinel(lb_dom_tiles(iTile), bounds_tile(:,iTile), s_par, prc, meas, tStep)
+       call lb_step_tile_sentinel(lb_dom_tiles(iTile), sentinel, s_par, prc, meas, tStep)
     end do
 
     ! appply physical boundary conditions
-    call set_bnds_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)
+    call set_bnds_sentinel(lb_dom, sentinel, s_par,prc,meas, tStep)
 
 #endif  /* USE_TILES*/
   end subroutine lb_step
@@ -118,11 +120,11 @@ contains
          integer,dimension(6),intent(inout) :: tb  ! inout: serves also as sentinel to track deps, as lb_dom_tile not in args
          type(mpl_var),intent(in)        :: prc
        end subroutine localize_tile
-!$CSS TASK
+!$CSS TASK REDUCTION(lb_dom)
        subroutine allocate_tile(lb_dom, lb_dom_tile, tb, prc)
          use lbm_functions
          implicit none
-         type(lb_block),intent(in)       :: lb_dom
+         type(lb_block),intent(inout)    :: lb_dom
          type(lb_block),intent(inout)    :: lb_dom_tile
          integer,dimension(6),intent(inout) :: tb
          type(mpl_var),intent(in)        :: prc
@@ -160,7 +162,7 @@ contains
        !write (*,"(Z20 Z20)") loc(lb_dom), loc(prc%bounds_tile(:,iTile))
     end do
     
-    !$CSS WAIT ON(lb_dom)
+    ! $ CSS WAIT ON(lb_dom)
     ! not sure why I need this WAIT ON here, otherwise seg fault. Maybe bug #57?
 
     ! CSS: do not merge these two loops (above and below) or will serialize 
@@ -279,15 +281,15 @@ contains
 end module lbm_step_tiled
 #endif /* USENOT_SMPSS_MODULES */
 
-  !$CSS TASK REDUCTION(meas)
-  subroutine lb_step_tile_sentinel(lb_dom, tb, s_par, prc, meas, tStep)
+  !$CSS TASK REDUCTION(meas, sentinel)
+  subroutine lb_step_tile_sentinel(lb_dom, sentinel, s_par, prc, meas, tStep)
 #ifdef USENOT_SMPSS_MODULES
     use lbm_functions
     use lbm_step_tiled
 #endif /* USENOT_SMPSS_MODULES */
     implicit none
     type(lb_block), intent(inout)   :: lb_dom
-    integer,dimension(6),intent(inout)  :: tb        ! sentinel for dependency tracking
+    integer,dimension(6),intent(inout)  :: sentinel    ! sentinel for dependency tracking
     type(sim_parameter),intent(in)  :: s_par
     type(mpl_var),intent(in)        :: prc
     type(measure),intent(inout)     :: meas
@@ -308,11 +310,11 @@ end module lbm_step_tiled
   end subroutine lb_step_tile_sentinel
 
 !$CSS TASK REDUCTION(meas)
-  subroutine set_bnds_sentinel(lb_dom, tb0, s_par, prc, meas, tStep)
+  subroutine set_bnds_sentinel(lb_dom, sentinel, s_par, prc, meas, tStep)
     use lbm_functions
     implicit none
     type(lb_block), intent(inout)          :: lb_dom
-    integer,dimension(6),intent(inout)     :: tb0       ! sentinel for dependency tracking
+    integer,dimension(6),intent(inout)     :: sentinel   ! sentinel for dependency tracking
     type(sim_parameter),intent(in)         :: s_par
     type(mpl_var),intent(in)               :: prc
     type(measure),intent(inout)            :: meas
@@ -380,7 +382,7 @@ end module lbm_step_tiled
   subroutine swap_lb_dom_pnts_smpss(lb_dom)
     use nrt_lib
     implicit none
-    type(lb_block),intent(inout)       :: lb_dom     ! array (1) due to false renaming user type bug #57
+    type(lb_block),intent(inout)       :: lb_dom
 
     real(R8B),pointer,dimension(:,:,:,:)                :: swapper
 

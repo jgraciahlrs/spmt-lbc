@@ -65,13 +65,14 @@ PROGRAM lbmain
 #ifdef USENOT_SMPSS_MODULES   
    interface
       !$CSS TASK REDUCTION(meas)
-      subroutine mpl_exchange_smpss(lb_dom,prc,meas)
+      subroutine mpl_exchange_sentinel(lb_dom,sentinel,prc,meas)
         use nrt_lib
         use mpl_lib
         type(lb_block),intent(inout) :: lb_dom
+        integer,dimension(6),intent(inout)  :: sentinel     ! sentinel to track deps
         type(mpl_var),intent(in)     :: prc
         type(measure),intent(inout)  :: meas
-      end subroutine mpl_exchange_smpss
+      end subroutine mpl_exchange_sentinel
       !$CSS TASK
       subroutine swap_lb_dom_pnts_smpss(lb_dom)
         use nrt_lib
@@ -206,8 +207,7 @@ PROGRAM lbmain
       ! Exchange between domains 
       if(prc%size > 1) then
 #ifdef USE_SMPSS
-        ! $CSS WAIT ON(lb_dom)
-        call mpl_exchange_smpss(lb_dom,prc,meas)
+        call mpl_exchange_sentinel(lb_dom,prc%bounds_tile(:,0),prc,meas)
 #else
         !$CSS BARRIER
         call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)

@@ -55,7 +55,7 @@ contains
          type(measure),intent(inout)         :: meas
          integer, intent(in)                 :: tStep
        end subroutine lb_step_tile_sentinel
-       !$CSS TASK REDUCTION(meas)
+       !$CSS TASK REDUCTION(meas) HIGHPRIORITY
        subroutine set_bnds_sentinel(lb_dom, sentinel, s_par, prc, meas, tStep)
          use lbm_functions
          implicit none
@@ -66,6 +66,13 @@ contains
          type(measure),intent(inout)            :: meas
          integer, intent(in)                    :: tStep
        end subroutine set_bnds_sentinel
+       !$CSS TASK
+       subroutine dummy_task(lb_dom, sentinel1, sentinel2)
+         use lbm_functions
+         implicit none
+         type(lb_block), intent(inout)          :: lb_dom
+         integer,dimension(6),intent(inout)     :: sentinel1, sentinel2       ! sentinel for dependency tracking
+       end subroutine dummy_task
     end interface
 #endif  /* USENOT_SMPSS_MODULES */
 
@@ -86,19 +93,27 @@ contains
     ! container of tile lb_blocks 
     lb_dom_tiles => prc%lb_dom_tiles
 
-    sentinel => bounds_tile(:,0)   ! set sentinel to "all tiles"
-    do iTile = 1, nTiles
+    ! force "all tiles" and "outer tiles" into the same timestep
+    ! a WAIT ON would be ok, too, but drops deps in temanejo
+    call dummy_task(lb_dom, bounds_tile(:,0),bounds_tile(:,prc%nOuterTiles))
+
+    sentinel => bounds_tile(:,prc%nOuterTiles)   ! set sentinel to "outer tiles"
+    do iTile = 1, prc%nOuterTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
        call lb_step_tile_sentinel(lb_dom_tiles(iTile), sentinel, s_par, prc, meas, tStep)
-
-       if (iTile == prc%nOuterTiles) then
-          ! appply physical boundary conditions
-          call set_bnds_sentinel(lb_dom, sentinel, s_par,prc,meas, tStep)
-       end if
     end do
 
-    !call set_bnds_sentinel(lb_dom, bounds_tile(:,0), s_par,prc,meas, tStep)
+    ! appply physical boundary conditions
+    call set_bnds_sentinel(lb_dom, sentinel, s_par,prc,meas, tStep)
+
+    sentinel => bounds_tile(:,0)   ! set sentinel to "all tiles"
+    do iTile = prc%nOuterTiles+1, nTiles
+       ! select a tile and
+       ! do a single tiled Lattice Boltzmann step
+       call lb_step_tile_sentinel(lb_dom_tiles(iTile), sentinel, s_par, prc, meas, tStep)
+    end do
+
 
 #endif  /* USE_TILES*/
   end subroutine lb_step
@@ -331,6 +346,17 @@ contains
 end module lbm_step_tiled
 #endif /* USENOT_SMPSS_MODULES */
 
+  !$CSS TASK
+  subroutine dummy_task(lb_dom, sentinel1, sentinel2)
+#ifdef USENOT_SMPSS_MODULES
+    use lbm_functions
+#endif /* USENOT_SMPSS_MODULES */
+    implicit none
+    type(lb_block), intent(inout)          :: lb_dom
+    integer,dimension(6),intent(inout)     :: sentinel1, sentinel2       ! sentinel for dependency tracking
+  end subroutine dummy_task
+
+
   !$CSS TASK REDUCTION(meas, sentinel)
   subroutine lb_step_tile_sentinel(lb_dom, sentinel, s_par, prc, meas, tStep)
 #ifdef USENOT_SMPSS_MODULES
@@ -359,7 +385,7 @@ end module lbm_step_tiled
 
   end subroutine lb_step_tile_sentinel
 
-!$CSS TASK REDUCTION(meas)
+!$CSS TASK REDUCTION(meas) HIGHPRIORITY
   subroutine set_bnds_sentinel(lb_dom, sentinel, s_par, prc, meas, tStep)
     use lbm_functions
     implicit none
@@ -428,7 +454,7 @@ end module lbm_step_tiled
     
   end subroutine localize_tile
 
-  !$CSS TASK
+  !$CSS TASK HIGHPRIORITY
   subroutine swap_lb_dom_pnts_smpss(lb_dom)
     use nrt_lib
     implicit none

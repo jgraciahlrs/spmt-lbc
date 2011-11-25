@@ -60,18 +60,27 @@ PROGRAM lbmain
    integer              :: i,j,k
    integer,pointer      :: tstep_cnt 
    logical              :: stop_request    
-   real(R8B),pointer,dimension(:,:,:,:) :: pnt_cur,pnt_nxt
+   real(R8B),pointer,dimension(:,:,:,:) :: swapper
    
+#ifdef USENOT_SMPSS_MODULES   
    interface
-      !$CSS TASK
-      subroutine mpl_exchange_smpss(lb_dom,prc,meas)
+      !$CSS TASK REDUCTION(meas) TARGET(COMM_THREAD) 
+      subroutine mpl_exchange_sentinel(lb_dom,sentinel,prc,meas)
         use nrt_lib
         use mpl_lib
         type(lb_block),intent(inout) :: lb_dom
+        integer,dimension(6),intent(inout)  :: sentinel     ! sentinel to track deps
         type(mpl_var),intent(in)     :: prc
         type(measure),intent(inout)  :: meas
-      end subroutine mpl_exchange_smpss
+      end subroutine mpl_exchange_sentinel
+      !$CSS TASK HIGHPRIORITY
+      subroutine swap_lb_dom_pnts_smpss(lb_dom)
+        use nrt_lib
+        implicit none
+        type(lb_block),intent(inout)       :: lb_dom
+      end subroutine swap_lb_dom_pnts_smpss
    end interface
+#endif /* USENOT_SMPSS_MODULES */
 
    countOut             = 0
    result_state         = 0
@@ -82,6 +91,7 @@ PROGRAM lbmain
 !------------------------------------------------------------------------
 ! Initialize environment
 
+!$CSS START
    call mpl_init(meas,prc)
    call cpu_time_measure(total_start)
    call cpu_time_measure(meas%tStart)
@@ -98,6 +108,11 @@ PROGRAM lbmain
 !------------------------------------------------------------------------
 ! Initialize data and distribute to processes
 !
+#ifdef USE_TILES
+   call init_tile(lb_dom, s_par, prc)
+!$CSS WAIT ON(lb_dom)
+#endif /* USE_TILES */
+
 #ifdef D2Q9
    lb_dom%fIn(NDX(1,:,:,:))=0.4444444444444d0
    lb_dom%fIn(NDX(2:5,:,:,:))=0.111111111111d0
@@ -138,11 +153,6 @@ PROGRAM lbmain
 
    call set_bnd(lb_dom,lb_dom%state,lb_dom%fIn,lb_dom%rho,lb_dom%u,s_par,prc,meas,0)
 
-!$CSS START
-#ifdef USE_TILES
-   call init_tile(lb_dom, s_par, prc)
-#endif /* USE_TILES */
-
 ! for timing
 !$CSS BARRIER
    call cpu_time_measure(meas%tEnd)
@@ -160,9 +170,9 @@ PROGRAM lbmain
    call cpu_time_measure(meas%tStart)
 #endif /* USE_SMPSS */
   
-   tstep_cnt = 0 
+   tstep_cnt = 0
+   lb_dom%pnt_nxt => lb_dom%fIn; lb_dom%pnt_cur => lb_dom%fOut    ! init work arrays 
    do tStep = 1,s_par%tMax
-   pnt_nxt => lb_dom%fIn
 
 #ifndef USE_SMPSS
       call cpu_time_measure(meas%tStart)
@@ -174,44 +184,39 @@ PROGRAM lbmain
       tstep_cnt = tstep_cnt+1
 
       call ramp_u(s_par,tstep)
+      ! swap work array pointers
+#ifdef USE_TILES
+      call swap_lb_dom_pnts_smpss(lb_dom)
+#else
+!$CSS WAIT ON(lb_dom)
+      swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
+#endif
+#ifdef USE_ADCL
 #ifdef COMBINE_STREAM_COLLIDE
       if(mod(tStep,2)==0) then
-      pnt_nxt => lb_dom%fIn
-      pnt_cur => lb_dom%fOut
-#ifdef USE_ADCL
       prc%adcl_active_req=1
-#endif /*USE_ADCL*/
       else
-      pnt_cur => lb_dom%fIn
-      pnt_nxt => lb_dom%fOut
-#ifdef USE_ADCL
       prc%adcl_active_req=0
-#endif /*USE_ADCL*/
       endif
 #else
-      pnt_cur => lb_dom%fIn
-#ifdef USE_ADCL
       prc%adcl_active_req=0
-#endif /*USE_ADCL*/
-      pnt_nxt => lb_dom%fOut
 #endif
+#endif /*USE_ADCL*/
 
       !---------------------------
       ! Exchange between domains 
       if(prc%size > 1) then
-#ifdef USE_TILES
-        ! $CSS WAIT ON(lb_dom)
-        lb_dom%pnt_cur_tile => pnt_cur
-        call mpl_exchange_smpss(lb_dom,prc,meas)
+#ifdef USE_SMPSS
+        call mpl_exchange_sentinel(lb_dom,prc%bounds_tile(:,prc%nOuterTiles),prc,meas)
 #else
         !$CSS BARRIER
-        call mpl_exchange(lb_dom,pnt_cur,prc,meas)
+        call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
 #endif
        end if
 
 
       ! do a single Lattice Boltzmann step
-      call lb_step(lb_dom, pnt_nxt, pnt_cur, s_par, prc, meas, tStep)
+      call lb_step(lb_dom, lb_dom%pnt_nxt, lb_dom%pnt_cur, s_par, prc, meas, tStep)
 
 #ifndef USE_SMPSS
       call cpu_time_measure(meas%tEnd)
@@ -231,9 +236,9 @@ PROGRAM lbmain
 #endif /* USE_SMPSS */
 #endif /* USE_TILES */
          ! calc macroscopic values (is also done in do_kinetic)
-         call calc_macr_vals(lb_dom,lb_dom%u,lb_dom%rho,pnt_nxt,meas)
+         call calc_macr_vals(lb_dom,lb_dom%u,lb_dom%rho,lb_dom%pnt_nxt,meas)
          countOut=countOut+1
-         call calc_rho_ges(lb_dom,pnt_nxt,s_par%rhoges,tStep,prc)
+         call calc_rho_ges(lb_dom,lb_dom%pnt_nxt,s_par%rhoges,tStep,prc)
          if(tStep > s_par%tMax-s_par%tOut  ) s_par%goend=.true. 
          if(result_state == -1) s_par%goend=.true. 
          if(stop_request .eqv. .true.) s_par%goend=.true. 

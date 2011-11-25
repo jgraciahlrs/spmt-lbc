@@ -132,6 +132,8 @@ module nrt_lib
       real(R8B),dimension(:,:,:,:), pointer :: pnt_cur_tile => NULL()
       real(R8B),dimension(:,:,:,:), pointer :: pnt_nxt_tile => NULL()
 #endif /* USE_TILES */
+      real(R8B),dimension(:,:,:,:), pointer :: pnt_cur => NULL()
+      real(R8B),dimension(:,:,:,:), pointer :: pnt_nxt => NULL()
       real(R8B),dimension(:,:,:),   allocatable :: rho
 #ifdef SPONGE
       real(R8B),dimension(:,:,:),   allocatable :: omega,gomega
@@ -156,6 +158,8 @@ module nrt_lib
       real(R8B),dimension(:,:,:,:), pointer :: pnt_cur_tile => NULL()
       real(R8B),dimension(:,:,:,:), pointer :: pnt_nxt_tile => NULL()
 #endif /* USE_TILES */
+      real(R8B),dimension(:,:,:,:), pointer :: pnt_cur => NULL()
+      real(R8B),dimension(:,:,:,:), pointer :: pnt_nxt => NULL()
       real(R8B),dimension(:,:,:),   pointer :: rho  => NULL(), rho_inc => NULL() 
 #ifdef SPONGE
       real(R8B),dimension(:,:,:),   pointer :: omega => NULL(), gomega => NULL() 
@@ -241,6 +245,7 @@ module nrt_lib
 #ifdef USE_TILES
       integer                                          :: tileSize          ! size of tiles without ghost cells
       integer                                          :: nTiles            ! total # of tiles
+      integer                                          :: nOuterTiles            ! total # of outer tiles
       integer,dimension(:,:),pointer                   :: bounds_tile       ! holds boundaries of tiles
       type(lb_block),dimension(:),pointer              :: lb_dom_tiles      ! lb_block's for tiles
 #endif /* USE_TILES */

@@ -116,7 +116,7 @@ LBMODEL += $(FDEF)-DD3Q19
 
 # Performance issues (optional)
 # Combine stream and collide routine, split relaxation 
-#LBMODEL += $(FDEF)-DCOMBINE_STREAM_COLLIDE
+LBMODEL += $(FDEF)-DCOMBINE_STREAM_COLLIDE
 #LBMODEL += $(FDEF)-DSPLITLOOPS
 
 # Memory layout:
@@ -329,19 +329,17 @@ else
 	  SFDEF=-Wf,
 	  SCDEF=-Wc,
 	  SLDEF=-Wl,
-	  COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/smpss-cc/')
-	  CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/smpss-cc/') 
+	  COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/smpss-cc2/')
+	  CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/smpss-cc2/') 
         endif
 	endif
 
-	
-
-      F90_CFLAGS_DEBUG=$(SFDEF)-xf95-cpp-input -O0 -g $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
-      F90_LFLAGS_DEBUG=-O0 -g $(SLDEF)-fbounds-check $(SLDEF)-Wall $(SLDEF)-pedantic $(SLDEF)-fcray-pointer $(SFDEF)-fwhole-file 
+      F90_CFLAGS_DEBUG=$(SFDEF)-xf95-cpp-input -O0 -g $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file
+      F90_LFLAGS_DEBUG=-O0 -g
 
       F90_CFLAGS_OPT=$(SFDEF)-xf95-cpp-input -O3 $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
 #-std=f2003  
-      F90_LFLAGS_OPT= -O3 $(SLDEF)-fcray-pointer $(SFDEF)-fwhole-file  
+      F90_LFLAGS_OPT= -O3
       #--------------------------------
       # OpenMP
       ifeq ($(findstring omp,$(COMPILER)),omp)
@@ -371,7 +369,6 @@ else
 	  F90_LFLAGS_OPT   += -t -k
         endif
      endif
-
    endif
 
 #--------------------------------
@@ -583,6 +580,10 @@ CPP=cpp -C -traditional-cpp
 %.o: %.f90
 	$(COMP) $(CPPDEFINES) $(F90CFLAGS) -c $< $(INCLUDES) $(LIB_CAF)  
 
+# dummy rule to override implicit rule in GNU make; sigh!
+%.o : %.mod
+	;
+
 # Targets:
 # --------
 #echo:
@@ -636,7 +637,7 @@ amr_source: amr_headers
 	@echo '==============================================================='
 
 clean:
-	- rm -f *.o *.mod *.i lbc *.mf95ss smpss_*.F90
+	- rm -f *.o *.mod *.i lbc *.mf95ss smpss_*.{f,F}90 *-adapters.c *-registration.c 
 	@echo '==============================================================='
 	@echo '=  c l e a n e d                                              ='
 	@echo '==============================================================='

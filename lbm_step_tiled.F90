@@ -12,7 +12,9 @@
 module lbm_step_tiled
   use lbm_functions
 
+#ifdef _OPENMP 
   use omp_lib
+#endif
 
 #include "include/replace.h"
 contains
@@ -100,30 +102,30 @@ contains
     call dummy_task(lb_dom, bounds_tile(:,0),bounds_tile(:,prc%nOuterTiles))
 
     sentinel => bounds_tile(:,prc%nOuterTiles)   ! set sentinel to "outer tiles"
-!$omp parallel	
-!$omp do
+!$omp parallel
+!$omp do schedule(runtime)
     do iTile = 1, prc%nOuterTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
        call lb_step_tile_sentinel(lb_dom_tiles(iTile), sentinel, s_par, prc, meas, tStep)
     end do
 !$omp end do
-!$omp end parallel
+!$omp single
 
     ! appply physical boundary conditions
     call set_bnds_sentinel(lb_dom, sentinel, s_par,prc,meas, tStep)
 
     sentinel => bounds_tile(:,0)   ! set sentinel to "all tiles"
-!$omp parallel	
-!$omp do
+
+!$omp end single
+!$omp do schedule(runtime)
     do iTile = prc%nOuterTiles+1, nTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
        call lb_step_tile_sentinel(lb_dom_tiles(iTile), sentinel, s_par, prc, meas, tStep)
     end do
 !$omp end do
-!$omp end parallel	
-
+!$omp end parallel
 
 
 #endif  /* USE_TILES*/
@@ -188,11 +190,15 @@ contains
     if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tiles"
     
     ! localize data fields of all tile lb_blocks
+    !$omp parallel
+    !$omp do schedule(runtime)
     do iTile = 1, prc%nTiles
        call localize_tile(lb_dom, prc%bounds_tile(:,iTile), prc) 
        !write (*,"(Z20 Z20)") loc(lb_dom), loc(prc%bounds_tile(:,iTile))
     end do
-    
+    !$omp end do
+    !$omp end parallel
+
     ! CSS: do not merge these two loops (above and below) or will serialize 
     ! allocate data fields of all tile lb_blocks
     do iTile = 1, prc%nTiles

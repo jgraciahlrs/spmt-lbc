@@ -26,7 +26,7 @@ HPC_TYPE=nehalem
 
 # Add _debug for debugging and smpss for StarSs/SMPSs
 #COMPILER=gnu_debug
-COMPILER=gnu_omp#_smpss#_trace#_debug
+COMPILER=gnu_smpss#_omp#_trace#_debug
 #COMPILER=sx
 #COMPILER=vampir
 #COMPILER=intel_debug

@@ -108,6 +108,11 @@ PROGRAM lbmain
 !------------------------------------------------------------------------
 ! Initialize data and distribute to processes
 !
+! does this fix the MPI serialization?
+if (mod(prc%rk,2)>0) then
+   prc%nghb(1:2) = prc%nghb(2:1:-1)
+endif 
+  
 #ifdef USE_TILES
    call init_tile(lb_dom, s_par, prc)
 !$CSS WAIT ON(lb_dom)

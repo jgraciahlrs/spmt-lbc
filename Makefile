@@ -81,6 +81,12 @@ PARALLEL += $(FDEF)-DCOMM_REDUCED      # Only Exchange necessary densities
 # StarSs options
 #PARALLEL += $(FDEF)-DUSE_SMPSS $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32
 #PARALLEL += $(FDEF)-DUSENOT_SMPSS_MODULES     # use to address bug in smpss, that does not allow to define tasks in fortran modules
+
+# OpenMP options; choose either one
+#PARALLEL += $(FDEF)-DUSE_OMP_FINE	# fine-grained loop level OpenMP version
+PARALLEL += $(FDEF)-DUSE_OMP_COARSE $(FDEF)-DUSE_SMPSS $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32 # coarse-grained tile level OpenMP version, shares code with StarSs version
+ 
+
 #-----------------------------------------------------
 # Model arguments 
 # Lattice Boltzmann Model: 

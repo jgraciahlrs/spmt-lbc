@@ -237,7 +237,7 @@ endif
          call cpu_time_measure(meas%tEnd)
 #ifdef USE_SMPSS
          meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
-         call gather_tiles(prc, lb_dom)
+         !call gather_tiles(prc, lb_dom)
 #endif /* USE_SMPSS */
 #endif /* USE_TILES */
          ! calc macroscopic values (is also done in do_kinetic)

@@ -231,15 +231,15 @@ endif
       !---------------------------
       ! Output and error check 
       if(MOD(tStep,s_par%tOut)==0 .and. tStep >= s_par%tOutBeg) then
-#ifdef USE_TILES
+#ifdef USE_SMPSS
          !$CSS WAIT ON(lb_dom)
          ! time main loop at barrier, excluding output
          call cpu_time_measure(meas%tEnd)
-#ifdef USE_SMPSS
          meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
+#ifdef USE_TILES
          !call gather_tiles(prc, lb_dom)
-#endif /* USE_SMPSS */
 #endif /* USE_TILES */
+#endif /* USE_SMPSS */
          ! calc macroscopic values (is also done in do_kinetic)
          call calc_macr_vals(lb_dom,lb_dom%u,lb_dom%rho,lb_dom%pnt_nxt,meas)
          countOut=countOut+1
@@ -281,10 +281,12 @@ endif
 #endif
    end do
 
+#ifdef USE_SMPSS
 !$CSS FINISH
 ! finish timing main loop
 call cpu_time_measure(meas%tEnd)
 meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
+#endif /* USE_SMPSS */
 
 !------------------------------------------------------------------------
 ! Done with Main loop 

@@ -452,8 +452,8 @@ else
 # Scalasca: simply add scalasca -instrument before command
 
    ifeq ($(findstring scalasca,$(COMPILER)),scalasca)
-      COMP=scalasca -instrument $(COMP) 
-      CCOMP=scalasca -instrument $(CCOMP) 
+      COMP:=scalasca -instrument $(COMP) 
+      CCOMP:=scalasca -instrument $(CCOMP) 
    endif
 
 

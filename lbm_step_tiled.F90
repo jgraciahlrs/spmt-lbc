@@ -12,9 +12,9 @@
 module lbm_step_tiled
   use lbm_functions
 
-#ifdef _OPENMP 
+#ifdef USE_OMP_COARSE 
   use omp_lib
-#endif
+#endif /* USE_OMP_COARSE */
 
 #include "include/replace.h"
 contains
@@ -102,30 +102,38 @@ contains
     call dummy_task(lb_dom, bounds_tile(:,0),bounds_tile(:,prc%nOuterTiles))
 
     sentinel => bounds_tile(:,prc%nOuterTiles)   ! set sentinel to "outer tiles"
+#ifdef USE_OMP_COARSE 
 !$omp parallel
 !$omp do schedule(runtime)
+#endif /* USE_OMP_COARSE */
     do iTile = 1, prc%nOuterTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
        call lb_step_tile_sentinel(lb_dom_tiles(iTile), sentinel, s_par, prc, meas, tStep)
     end do
+#ifdef USE_OMP_COARSE 
 !$omp end do
 !$omp single
+#endif /* USE_OMP_COARSE */
 
     ! appply physical boundary conditions
     call set_bnds_sentinel(lb_dom, sentinel, s_par,prc,meas, tStep)
 
     sentinel => bounds_tile(:,0)   ! set sentinel to "all tiles"
 
+#ifdef USE_OMP_COARSE 
 !$omp end single
 !$omp do schedule(runtime)
+#endif /* USE_OMP_COARSE */
     do iTile = prc%nOuterTiles+1, nTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
        call lb_step_tile_sentinel(lb_dom_tiles(iTile), sentinel, s_par, prc, meas, tStep)
     end do
+#ifdef USE_OMP_COARSE 
 !$omp end do
 !$omp end parallel
+#endif /* USE_OMP_COARSE */
 
 
 #endif  /* USE_TILES*/
@@ -190,14 +198,18 @@ contains
     if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tiles"
     
     ! localize data fields of all tile lb_blocks
+#ifdef USE_OMP_COARSE 
     !$omp parallel
     !$omp do schedule(runtime)
+#endif /* USE_OMP_COARSE */
     do iTile = 1, prc%nTiles
        call localize_tile(lb_dom, prc%bounds_tile(:,iTile), prc) 
        !write (*,"(Z20 Z20)") loc(lb_dom), loc(prc%bounds_tile(:,iTile))
     end do
+#ifdef USE_OMP_COARSE 
     !$omp end do
     !$omp end parallel
+#endif /* USE_OMP_COARSE */
 
     ! CSS: do not merge these two loops (above and below) or will serialize 
     ! allocate data fields of all tile lb_blocks
@@ -463,7 +475,7 @@ end module lbm_step_tiled
     
     
     nghost = prc%n_ghost_nodes
-    ! do first touch in tasks to localize array's pages
+    ! do first touch in tasks to localize arrays pages
     lb_dom%u0(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6))) = 0.0
     lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost) = 0.0
     lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6))) = 0.0

@@ -1,5 +1,5 @@
 !!
-!! Copyright (c) 2010-2011   HLRS, University of Stuttgart. All rights reserved.
+!! Copyright (c) 2010-2012   HLRS, University of Stuttgart. All rights reserved.
 !!
 !! $COPYRIGHT$
 !!
@@ -10,6 +10,9 @@
 
 
 module lbm_functions
+#ifdef USE_OMP_FINE
+   use omp_lib
+#endif /* USE_OMP_FINE */
    use mpl_lib
    use lbmodel
    use function_set
@@ -42,7 +45,11 @@ contains
       call cpu_time_measure(meas%tSt_comm) 
       count_err=0
 
-
+#ifdef USE_OMP_FINE
+      !$omp parallel default(none) private(ftmp,i,j,k) &
+      !$omp& shared(fIn,fOut,opp,lb_dom,state,cx)
+      !$omp do collapse(2)
+#endif /* USE_OMP_FINE */
       do k=1,lb_dom%lx(3)
          do j=1,lb_dom%lx(2)
             do i=1,lb_dom%lx(1)
@@ -94,6 +101,10 @@ endif
             enddo
          enddo
       enddo
+#ifdef USE_OMP_FINE
+      !$omp end do
+      !$omp end parallel
+#endif /* USE_OMP_FINE */
 
       call cpu_time_measure(meas%tEnd_comm)
       meas%prop_duration = meas%tEnd_comm - meas%tSt_comm + meas%prop_duration
@@ -1384,8 +1395,20 @@ call pdf_to_macro(fOut(NDX(:,i,j,k)),rhot,ut)
 #endif /* LES_SMAGORINSKY */
 
 
-
-      ! Single Relaxation time Collision routine
+    ! Single Relaxation time Collision routine
+#ifdef USE_OMP_FINE
+#ifdef LES_SMAGORINSKY	
+      !$omp parallel default(none) private(rholoc,fEq,u,usq,i,j,k,q_bgk,q_sum,tau_turb) &
+      !$omp& shared(fIn,fOut,t2cs2inv,t2cs4inv,s_par,lb_dom,cx,opp,tau0,cs4inv) &	
+      !$omp& firstprivate( omega,rho0 )
+#else
+      !$omp parallel default(none) private(rholoc,fEq,u,usq,i,j,k) &
+      !$omp& shared(fIn,fOut,t2cs2inv,t2cs4inv,s_par,lb_dom,cx,opp) &	
+      !$omp& firstprivate( omega,rho0 )
+#endif/* LES_SMAGORINSKY */
+      
+      !$omp do collapse(2)
+#endif /* USE_OMP_FINE */
       do k=1,lb_dom%lx(3)
          do j=1,lb_dom%lx(2)
             do i=1,lb_dom%lx(1)
@@ -1682,6 +1705,10 @@ endif
             end do
          end do
       end do
+#ifdef USE_OMP_FINE
+      !$omp end do
+      !$omp end parallel
+#endif /* USE_OMP_FINE */
       
       call cpu_time_measure(meas%tEnd_comm)
 
@@ -1694,6 +1721,11 @@ endif
    end subroutine collide_bgk 
   !------------------------------------------------------------------------
 #endif /* COMBINE_STREAM_COLLIDE */
+
+
+
+
+
 
 
 #ifndef TRT
@@ -1712,6 +1744,9 @@ endif
       real(R8B),pointer,dimension(:,:,:,:),intent(out)     :: fOut
       real(R8B),pointer,dimension(:,:,:,:),intent(inout)   ::  fIn
       integer                    :: i,j,k,l
+#ifdef USE_OMP_FINE
+      integer                    :: chunk
+#endif /* USE_OMP_FINE */
 #ifdef SPLITLOOPS
 #define INDEXVAR i
 #define SPLITDIMENSION lb_dom%lx(1)
@@ -1735,6 +1770,16 @@ endif
       t2cs2inv = 1._R8B/(2._R8B*cs*cs)
 
       ! Single Relaxation time Collision routine
+
+#ifdef USE_OMP_FINE
+      !$omp parallel default(none) private(ftmp1,ftmp2,ftmp3,ftmp4,ftmp5,ftmp6,ftmp7,ftmp8,ftmp9,ftmp10,ftmp11, &
+      !$omp& ftmp12,ftmp13,ftmp14,ftmp15,ftmp16,ftmp17,ftmp18,ftmp19, &
+      !$omp& fEq1,fEq2,fEq3,fEq4,fEq5,fEq6,fEq7,fEq8,fEq9,fEq10,fEq11,fEq12,fEq13,fEq14,	&
+      !$omp& fEq15,fEq16,fEq17,fEq18,fEq19,rholoc,u1,u2,u3,usq,i,j,k) &
+      !$omp& shared(fIn,fOut,t2cs2inv,t2cs4inv,lb_dom,cx,opp) firstprivate( omega )
+
+      !$omp do collapse(2)
+#endif /* USE_OMP_FINE */
       do k=1,lb_dom%lx(3)
          do j=1,lb_dom%lx(2)
             do i=1,lb_dom%lx(1)
@@ -2031,6 +2076,10 @@ else
             end do
          end do
       end do
+#ifdef USE_OMP_FINE
+      !$omp end do
+      !$omp end parallel
+#endif /* USE_OMP_FINE */
       
       call cpu_time_measure(meas%tEnd_comm)
 

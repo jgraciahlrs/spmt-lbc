@@ -118,6 +118,10 @@ endif
 !$CSS WAIT ON(lb_dom)
 #endif /* USE_TILES */
 
+#ifdef USE_OMP_FINE
+!$omp parallel default(none) shared(lb_dom)
+!$omp workshare
+#endif /* USE_OMP_FINE */
 #ifdef D2Q9
    lb_dom%fIn(NDX(1,:,:,:))=0.4444444444444d0
    lb_dom%fIn(NDX(2:5,:,:,:))=0.111111111111d0
@@ -129,6 +133,10 @@ endif
 #endif
 !   lb_dom%fIn  = -10.d0
    lb_dom%fOut = lb_dom%fIn
+#ifdef USE_OMP_FINE
+!$omp end workshare nowait
+!$omp end parallel
+#endif /* USE_OMP_FINE */
 
 
    !---------------------------

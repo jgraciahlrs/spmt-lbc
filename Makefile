@@ -26,7 +26,7 @@ HPC_TYPE=nehalem
 
 # Add _debug for debugging and smpss for StarSs/SMPSs
 #COMPILER=gnu_debug
-COMPILER=gnu_omp#_smpss_trace#_debug
+COMPILER=gnu_omp#_smpss#_trace#_debug
 #COMPILER=sx
 #COMPILER=vampir
 #COMPILER=intel_debug
@@ -84,7 +84,7 @@ PARALLEL += $(FDEF)-DCOMM_REDUCED      # Only Exchange necessary densities
 
 # OpenMP options; choose either one
 #PARALLEL += $(FDEF)-DUSE_OMP_FINE	# fine-grained loop level OpenMP version
-PARALLEL += $(FDEF)-DUSE_OMP_COARSE $(FDEF)-DUSE_SMPSS $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32 # coarse-grained tile level OpenMP version, shares code with StarSs version
+PARALLEL += $(FDEF)-DUSE_OMP_COARSE $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32 # coarse-grained tile level OpenMP version, shares code with StarSs version
  
 
 #-----------------------------------------------------

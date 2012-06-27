@@ -26,7 +26,7 @@ HPC_TYPE=nehalem
 
 # Add _debug for debugging and smpss for StarSs/SMPSs
 #COMPILER=gnu_debug
-COMPILER=gnu_omp#_smpss#_trace#_debug
+COMPILER=gnu_smpss#_omp#_trace#_debug
 #COMPILER=sx
 #COMPILER=vampir
 #COMPILER=intel_debug
@@ -79,12 +79,12 @@ PARALLEL += $(FDEF)-DCOMM_REDUCED      # Only Exchange necessary densities
 #PARALLEL += $(FDEF)-DCAF_BENCH=2       # instead of communication routine, run a little caf benchmark 
 
 # StarSs options
-#PARALLEL += $(FDEF)-DUSE_SMPSS $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32
-#PARALLEL += $(FDEF)-DUSENOT_SMPSS_MODULES     # use to address bug in smpss, that does not allow to define tasks in fortran modules
+PARALLEL += $(FDEF)-DUSE_SMPSS $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32
+PARALLEL += $(FDEF)-DUSENOT_SMPSS_MODULES     # use to address bug in smpss, that does not allow to define tasks in fortran modules
 
 # OpenMP options; choose either one
 #PARALLEL += $(FDEF)-DUSE_OMP_FINE	# fine-grained loop level OpenMP version
-PARALLEL += $(FDEF)-DUSE_OMP_COARSE $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32 # coarse-grained tile level OpenMP version, shares code with StarSs version
+#PARALLEL += $(FDEF)-DUSE_OMP_COARSE $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32 # coarse-grained tile level OpenMP version, shares code with StarSs version
  
 
 #-----------------------------------------------------

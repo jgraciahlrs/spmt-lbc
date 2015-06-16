@@ -98,7 +98,7 @@ contains
    !
       type(measure),intent(inout) :: meas
       type(mpl_var)   :: prc
-
+      integer	      :: mpi_thread_level
 
       prc%ierr           =  0
       prc%root_th        = -1
@@ -129,7 +129,18 @@ contains
 
 
 #ifdef USE_MPI
-      call MPI_INIT(prc%ierr)
+      call MPI_INIT_THREAD(MPI_THREAD_SERIALIZED, mpi_thread_level, prc%ierr)
+      if (MPI_THREAD_SERIALIZED /= mpi_thread_level) then
+         ! did not get suffifient guarantees on MPI thread safety
+#ifdef USE_SMPSS
+         write (*,*) "This MPI version is running with low thread safety levels"
+         write (*,*) "Exiting ..."
+         call abort()
+#else 
+         write (*,*) "Warning: This MPI version is running with low thread safety levels"
+#endif
+      end if
+
       call MPI_COMM_RANK(MPI_COMM_WORLD,prc%rk,prc%ierr)
       call MPI_COMM_SIZE(MPI_COMM_WORLD,prc%size,prc%ierr)
 

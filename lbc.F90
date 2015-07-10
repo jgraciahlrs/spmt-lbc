@@ -181,7 +181,8 @@ endif
       call swap_lb_dom_pnts_smpss(lb_dom)
 #else
       swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
-#endif
+#endif /* USE_SMPSS */
+
 #ifdef USE_ADCL
 #ifdef COMBINE_STREAM_COLLIDE
       if(mod(tStep,2)==0) then
@@ -221,9 +222,6 @@ endif
          ! time main loop at barrier, excluding output
          call cpu_time_measure(meas%tEnd)
          meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
-#ifdef USE_TILES
-         !call gather_tiles(prc, lb_dom)
-#endif /* USE_TILES */
 #endif /* USE_SMPSS */
          ! calc macroscopic values (is also done in do_kinetic)
          call calc_macr_vals(lb_dom,lb_dom%u,lb_dom%rho,lb_dom%pnt_nxt,meas)

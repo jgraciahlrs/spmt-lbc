@@ -38,7 +38,6 @@ contains
     type(measure)                   :: meas
     integer, intent(in)             :: tStep
     
-#ifdef USE_TILES
     integer                         :: nTiles, iTile      ! total # of tiles, tile index
     integer                         :: nOuterTiles        ! total # of outer tiles
     integer,dimension(:,:),pointer  :: bounds_tile        ! boundaries of given tile in parent block
@@ -108,11 +107,9 @@ contains
 #endif /* USE_OMP_COARSE */
 
     !$OMP TASKWAIT
-#endif  /* USE_TILES*/
   end subroutine lb_step
 
 
-#ifdef USE_TILES
 
 
   ! initialize machinery for tiles implementation
@@ -199,7 +196,7 @@ contains
 #ifdef LAYOUT_LIJK
        lb(1:3) = lb(2:4)                         ! spatial indices should be in lb(1:3) regardless of LAYOUT_IJKL/LIJK
        tS(1:3) = tS(2:4)
-#endif
+#endif /* LAYOUT_LIJK */
 
        ! copy data from tile to block, exclude ghost cells and first physical cell (aka boundary cell) as are invalid
        lb_dom%pnt_nxt(NDX(:,tb(1)+nghost+1:tb(2)-nghost-1,tb(3)+nghost+1:tb(4)-nghost-1,tb(5)+nghost+1:tb(6)-nghost-1)) = &
@@ -297,7 +294,6 @@ contains
     !write (*,*) tb
 
   end subroutine tile_bounds
-#endif  /* USE_TILES*/
 
   subroutine lb_step_tile(lb_dom, pnt_nxt, pnt_cur, s_par, prc, meas, tStep)
     implicit none

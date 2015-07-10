@@ -62,26 +62,6 @@ PROGRAM lbmain
    logical              :: stop_request    
    real(R8B),pointer,dimension(:,:,:,:) :: swapper
    
-#ifdef USENOT_SMPSS_MODULES   
-   interface
-      !$CSS TASK REDUCTION(meas) TARGET(COMM_THREAD) 
-      subroutine mpl_exchange_sentinel(lb_dom,sentinel,prc,meas)
-        use nrt_lib
-        use mpl_lib
-        type(lb_block),intent(inout) :: lb_dom
-        integer,dimension(6),intent(inout)  :: sentinel     ! sentinel to track deps
-        type(mpl_var),intent(in)     :: prc
-        type(measure),intent(inout)  :: meas
-      end subroutine mpl_exchange_sentinel
-      !$CSS TASK HIGHPRIORITY
-      subroutine swap_lb_dom_pnts_smpss(lb_dom)
-        use nrt_lib
-        implicit none
-        type(lb_block),intent(inout)       :: lb_dom
-      end subroutine swap_lb_dom_pnts_smpss
-   end interface
-#endif /* USENOT_SMPSS_MODULES */
-
    countOut             = 0
    result_state         = 0
    tstep_cnt => gtstep_cur

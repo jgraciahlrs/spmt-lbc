@@ -45,41 +45,6 @@ contains
     type(lb_block),dimension(:),pointer                 :: lb_dom_tiles    ! lb_blocks for tiles
     integer,dimension(:),pointer    :: sentinel           ! sentinel to distinguish between, inner, outer, and all tiles
 
-#ifdef USENOT_SMPSS_MODULES
-    ! need to declare explitic interfaces for StarSs tasks
-    interface
-       !$CSS TASK REDUCTION(meas, sentinel)
-       subroutine lb_step_tile_sentinel(lb_dom, sentinel, s_par, prc, meas, tStep)
-         use lbm_functions
-         implicit none
-         type(lb_block),intent(inout)        :: lb_dom
-         integer,dimension(6),intent(inout)  :: sentinel  ! sentinel for dependency tracking
-         type(sim_parameter),intent(in)      :: s_par
-         type(mpl_var),intent(in)            :: prc
-         type(measure),intent(inout)         :: meas
-         integer, intent(in)                 :: tStep
-       end subroutine lb_step_tile_sentinel
-       !$CSS TASK REDUCTION(meas) HIGHPRIORITY
-       subroutine set_bnds_sentinel(lb_dom, sentinel, s_par, prc, meas, tStep)
-         use lbm_functions
-         implicit none
-         type(lb_block), intent(inout)          :: lb_dom
-         integer,dimension(6),intent(inout)     :: sentinel       ! sentinel for dependency tracking
-         type(sim_parameter),intent(in)         :: s_par
-         type(mpl_var),intent(in)               :: prc
-         type(measure),intent(inout)            :: meas
-         integer, intent(in)                    :: tStep
-       end subroutine set_bnds_sentinel
-       !$CSS TASK
-       subroutine dummy_task(lb_dom, sentinel1, sentinel2)
-         use lbm_functions
-         implicit none
-         type(lb_block), intent(inout)          :: lb_dom
-         integer,dimension(6),intent(inout)     :: sentinel1, sentinel2       ! sentinel for dependency tracking
-       end subroutine dummy_task
-    end interface
-#endif  /* USENOT_SMPSS_MODULES */
-
     !if (prc%rk==0) then
     !   write (*,*) ' .... Doing tiled lb_step!'
     !endif
@@ -149,29 +114,6 @@ contains
     type(lb_block),intent(inout)    :: lb_dom
     type(sim_parameter), intent(inout)  :: s_par 
     type(mpl_var),intent(inout)     :: prc
-
-#ifdef USENOT_SMPSS_MODULES
-    ! need to declare explitic interfaces for StarSs tasks
-    interface
-!$CSS TASK REDUCTION(lb_dom)
-       subroutine localize_tile(lb_dom, tb, prc)
-         use lbm_functions
-         implicit none
-         type(lb_block),intent(inout)    :: lb_dom
-         integer,dimension(6),intent(inout) :: tb  ! inout: serves also as sentinel to track deps, as lb_dom_tile not in args
-         type(mpl_var),intent(in)        :: prc
-       end subroutine localize_tile
-!$CSS TASK REDUCTION(lb_dom)
-       subroutine allocate_tile(lb_dom, lb_dom_tile, tb, prc)
-         use lbm_functions
-         implicit none
-         type(lb_block),intent(inout)    :: lb_dom
-         type(lb_block),intent(inout)    :: lb_dom_tile
-         integer,dimension(6),intent(inout) :: tb
-         type(mpl_var),intent(in)        :: prc
-       end subroutine allocate_tile
-    end interface
-#endif /* USENOT_SMPSS_MODULES */
 
     integer                         :: alloc_stat
     integer                         :: iTile
@@ -371,15 +313,9 @@ contains
 #endif
   end subroutine lb_step_tile
 
-#ifdef USENOT_SMPSS_MODULES
-end module lbm_step_tiled
-#endif /* USENOT_SMPSS_MODULES */
 
   !$CSS TASK
   subroutine dummy_task(lb_dom, sentinel1, sentinel2)
-#ifdef USENOT_SMPSS_MODULES
-    use lbm_functions
-#endif /* USENOT_SMPSS_MODULES */
     implicit none
     type(lb_block), intent(inout)          :: lb_dom
     integer,dimension(6),intent(inout)     :: sentinel1, sentinel2       ! sentinel for dependency tracking
@@ -388,10 +324,6 @@ end module lbm_step_tiled
 
   !$CSS TASK REDUCTION(meas, sentinel)
   subroutine lb_step_tile_sentinel(lb_dom, sentinel, s_par, prc, meas, tStep)
-#ifdef USENOT_SMPSS_MODULES
-    use lbm_functions
-    use lbm_step_tiled
-#endif /* USENOT_SMPSS_MODULES */
     implicit none
     type(lb_block), intent(inout)   :: lb_dom
     integer,dimension(6),intent(inout)  :: sentinel    ! sentinel for dependency tracking
@@ -495,8 +427,6 @@ end module lbm_step_tiled
 
   end subroutine swap_lb_dom_pnts_smpss
 
-#ifndef USENOT_SMPSS_MODULES
 end module lbm_step_tiled
-#endif /* !USENOT_SMPSS_MODULES */
 
 #endif /* USE_TILES (all the file) */ 

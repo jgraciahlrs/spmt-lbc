@@ -145,7 +145,9 @@ contains
     !$omp do schedule(runtime)
 #endif /* USE_OMP_COARSE */
     do iTile = 1, prc%nTiles
+       !$OMP TASK INOUT(prc%lb_dom_tiles(iTile))  CONCURRENT(lb_dom) label(localize_tile) 
        call localize_tile(lb_dom, prc%bounds_tile(:,iTile), prc) 
+       !$OMP END TASK
        !write (*,"(Z20 Z20)") loc(lb_dom), loc(prc%bounds_tile(:,iTile))
     end do
 #ifdef USE_OMP_COARSE 
@@ -156,7 +158,9 @@ contains
     ! CSS: do not merge these two loops (above and below) or will serialize 
     ! allocate data fields of all tile lb_blocks
     do iTile = 1, prc%nTiles
+       !$OMP TASK INOUT(prc%lb_dom_tiles(iTile)) label(allocate_tile)
        call allocate_tile(lb_dom, prc%lb_dom_tiles(iTile), prc%bounds_tile(:,iTile), prc) 
+       !$OMP END TASK
     end do
   end subroutine init_tile
 
@@ -364,7 +368,6 @@ contains
   end subroutine set_bnds_sentinel
 
   ! allocate memory for tiles and init them
-  !$CSS TASK 
   subroutine allocate_tile(lb_dom, lb_dom_tile, tb, prc)
     use lbm_functions
     implicit none
@@ -395,7 +398,6 @@ contains
     
   end subroutine allocate_tile
 
-  !$CSS TASK REDUCTION(lb_dom)
   subroutine localize_tile(lb_dom, tb, prc)
     use lbm_functions
     implicit none

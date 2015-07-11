@@ -71,7 +71,6 @@ PROGRAM lbmain
 !------------------------------------------------------------------------
 ! Initialize environment
 
-!$CSS START
    call mpl_init(meas,prc)
    call cpu_time_measure(total_start)
    call cpu_time_measure(meas%tStart)
@@ -95,7 +94,7 @@ endif
   
 #ifdef USE_TILES
    call init_tile(lb_dom, s_par, prc)
-!$CSS WAIT ON(lb_dom)
+!$OMP TASKWAIT !!ON(lb_dom)
 #endif /* USE_TILES */
 
 #ifdef USE_OMP_FINE
@@ -147,7 +146,7 @@ endif
    call set_bnd(lb_dom,lb_dom%state,lb_dom%fIn,lb_dom%rho,lb_dom%u,s_par,prc,meas,0)
 
 ! for timing
-!$CSS BARRIER
+!$OMP TASKWAIT
    call cpu_time_measure(meas%tEnd)
    meas%init_duration = real(meas%tEnd,8) - real(meas%tStart,8)
 !------------------------------------------------------------------------
@@ -178,10 +177,9 @@ endif
 
       call ramp_u(s_par,tstep)
       ! swap work array pointers
-#ifdef USE_TILES
+#ifdef USE_SMPSS
       call swap_lb_dom_pnts_smpss(lb_dom)
 #else
-!$CSS WAIT ON(lb_dom)
       swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
 #endif
 #ifdef USE_ADCL
@@ -202,7 +200,6 @@ endif
 #ifdef USE_SMPSS
         call mpl_exchange_sentinel(lb_dom,prc%bounds_tile(:,prc%nOuterTiles),prc,meas)
 #else
-        !$CSS BARRIER
         call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
 #endif
        end if
@@ -220,7 +217,7 @@ endif
       ! Output and error check 
       if(MOD(tStep,s_par%tOut)==0 .and. tStep >= s_par%tOutBeg) then
 #ifdef USE_SMPSS
-         !$CSS WAIT ON(lb_dom)
+         !$OMP TASKWAIT !!ON(lb_dom)
          ! time main loop at barrier, excluding output
          call cpu_time_measure(meas%tEnd)
          meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
@@ -270,7 +267,7 @@ endif
    end do
 
 #ifdef USE_SMPSS
-!$CSS FINISH
+!$OMP TASKWAIT
 ! finish timing main loop
 call cpu_time_measure(meas%tEnd)
 meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)

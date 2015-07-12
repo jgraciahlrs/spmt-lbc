@@ -66,6 +66,7 @@ contains
     ! a WAIT ON would be ok, too, but drops deps in temanejo
     call dummy_task(lb_dom, bounds_tile(:,0),bounds_tile(:,prc%nOuterTiles))
 
+    !$OMP TASKWAIT
     sentinel => bounds_tile(:,prc%nOuterTiles)   ! set sentinel to "outer tiles"
 #ifdef USE_OMP_COARSE 
 !$omp parallel
@@ -74,7 +75,9 @@ contains
     do iTile = 1, prc%nOuterTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
-       call lb_step_tile_sentinel(lb_dom_tiles(iTile), sentinel, s_par, prc, meas, tStep)
+       !$OMP TASK INOUT(lb_dom_tiles(iTile)) CONCURRENT(sentinel) label(lb_step_tile_outer) no_copy_deps
+       call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
+       !$OMP END TASK
     end do
 #ifdef USE_OMP_COARSE 
 !$omp end do
@@ -82,7 +85,9 @@ contains
 #endif /* USE_OMP_COARSE */
 
     ! appply physical boundary conditions
-    call set_bnds_sentinel(lb_dom, sentinel, s_par,prc,meas, tStep)
+    !$OMP TASK INOUT(lb_dom, sentinel) label(set_bnds) no_copy_deps
+    call set_bnds_task(lb_dom, s_par,prc,meas, tStep)
+    !$OMP END TASK
 
     sentinel => bounds_tile(:,0)   ! set sentinel to "all tiles"
 
@@ -93,14 +98,16 @@ contains
     do iTile = prc%nOuterTiles+1, nTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
-       call lb_step_tile_sentinel(lb_dom_tiles(iTile), sentinel, s_par, prc, meas, tStep)
+       !$OMP TASK INOUT(lb_dom_tiles(iTile)) CONCURRENT(sentinel) label(lb_step_tile_inner) no_copy_deps
+       call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
+       !$OMP END TASK
     end do
 #ifdef USE_OMP_COARSE 
 !$omp end do
 !$omp end parallel
 #endif /* USE_OMP_COARSE */
 
-
+    !$OMP TASKWAIT
 #endif  /* USE_TILES*/
   end subroutine lb_step
 
@@ -145,7 +152,7 @@ contains
     !$omp do schedule(runtime)
 #endif /* USE_OMP_COARSE */
     do iTile = 1, prc%nTiles
-       !$OMP TASK INOUT(prc%lb_dom_tiles(iTile))  CONCURRENT(lb_dom) label(localize_tile) 
+       !$OMP TASK INOUT(prc%lb_dom_tiles(iTile))  CONCURRENT(lb_dom) label(localize_tile) no_copy_deps
        call localize_tile(lb_dom, prc%bounds_tile(:,iTile), prc) 
        !$OMP END TASK
        !write (*,"(Z20 Z20)") loc(lb_dom), loc(prc%bounds_tile(:,iTile))
@@ -158,7 +165,7 @@ contains
     ! CSS: do not merge these two loops (above and below) or will serialize 
     ! allocate data fields of all tile lb_blocks
     do iTile = 1, prc%nTiles
-       !$OMP TASK INOUT(prc%lb_dom_tiles(iTile)) label(allocate_tile)
+       !$OMP TASK INOUT(prc%lb_dom_tiles(iTile)) label(allocate_tile) no_copy_deps
        call allocate_tile(lb_dom, prc%lb_dom_tiles(iTile), prc%bounds_tile(:,iTile), prc) 
        !$OMP END TASK
     end do
@@ -326,11 +333,9 @@ contains
   end subroutine dummy_task
 
 
-  !$CSS TASK REDUCTION(meas, sentinel)
-  subroutine lb_step_tile_sentinel(lb_dom, sentinel, s_par, prc, meas, tStep)
+  subroutine lb_step_tile_task(lb_dom, s_par, prc, meas, tStep)
     implicit none
     type(lb_block), intent(inout)   :: lb_dom
-    integer,dimension(6),intent(inout)  :: sentinel    ! sentinel for dependency tracking
     type(sim_parameter),intent(in)  :: s_par
     type(mpl_var),intent(in)        :: prc
     type(measure),intent(inout)     :: meas
@@ -348,14 +353,12 @@ contains
 
     swapper=>lb_dom%pnt_nxt_tile; lb_dom%pnt_nxt_tile=>lb_dom%pnt_cur_tile; lb_dom%pnt_cur_tile=>swapper
 
-  end subroutine lb_step_tile_sentinel
+  end subroutine lb_step_tile_task
 
-!$CSS TASK REDUCTION(meas) HIGHPRIORITY
-  subroutine set_bnds_sentinel(lb_dom, sentinel, s_par, prc, meas, tStep)
+  subroutine set_bnds_task(lb_dom, s_par, prc, meas, tStep)
     use lbm_functions
     implicit none
     type(lb_block), intent(inout)          :: lb_dom
-    integer,dimension(6),intent(inout)     :: sentinel   ! sentinel for dependency tracking
     type(sim_parameter),intent(in)         :: s_par
     type(mpl_var),intent(in)               :: prc
     type(measure),intent(inout)            :: meas
@@ -365,7 +368,7 @@ contains
     call set_nrbc_antibb(lb_dom,lb_dom%pnt_nxt,lb_dom%pnt_cur,s_par,prc,meas)
     call set_bnd(lb_dom,lb_dom%state,lb_dom%pnt_nxt,lb_dom%rho,lb_dom%u,s_par,prc,meas,tStep)
 
-  end subroutine set_bnds_sentinel
+  end subroutine set_bnds_task
 
   ! allocate memory for tiles and init them
   subroutine allocate_tile(lb_dom, lb_dom_tile, tb, prc)
@@ -417,8 +420,7 @@ contains
     
   end subroutine localize_tile
 
-  !$CSS TASK HIGHPRIORITY
-  subroutine swap_lb_dom_pnts_smpss(lb_dom)
+  subroutine swap_lb_dom_pnts_task(lb_dom)
     use nrt_lib
     implicit none
     type(lb_block),intent(inout)       :: lb_dom
@@ -427,7 +429,7 @@ contains
 
     swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
 
-  end subroutine swap_lb_dom_pnts_smpss
+  end subroutine swap_lb_dom_pnts_task
 
 end module lbm_step_tiled
 

@@ -63,9 +63,10 @@ contains
 
     ! force "all tiles" and "outer tiles" into the same timestep
     ! a WAIT ON would be ok, too, but drops deps in temanejo
-    call dummy_task(lb_dom, bounds_tile(:,0),bounds_tile(:,prc%nOuterTiles))
+    !$OMP TASK INOUT(lb_dom, bounds_tile(:,0),bounds_tile(:,prc%nOuterTiles)) label(dummy_task) no_copy_deps
+    call dummy_task()
+    !$OMP END TASK
 
-    !$OMP TASKWAIT
     sentinel => bounds_tile(:,prc%nOuterTiles)   ! set sentinel to "outer tiles"
 #ifdef USE_OMP_COARSE 
 !$omp parallel
@@ -321,11 +322,7 @@ contains
   end subroutine lb_step_tile
 
 
-  !$CSS TASK
-  subroutine dummy_task(lb_dom, sentinel1, sentinel2)
-    implicit none
-    type(lb_block), intent(inout)          :: lb_dom
-    integer,dimension(6),intent(inout)     :: sentinel1, sentinel2       ! sentinel for dependency tracking
+  subroutine dummy_task()
   end subroutine dummy_task
 
 

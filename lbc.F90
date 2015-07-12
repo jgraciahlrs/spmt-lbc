@@ -178,9 +178,7 @@ endif
       call ramp_u(s_par,tstep)
       ! swap work array pointers
 #ifdef USE_SMPSS
-      !$OMP TASK INOUT(lb_dom) label(swap_lb_dom_pnts_smpss)
       call swap_lb_dom_pnts_smpss(lb_dom)
-      !$OMP END TASK
 #else
       swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
 #endif
@@ -200,9 +198,7 @@ endif
       ! Exchange between domains 
       if(prc%size > 1) then
 #ifdef USE_SMPSS
-        !$OMP TASK INOUT(lb_dom, prc%bounds_tile(:,prc%nOuterTiles)) label(mpl_exchange_sentinel)   
         call mpl_exchange_sentinel(lb_dom,prc%bounds_tile(:,prc%nOuterTiles),prc,meas)
-        !$OMP END TASK
 #else
         call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
 #endif

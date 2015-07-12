@@ -417,6 +417,7 @@ contains
     
   end subroutine localize_tile
 
+  !$CSS TASK HIGHPRIORITY
   subroutine swap_lb_dom_pnts_smpss(lb_dom)
     use nrt_lib
     implicit none

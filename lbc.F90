@@ -94,7 +94,7 @@ endif
   
 #ifdef USE_TILES
    call init_tile(lb_dom, s_par, prc)
-!$OMP TASKWAIT !!ON(lb_dom)
+!$OMP TASKWAIT ON(lb_dom)
 #endif /* USE_TILES */
 
 #ifdef USE_OMP_FINE

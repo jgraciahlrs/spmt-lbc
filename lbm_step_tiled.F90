@@ -107,7 +107,6 @@ contains
 !$omp end parallel
 #endif /* USE_OMP_COARSE */
 
-    !$OMP TASKWAIT
   end subroutine lb_step
 
 

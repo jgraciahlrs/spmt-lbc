@@ -2326,7 +2326,6 @@ end subroutine mpl_set_nodes_to_send
 end module mpl_set
 
 #ifdef USE_SMPSS
-!$CSS TASK REDUCTION(meas)
 subroutine mpl_exchange_sentinel(lb_dom,sentinel,prc,meas)
   use nrt_lib
   use mpl_set

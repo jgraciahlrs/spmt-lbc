@@ -163,7 +163,7 @@ contains
     ! CSS: do not merge these two loops (above and below) or will serialize 
     ! allocate data fields of all tile lb_blocks
     do iTile = 1, prc%nTiles
-       !$OMP TASK INOUT(prc%lb_dom_tiles(iTile)) label(allocate_tile) no_copy_deps
+       !$OMP TASK INOUT(prc%lb_dom_tiles(iTile)) CONCURRENT(lb_dom) label(allocate_tile) no_copy_deps
        call allocate_tile(lb_dom, prc%lb_dom_tiles(iTile), prc%bounds_tile(:,iTile), prc) 
        !$OMP END TASK
     end do

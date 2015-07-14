@@ -12,15 +12,15 @@
 module lbm_step_tiled
   use lbm_functions
 
-#ifdef USE_OMP_COARSE 
+#ifdef USE_OMP_COARSE
   use omp_lib
 #endif /* USE_OMP_COARSE */
 
 #include "include/replace.h"
 contains
 
-  ! TODO: 
-  !   
+  ! TODO:
+  !
   ! lb_step() is called from the main time loop
   ! does one lbm step, ie. propagate & collide
   ! and possibly boundary conditions.
@@ -37,7 +37,7 @@ contains
     type(mpl_var),intent(inout)     :: prc
     type(measure)                   :: meas
     integer, intent(in)             :: tStep
-    
+
     integer                         :: nTiles, iTile      ! total # of tiles, tile index
     integer                         :: nOuterTiles        ! total # of outer tiles
     integer,dimension(:,:),pointer  :: bounds_tile        ! boundaries of given tile in parent block
@@ -54,11 +54,11 @@ contains
     !  number of tiles
     nTiles = prc%nTiles
 
-    ! tile boundaries within parent block 
-    bounds_tile => prc%bounds_tile 
+    ! tile boundaries within parent block
+    bounds_tile => prc%bounds_tile
     ! bounds_tile needs to be pointer, otherwise will be overwritten -> race-condition
 
-    ! container of tile lb_blocks 
+    ! container of tile lb_blocks
     lb_dom_tiles => prc%lb_dom_tiles
 
     ! force "all tiles" and "outer tiles" into the same timestep
@@ -68,30 +68,30 @@ contains
     !$OMP END TASK
 
     sentinel => bounds_tile(:,prc%nOuterTiles)   ! set sentinel to "outer tiles"
-#ifdef USE_OMP_COARSE 
+#ifdef USE_OMP_COARSE
 !$omp parallel
 !$omp do schedule(runtime)
 #endif /* USE_OMP_COARSE */
     do iTile = 1, prc%nOuterTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
-       !$OMP TASK INOUT(lb_dom_tiles(iTile)) CONCURRENT(sentinel) label(lb_step_tile_outer) no_copy_deps
+       !$OMP TASK INOUT(lb_dom_tiles(iTile)) CONCURRENT(sentinel) PRIORITY(50) label(lb_step_tile_outer) no_copy_deps
        call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
        !$OMP END TASK
     end do
-#ifdef USE_OMP_COARSE 
+#ifdef USE_OMP_COARSE
 !$omp end do
 !$omp single
 #endif /* USE_OMP_COARSE */
 
     ! appply physical boundary conditions
-    !$OMP TASK INOUT(lb_dom, sentinel) label(set_bnds) no_copy_deps
+    !$OMP TASK INOUT(lb_dom, sentinel) PRIORITY(50)  label(set_bnds) no_copy_deps
     call set_bnds_task(lb_dom, s_par,prc,meas, tStep)
     !$OMP END TASK
 
     sentinel => bounds_tile(:,0)   ! set sentinel to "all tiles"
 
-#ifdef USE_OMP_COARSE 
+#ifdef USE_OMP_COARSE
 !$omp end single
 !$omp do schedule(runtime)
 #endif /* USE_OMP_COARSE */
@@ -102,7 +102,7 @@ contains
        call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
        !$OMP END TASK
     end do
-#ifdef USE_OMP_COARSE 
+#ifdef USE_OMP_COARSE
 !$omp end do
 !$omp end parallel
 #endif /* USE_OMP_COARSE */
@@ -113,10 +113,10 @@ contains
 
 
   ! initialize machinery for tiles implementation
-  subroutine init_tile(lb_dom, s_par, prc) 
+  subroutine init_tile(lb_dom, s_par, prc)
     implicit none
     type(lb_block),intent(inout)    :: lb_dom
-    type(sim_parameter), intent(inout)  :: s_par 
+    type(sim_parameter), intent(inout)  :: s_par
     type(mpl_var),intent(inout)     :: prc
 
     integer                         :: alloc_stat
@@ -128,42 +128,42 @@ contains
 
     ! assert compatibility of tile size and domain size
     if ((modulo(lb_dom%lx(1),prc%tileSize)/=0) &
-         &.or. (modulo(lb_dom%lx(2),prc%tileSize)/=0) & 
+         &.or. (modulo(lb_dom%lx(2),prc%tileSize)/=0) &
          &.or. (modulo(lb_dom%lx(3),prc%tileSize)/=0)) then
        write (*,*) "Fatal error: domain sizes must be and integer multiple of TILESIZE=", prc%tileSize
        write (*,*) "Exiting ..."
        s_par%goend = .true.        ! why is this not sufficient?
        call abort()
     end if
-    
-    ! compute tile boundaries within parent block 
+
+    ! compute tile boundaries within parent block
     call tile_bounds(prc%tileSize, prc%nTiles, lb_dom%lx, prc%n_ghost_nodes, prc%bounds_tile, prc%nOuterTiles)
 
     ! allocate space for a container of tile lb_blocks
     allocate(prc%lb_dom_tiles(prc%nTiles),stat=alloc_stat)
     if(alloc_stat /=0) write(*,*) "Error allocating lb_dom_tiles"
-    
+
     ! localize data fields of all tile lb_blocks
-#ifdef USE_OMP_COARSE 
+#ifdef USE_OMP_COARSE
     !$omp parallel
     !$omp do schedule(runtime)
 #endif /* USE_OMP_COARSE */
     do iTile = 1, prc%nTiles
        !$OMP TASK INOUT(prc%lb_dom_tiles(iTile))  CONCURRENT(lb_dom) label(localize_tile) no_copy_deps
-       call localize_tile(lb_dom, prc%bounds_tile(:,iTile), prc) 
+       call localize_tile(lb_dom, prc%bounds_tile(:,iTile), prc)
        !$OMP END TASK
        !write (*,"(Z20 Z20)") loc(lb_dom), loc(prc%bounds_tile(:,iTile))
     end do
-#ifdef USE_OMP_COARSE 
+#ifdef USE_OMP_COARSE
     !$omp end do
     !$omp end parallel
 #endif /* USE_OMP_COARSE */
 
-    ! CSS: do not merge these two loops (above and below) or will serialize 
+    ! CSS: do not merge these two loops (above and below) or will serialize
     ! allocate data fields of all tile lb_blocks
     do iTile = 1, prc%nTiles
        !$OMP TASK INOUT(prc%lb_dom_tiles(iTile)) CONCURRENT(lb_dom) label(allocate_tile) no_copy_deps
-       call allocate_tile(lb_dom, prc%lb_dom_tiles(iTile), prc%bounds_tile(:,iTile), prc) 
+       call allocate_tile(lb_dom, prc%lb_dom_tiles(iTile), prc%bounds_tile(:,iTile), prc)
        !$OMP END TASK
     end do
   end subroutine init_tile
@@ -205,14 +205,14 @@ contains
 
   end subroutine gather_tiles
 
- 
-  ! calculates boundaries of tile with given number i within parent block    
+
+  ! calculates boundaries of tile with given number i within parent block
   subroutine tile_bounds(ts, nT, lx, ng, tb, nOT)
     implicit none
-    integer,intent(in)           :: ts, nT, lx(3), ng        ! tile size, tile number, domain size and # of ghostcells  
-    integer,intent(out),dimension(:,:),pointer          :: tb               ! tile boundaries   
+    integer,intent(in)           :: ts, nT, lx(3), ng        ! tile size, tile number, domain size and # of ghostcells
+    integer,intent(out),dimension(:,:),pointer          :: tb               ! tile boundaries
     integer,intent(out)          :: nOT                      ! number of outer tiles
-    
+
     integer                      :: i,nx,ny,nz,xl,xu,yl,yu,zl,zu,tx,ty,tz
     integer                      :: alloc_stat
 
@@ -238,15 +238,15 @@ contains
              xl = (tx-1)*ts; xu = xl + ts+2*ng - 1     ! fields are zero based in spatial coords?
              yl = (ty-1)*ts; yu = yl + ts+2*ng - 1
              zl = (tz-1)*ts; zu = zl + ts+2*ng - 1
-             
+
              tb(1,i)=xl;tb(2,i)=xu; tb(3,i)=yl;tb(4,i)=yu; tb(5,i)=zl;tb(6,i)=zu
              i = i+1
           end do
        end do
     end do
-    
+
     ! next upper and lower ty
-    do ty=1,ny,max(1,ny-1) 
+    do ty=1,ny,max(1,ny-1)
        do tx = 2,nx-1
           do tz = 1, nz
              ! tile boundaries including ghostcells
@@ -261,7 +261,7 @@ contains
     end do
 
     ! finally upper and lower tz
-    do tz=1,nz,max(1,nz-1) 
+    do tz=1,nz,max(1,nz-1)
        do tx = 2,nx-1
           do ty = 2,ny-1
              ! tile boundaries including ghostcells
@@ -275,7 +275,7 @@ contains
        end do
     end do
     nOT = i-1
-    !write (*,*) "# outer tiles:", nOT 
+    !write (*,*) "# outer tiles:", nOT
 
     ! now inner tiles
     do tx = 2, nx-1
@@ -311,8 +311,8 @@ contains
       ! Combined Stream-collide Routine
 #ifndef COMBINE_STREAM_COLLIDE
 #error "The tiled version of lbc necessarily requires to set -DCOMBINE_STREAM_COLLIDE in the Makefile."
-#endif 
-    
+#endif
+
 #ifdef TRT
     call stream_collide_trt(lb_dom,pnt_nxt,pnt_cur,s_par%omega)
 #else
@@ -335,7 +335,7 @@ contains
 
     real(R8B),pointer,dimension(:,:,:,:)                 :: dummy_pnt_nxt
     real(R8B),pointer,dimension(:,:,:,:)                 :: dummy_pnt_cur
-    real(R8B),pointer,dimension(:,:,:,:)                 :: swapper    
+    real(R8B),pointer,dimension(:,:,:,:)                 :: swapper
 
     ! unpack pointers to cur and nxt field
     dummy_pnt_cur => lb_dom%pnt_cur_tile
@@ -355,7 +355,7 @@ contains
     type(mpl_var),intent(in)               :: prc
     type(measure),intent(inout)            :: meas
     integer, intent(in)                    :: tStep
-    
+
     ! do boundary conditions after stream and collide steps
     call set_nrbc_antibb(lb_dom,lb_dom%pnt_nxt,lb_dom%pnt_cur,s_par,prc,meas)
     call set_bnd(lb_dom,lb_dom%state,lb_dom%pnt_nxt,lb_dom%rho,lb_dom%u,s_par,prc,meas,tStep)
@@ -370,16 +370,16 @@ contains
     type(lb_block),intent(inout)    :: lb_dom_tile
     integer,dimension(6),intent(inout) :: tb
     type(mpl_var),intent(in)        :: prc
-    
+
     integer                         :: alloc_stat
     integer                         :: lx, ly, lz
     integer                         :: nghost
-    
-    
+
+
     ! set tile size from tile boundaries
     lb_dom_tile%lx = (/ tb(2)-tb(1)-1, tb(4)-tb(3)-1, tb(6)-tb(5)-1 /)
     nghost = prc%n_ghost_nodes
-    lx = lb_dom_tile%lx(1); ly = lb_dom_tile%lx(2); lz = lb_dom_tile%lx(3); 
+    lx = lb_dom_tile%lx(1); ly = lb_dom_tile%lx(2); lz = lb_dom_tile%lx(3);
 
     ! map lb_dom subarrays to tiles
     ! %u0 could be pointer if remapping of indices worked. Works as of GNU 4.6
@@ -390,7 +390,7 @@ contains
 
     lb_dom_tile%pnt_cur_tile => lb_dom_tile%fIn
     lb_dom_tile%pnt_nxt_tile => lb_dom_tile%fOut
-    
+
   end subroutine allocate_tile
 
   subroutine localize_tile(lb_dom, tb, prc)
@@ -399,17 +399,17 @@ contains
     type(lb_block),intent(inout)    :: lb_dom
     integer,dimension(6),intent(inout) :: tb    ! inout: serves also as sentinel to track deps, as lb_dom_tile not in args
     type(mpl_var),intent(in)        :: prc
-    
+
     integer                         :: nghost
-    
-    
+
+
     nghost = prc%n_ghost_nodes
     ! do first touch in tasks to localize arrays pages
     lb_dom%u0(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6))) = 0.0
     lb_dom%state(tb(1)+nghost:tb(2)-nghost,tb(3)+nghost:tb(4)-nghost,tb(5)+nghost:tb(6)-nghost) = 0.0
     lb_dom%fIn(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6))) = 0.0
     lb_dom%fOut(NDX(:,tb(1):tb(2),tb(3):tb(4),tb(5):tb(6))) = 0.0
-    
+
   end subroutine localize_tile
 
   subroutine swap_lb_dom_pnts_task(lb_dom)
@@ -425,4 +425,4 @@ contains
 
 end module lbm_step_tiled
 
-#endif /* USE_TILES (all the file) */ 
+#endif /* USE_TILES (all the file) */

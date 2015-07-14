@@ -201,8 +201,8 @@ endif
       ! Exchange between domains 
       if(prc%size > 1) then
 #ifdef USE_SMPSS
-         !$OMP TASK INOUT(lb_dom) label(mpl_exchange) no_copy_deps
-        call mpl_exchange_sentinel(lb_dom,prc%bounds_tile(:,prc%nOuterTiles),prc,meas)
+        !$OMP TASK INOUT(lb_dom) label(mpl_exchange) no_copy_deps
+        call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
         !$OMP END TASK
 #else
         call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)

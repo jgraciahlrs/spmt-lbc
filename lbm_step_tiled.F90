@@ -42,7 +42,7 @@ contains
     integer                         :: nOuterTiles        ! total # of outer tiles
     integer,dimension(:,:),pointer  :: bounds_tile        ! boundaries of given tile in parent block
     type(lb_block),dimension(:),pointer                 :: lb_dom_tiles    ! lb_blocks for tiles
-    integer,dimension(:),pointer    :: sentinel           ! sentinel to distinguish between, inner, outer, and all tiles
+    integer,dimension(:),pointer    :: sentinel_inner, sentinel_outer           ! sentinel to distinguish between, inner, outer, and all tiles
 
     !if (prc%rk==0) then
     !   write (*,*) ' .... Doing tiled lb_step!'
@@ -67,7 +67,7 @@ contains
     call dummy_task()
     !$OMP END TASK
 
-    sentinel => bounds_tile(:,prc%nOuterTiles)   ! set sentinel to "outer tiles"
+    sentinel_outer => bounds_tile(:,prc%nOuterTiles)   ! set sentinel to "outer tiles"
 #ifdef USE_OMP_COARSE
 !$omp parallel
 !$omp do schedule(runtime)
@@ -75,7 +75,7 @@ contains
     do iTile = 1, prc%nOuterTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
-       !$OMP TASK INOUT(lb_dom_tiles(iTile)) CONCURRENT(sentinel) PRIORITY(50) label(lb_step_tile_outer) no_copy_deps
+       !$OMP TASK INOUT(lb_dom_tiles(iTile)) CONCURRENT(sentinel_outer) PRIORITY(50) label(lb_step_tile_outer) no_copy_deps
        call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
        !$OMP END TASK
     end do
@@ -84,12 +84,9 @@ contains
 !$omp single
 #endif /* USE_OMP_COARSE */
 
-    ! appply physical boundary conditions
-    !$OMP TASK INOUT(lb_dom, sentinel) PRIORITY(50)  label(set_bnds) no_copy_deps
-    call set_bnds_task(lb_dom, s_par,prc,meas, tStep)
-    !$OMP END TASK
 
-    sentinel => bounds_tile(:,0)   ! set sentinel to "inner tiles"
+
+    sentinel_inner => bounds_tile(:,0)   ! set sentinel to "inner tiles"
 
 #ifdef USE_OMP_COARSE
 !$omp end single
@@ -98,7 +95,7 @@ contains
     do iTile = prc%nOuterTiles+1, nTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
-       !$OMP TASK INOUT(lb_dom_tiles(iTile)) CONCURRENT(sentinel) label(lb_step_tile_inner) no_copy_deps
+       !$OMP TASK INOUT(lb_dom_tiles(iTile)) CONCURRENT(sentinel_inner) label(lb_step_tile_inner) no_copy_deps
        call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
        !$OMP END TASK
     end do
@@ -106,6 +103,11 @@ contains
 !$omp end do
 !$omp end parallel
 #endif /* USE_OMP_COARSE */
+
+! appply physical boundary conditions
+!$OMP TASK INOUT(lb_dom, sentinel_outer) PRIORITY(50)  label(set_bnds) no_copy_deps
+call set_bnds_task(lb_dom, s_par,prc,meas, tStep)
+!$OMP END TASK
 
   end subroutine lb_step
 

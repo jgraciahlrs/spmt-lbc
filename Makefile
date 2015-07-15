@@ -85,6 +85,8 @@ PARALLEL += $(FDEF)-DUSE_SMPSS $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32
 #PARALLEL += $(FDEF)-DUSE_OMP_FINE	# fine-grained loop level OpenMP version
 #PARALLEL += $(FDEF)-DUSE_OMP_COARSE $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32 # coarse-grained tile level OpenMP version, shares code with StarSs version
  
+# OmpSs parallelisation strategy, if no strategy is set the default(comm_hiding strategy) is used
+PARALLEL += $(FDEF)-DUSE_OMPSS_FORK_JOIN
 
 #-----------------------------------------------------
 # Model arguments 

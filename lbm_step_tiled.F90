@@ -105,7 +105,11 @@ contains
 #endif /* USE_OMP_COARSE */
 
 ! appply physical boundary conditions
+#ifdef USE_OMPSS_FORK_JOIN
+!$OMP TASK INOUT(lb_dom, sentinel_inner, sentinel_outer) PRIORITY(50)  label(set_bnds) no_copy_deps
+#else
 !$OMP TASK INOUT(lb_dom, sentinel_outer) PRIORITY(50)  label(set_bnds) no_copy_deps
+#endif /* USE_OMPSS_FORK_JOIN */
 call set_bnds_task(lb_dom, s_par,prc,meas, tStep)
 !$OMP END TASK
 

@@ -89,7 +89,7 @@ contains
     call set_bnds_task(lb_dom, s_par,prc,meas, tStep)
     !$OMP END TASK
 
-    sentinel => bounds_tile(:,0)   ! set sentinel to "all tiles"
+    sentinel => bounds_tile(:,0)   ! set sentinel to "inner tiles"
 
 #ifdef USE_OMP_COARSE
 !$omp end single

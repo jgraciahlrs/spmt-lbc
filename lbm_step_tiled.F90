@@ -61,13 +61,16 @@ contains
     ! container of tile lb_blocks
     lb_dom_tiles => prc%lb_dom_tiles
 
+    sentinel_outer => bounds_tile(:,prc%nOuterTiles)   ! set sentinel to "outer tiles"
+    sentinel_inner => bounds_tile(:,0)   ! set sentinel to "inner tiles"
+
     ! force "all tiles" and "outer tiles" into the same timestep
     ! a WAIT ON would be ok, too, but drops deps in temanejo
-    !$OMP TASK INOUT(lb_dom, bounds_tile(:,0),bounds_tile(:,prc%nOuterTiles)) label(dummy_task) no_copy_deps
+    !$OMP TASK INOUT(lb_dom, sentinel_inner, sentinel_outer) label(dummy_task) no_copy_deps
     call dummy_task()
     !$OMP END TASK
 
-    sentinel_outer => bounds_tile(:,prc%nOuterTiles)   ! set sentinel to "outer tiles"
+
 #ifdef USE_OMP_COARSE
 !$omp parallel
 !$omp do schedule(runtime)
@@ -86,7 +89,7 @@ contains
 
 
 
-    sentinel_inner => bounds_tile(:,0)   ! set sentinel to "inner tiles"
+
 
 #ifdef USE_OMP_COARSE
 !$omp end single

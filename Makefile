@@ -89,7 +89,6 @@ PARALLEL += $(FDEF)-DUSE_SMPSS $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32
 PARALLEL += $(FDEF)-DUSE_OMPSS_FORK_JOIN
 
 # Compiles your application with ompss MPI
-#-I/zhome/academic/HLRS/hlrs/hpcvmarj/hornet/workspace/tools/OmpSs_MPI/ -L//zhome/academic/HLRS/hlrs/hpcvmarj/hornet/workspace/tools/OmpSs_MPI/ -lompssmpi
 PARALLEL += $(FDEF)-DUSE_OMPSS_MPI
 
 #-----------------------------------------------------
@@ -573,8 +572,10 @@ ifeq ($(findstring TEC_OUT,$(LBMODEL)),TEC_OUT)
 else
    TEC_LIB=
 endif
-
-
+ifeq ($(findstring USE_OMPSS_MPI,$(PARALLEL)),USE_OMPSS_MPI)
+   INCLUDES+=-I$(OMPSS_MPI_HOME)
+   LIBS+=-L$(OMPSS_MPI_HOME) -lompssmpi
+endif
 
 # paramesh
 # Shell:

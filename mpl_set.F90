@@ -1647,11 +1647,19 @@ prc,meas)
       call cpu_time_measure(comm_start)
 
 #if defined SENDRECV
+#ifdef USE_OMPSS_MPI
+call ompss_mpi_sendrecv(  mpl_buffer(neighbor)%send,                                     &
+                    prc%length(neighbor),mpi_double_precision,prc%nghb(neighbor), 1,      &
+                    mpl_buffer(neighbor)%recv,                                     &
+                    prc%length(neighbor),mpi_double_precision,prc%nghb(neighbor),1,       &
+                    prc%cart_comm,prc%stat,prc%ierr)
+#else
       call mpi_sendrecv(  mpl_buffer(neighbor)%send,                                     &
                           prc%length(neighbor),mpi_double_precision,prc%nghb(neighbor), 1,      &
                           mpl_buffer(neighbor)%recv,                                     & 
                           prc%length(neighbor),mpi_double_precision,prc%nghb(neighbor),1,       &
                           prc%cart_comm,prc%stat,prc%ierr)
+#endif /*USE_OMPSS_MPI*/
 
 #elif defined ISEND_IRECV
       call mpi_irecv(mpl_buffer(neighbor)%recv,                &

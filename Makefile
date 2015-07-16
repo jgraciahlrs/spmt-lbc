@@ -88,6 +88,10 @@ PARALLEL += $(FDEF)-DUSE_SMPSS $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32
 # OmpSs parallelisation strategy, if no strategy is set the default(comm_hiding strategy) is used
 PARALLEL += $(FDEF)-DUSE_OMPSS_FORK_JOIN
 
+# Compiles your application with ompss MPI
+#-I/zhome/academic/HLRS/hlrs/hpcvmarj/hornet/workspace/tools/OmpSs_MPI/ -L//zhome/academic/HLRS/hlrs/hpcvmarj/hornet/workspace/tools/OmpSs_MPI/ -lompssmpi
+PARALLEL += $(FDEF)-DUSE_OMPSS_MPI
+
 #-----------------------------------------------------
 # Model arguments 
 # Lattice Boltzmann Model: 

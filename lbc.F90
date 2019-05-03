@@ -11,13 +11,13 @@
 
 ! ------------------------------------------------------------------------
 !
-!         oooo   .o8                       
-!          888   888                       
-!          888   888oooo.   .ooooo.        
-!          888   d88   88b d88    Y8       
-!          888   888   888 888             
-!          888   888   888 888   .o8       
-!         o888o  `Y8bod8P  `Y8bod8P       
+!         oooo   .o8
+!          888   888
+!          888   888oooo.   .ooooo.
+!          888   d88   88b d88    Y8
+!          888   888   888 888
+!          888   888   888 888   .o8
+!         o888o  `Y8bod8P  `Y8bod8P
 !
 ! This is the Lattice Boltzmann Kernel LBC for testing purposes only.
 ! Loosely based on J. Bernsdorfs anb-Lattice Boltzmann-Code
@@ -26,7 +26,7 @@
 !------------------------------------------------------------------------
 !
 !
-! - MRT Model parameter was tuned, so that bulk viscosity is set equal to bgk. Watch parameter s1 s_mrt(2) 
+! - MRT Model parameter was tuned, so that bulk viscosity is set equal to bgk. Watch parameter s1 s_mrt(2)
 !
 !========================================================================
 
@@ -53,45 +53,24 @@ PROGRAM lbmain
    type(measure)        :: meas
 #endif
    type(lb_block)       :: lb_dom
-   type(sim_parameter)  :: s_par 
+   type(sim_parameter)  :: s_par
    type(mpl_var)        :: prc
    real(R8B)            :: total_start,total_end
    integer              :: tStep,countOut,result_state
    integer              :: i,j,k
-   integer,pointer      :: tstep_cnt 
-   logical              :: stop_request    
+   integer,pointer      :: tstep_cnt
+   logical              :: stop_request
    real(R8B),pointer,dimension(:,:,:,:) :: swapper
-   
-#ifdef USENOT_SMPSS_MODULES   
-   interface
-      !$CSS TASK REDUCTION(meas) TARGET(COMM_THREAD) 
-      subroutine mpl_exchange_sentinel(lb_dom,sentinel,prc,meas)
-        use nrt_lib
-        use mpl_lib
-        type(lb_block),intent(inout) :: lb_dom
-        integer,dimension(6),intent(inout)  :: sentinel     ! sentinel to track deps
-        type(mpl_var),intent(in)     :: prc
-        type(measure),intent(inout)  :: meas
-      end subroutine mpl_exchange_sentinel
-      !$CSS TASK HIGHPRIORITY
-      subroutine swap_lb_dom_pnts_smpss(lb_dom)
-        use nrt_lib
-        implicit none
-        type(lb_block),intent(inout)       :: lb_dom
-      end subroutine swap_lb_dom_pnts_smpss
-   end interface
-#endif /* USENOT_SMPSS_MODULES */
 
    countOut             = 0
    result_state         = 0
    tstep_cnt => gtstep_cur
 
    stop_request         = .false.
-  
+
 !------------------------------------------------------------------------
 ! Initialize environment
 
-!$CSS START
    call mpl_init(meas,prc)
    call cpu_time_measure(total_start)
    call cpu_time_measure(meas%tStart)
@@ -111,11 +90,11 @@ PROGRAM lbmain
 ! does this fix the MPI serialization?
 if (mod(prc%rk,2)>0) then
    prc%nghb(1:2) = prc%nghb(2:1:-1)
-endif 
-  
+endif
+
 #ifdef USE_TILES
    call init_tile(lb_dom, s_par, prc)
-!$CSS WAIT ON(lb_dom)
+!$OMP TASKWAIT ON(lb_dom)
 #endif /* USE_TILES */
 
 #ifdef USE_OMP_FINE
@@ -150,16 +129,16 @@ endif
    end if
 
    !---------------------------
-   ! Decompose domain 
+   ! Decompose domain
    call mpl_decompose_domain(lb_dom,s_par,prc)
-   
+
 #else
    call get_geo_each(lb_dom,s_par,prc)
    call init_field_each(lb_dom,s_par,prc)
    call calc_fEq(lb_dom,lb_dom%rho,lb_dom%u,lb_dom%fIn,0,0,0,0,0,0,s_par)
 #endif
    !---------------------------
-   ! Initialize the obstacle and boundary vectors 
+   ! Initialize the obstacle and boundary vectors
    call init_vector(lb_dom,s_par,prc)
 
    call ramp_u(s_par,0)
@@ -167,13 +146,13 @@ endif
    call set_bnd(lb_dom,lb_dom%state,lb_dom%fIn,lb_dom%rho,lb_dom%u,s_par,prc,meas,0)
 
 ! for timing
-!$CSS BARRIER
+!$OMP TASKWAIT
    call cpu_time_measure(meas%tEnd)
    meas%init_duration = real(meas%tEnd,8) - real(meas%tStart,8)
 !------------------------------------------------------------------------
-! Main Loop 
+! Main Loop
 !
-   if(prc%rk==0) then  
+   if(prc%rk==0) then
      write(*,*); write(*,*) "  --------------------------------------"
      write(*,*) "  Starting main time loop"; write(*,*)
    endif
@@ -182,28 +161,30 @@ endif
    ! time main loop
    call cpu_time_measure(meas%tStart)
 #endif /* USE_SMPSS */
-  
+
    tstep_cnt = 0
-   lb_dom%pnt_nxt => lb_dom%fIn; lb_dom%pnt_cur => lb_dom%fOut    ! init work arrays 
+   lb_dom%pnt_nxt => lb_dom%fIn; lb_dom%pnt_cur => lb_dom%fOut    ! init work arrays
    do tStep = 1,s_par%tMax
 
 #ifndef USE_SMPSS
       call cpu_time_measure(meas%tStart)
 #endif /* Not USE_SMPSS */
       !---------------------------
-      ! Set Boundaries on fIn  
+      ! Set Boundaries on fIn
       call treat_initial(lb_dom,s_par,tstep,prc)
 
       tstep_cnt = tstep_cnt+1
 
       call ramp_u(s_par,tstep)
       ! swap work array pointers
-#ifdef USE_TILES
-      call swap_lb_dom_pnts_smpss(lb_dom)
+#ifdef USE_SMPSS
+      !$OMP TASK INOUT(lb_dom) label(swap_lb_dom_pnts_smpss) PRIORITY(50) no_copy_deps
+      call swap_lb_dom_pnts_task(lb_dom)
+      !$OMP END TASK
 #else
-!$CSS WAIT ON(lb_dom)
       swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
-#endif
+#endif /* USE_SMPSS */
+
 #ifdef USE_ADCL
 #ifdef COMBINE_STREAM_COLLIDE
       if(mod(tStep,2)==0) then
@@ -217,12 +198,13 @@ endif
 #endif /*USE_ADCL*/
 
       !---------------------------
-      ! Exchange between domains 
+      ! Exchange between domains
       if(prc%size > 1) then
 #ifdef USE_SMPSS
-        call mpl_exchange_sentinel(lb_dom,prc%bounds_tile(:,prc%nOuterTiles),prc,meas)
+        !$OMP TASK INOUT(lb_dom) label(mpl_exchange) PRIORITY(50)  no_copy_deps
+        call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
+        !$OMP END TASK
 #else
-        !$CSS BARRIER
         call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
 #endif
        end if
@@ -237,25 +219,22 @@ endif
 #endif /* Not USE_SMPSS */
 
       !---------------------------
-      ! Output and error check 
+      ! Output and error check
       if(MOD(tStep,s_par%tOut)==0 .and. tStep >= s_par%tOutBeg) then
 #ifdef USE_SMPSS
-         !$CSS WAIT ON(lb_dom)
+         !$OMP TASKWAIT !!ON(lb_dom)
          ! time main loop at barrier, excluding output
          call cpu_time_measure(meas%tEnd)
          meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
-#ifdef USE_TILES
-         !call gather_tiles(prc, lb_dom)
-#endif /* USE_TILES */
 #endif /* USE_SMPSS */
          ! calc macroscopic values (is also done in do_kinetic)
          call calc_macr_vals(lb_dom,lb_dom%u,lb_dom%rho,lb_dom%pnt_nxt,meas)
          countOut=countOut+1
          call calc_rho_ges(lb_dom,lb_dom%pnt_nxt,s_par%rhoges,tStep,prc)
-         if(tStep > s_par%tMax-s_par%tOut  ) s_par%goend=.true. 
-         if(result_state == -1) s_par%goend=.true. 
-         if(stop_request .eqv. .true.) s_par%goend=.true. 
-      
+         if(tStep > s_par%tMax-s_par%tOut  ) s_par%goend=.true.
+         if(result_state == -1) s_par%goend=.true.
+         if(stop_request .eqv. .true.) s_par%goend=.true.
+
          inquire(FILE='stop',exist=stop_request)
          if(s_par%save_output) then
             call gather_output(lb_dom,countOut,tStep,s_par,prc)
@@ -268,9 +247,9 @@ endif
             call comm_res(result_state,prc)
          elseif(result_state ==-1 .and. s_par%goend .eqv. .true.) then
             write(*,*) "Result is errorous. Exiting..."
-            exit 
+            exit
          endif
-     
+
          if(stop_request .and. s_par%goend ) then
             write(*,*) "Stop has been requested by stopfile 'Stop'"
             exit
@@ -290,21 +269,21 @@ endif
    end do
 
 #ifdef USE_SMPSS
-!$CSS FINISH
+!$OMP TASKWAIT
 ! finish timing main loop
 call cpu_time_measure(meas%tEnd)
 meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
 #endif /* USE_SMPSS */
 
 !------------------------------------------------------------------------
-! Done with Main loop 
+! Done with Main loop
 
-   if(prc%rk==0) then  
+   if(prc%rk==0) then
      write(*,*); write(*,*) "  --------------------------------------"
      write(*,*) "  "; write(*,*)
    endif
 !------------------------------------------------------------------------
-! Finish up 
+! Finish up
 !
    call cpu_time_measure(total_end)
    meas%total_duration = total_end - total_start
@@ -321,8 +300,3 @@ meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
 
 END PROGRAM lbmain
 !========================================================================
-
-
-
-
-

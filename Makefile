@@ -17,8 +17,8 @@
 #HPC_TYPE=sx9
 #HPC_TYPE=bwgrid
 #HPC_TYPE=cray
-#HPC_TYPE=xe6
-HPC_TYPE=nehalem
+HPC_TYPE=xe6
+#HPC_TYPE=nehalem
 #HPC_TYPE=bluegene
 
 #---------------------
@@ -26,7 +26,7 @@ HPC_TYPE=nehalem
 
 # Add _debug for debugging and smpss for StarSs/SMPSs
 #COMPILER=gnu_debug
-COMPILER=gnu_smpss#_omp#_trace#_debug
+COMPILER=gnu_ompss#_smpss#_omp#_trace#_debug
 #COMPILER=sx
 #COMPILER=vampir
 #COMPILER=intel_debug
@@ -80,12 +80,16 @@ PARALLEL += $(FDEF)-DCOMM_REDUCED      # Only Exchange necessary densities
 
 # StarSs options
 PARALLEL += $(FDEF)-DUSE_SMPSS $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32
-PARALLEL += $(FDEF)-DUSENOT_SMPSS_MODULES     # use to address bug in smpss, that does not allow to define tasks in fortran modules
 
 # OpenMP options; choose either one
 #PARALLEL += $(FDEF)-DUSE_OMP_FINE	# fine-grained loop level OpenMP version
 #PARALLEL += $(FDEF)-DUSE_OMP_COARSE $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32 # coarse-grained tile level OpenMP version, shares code with StarSs version
  
+# OmpSs parallelisation strategy, if no strategy is set the default(comm_hiding strategy) is used
+PARALLEL += $(FDEF)-DUSE_OMPSS_FORK_JOIN
+
+# Compiles your application with ompss MPI
+PARALLEL += $(FDEF)-DUSE_OMPSS_MPI
 
 #-----------------------------------------------------
 # Model arguments 
@@ -128,9 +132,9 @@ LBMODEL += $(FDEF)-DCOMBINE_STREAM_COLLIDE
 # Memory layout:
 # Choose ONE of the following
 # save array in memory as x-,y-,z- component and l as density (1...9 / 1...19)
-LBMODEL += $(FDEF)-DLAYOUT_IJKL
+#LBMODEL += $(FDEF)-DLAYOUT_IJKL
 #  save array in memory as l as density (1...9 / 1...19) and x-,y-,z- component 
-#LBMODEL += $(FDEF)-DLAYOUT_LIJK
+LBMODEL += $(FDEF)-DLAYOUT_LIJK
 
 # Initialization of geometry and boundaries (for parallel execution)
 #  First process assigns geometry and distributes to other processes
@@ -314,45 +318,67 @@ else
 # GNU
 
     ifeq ($(findstring gnu,$(COMPILER)),gnu)
-	ifeq ($(findstring xe6,$(HPC_TYPE)),xe6)
-        COMP=ftn
-        CCOMP=cc
+      ifeq ($(findstring xe6,$(HPC_TYPE)),xe6)
+          COMP=ftn 
+          CCOMP=cc 
+          ifeq ($(findstring smpss,$(COMPILER)),smpss)
+              # find parameters with mpif90/cc -showme	
+              SFDEF=-Wf,
+	      SCDEF=-Wc,
+	      SLDEF=-Wl,
+              COMP=smpss-cc -I$(MPICH_DIR)/include
+	      CCOMP=smpss-cc -I$(MPICH_DIR)/include
+          endif
+          ifeq ($(findstring ompss,$(COMPILER)),ompss)
+              # find parameters with mpif90/cc -showme	
+              SFDEF=-Wf,
+	      SCDEF=-Wc,
+	      SLDEF=-Wl,
 
-        ifeq ($(findstring smpss,$(COMPILER)),smpss)
-          # find parameters with mpif90/cc -showme	
-	  SFDEF=-Wf,
-	  SCDEF=-Wc,
-	  SLDEF=-Wl,
-	  COMP=smpss-cc -I$(MPICH_DIR)/include
-	  CCOMP=smpss-cc -I$(MPICH_DIR)/include
-        endif
-	else
-        COMP=mpif90
-        CCOMP=mpicc
 
-        ifeq ($(findstring smpss,$(COMPILER)),smpss)
-          # find parameters with mpif90/cc -showme	
-	  SFDEF=-Wf,
-	  SCDEF=-Wc,
-	  SLDEF=-Wl,
-	  COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/smpss-cc2/')
-	  CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/smpss-cc2/') 
-        endif
-	endif
+	      COMP=mfc --cc=ftn --ompss -I$(MPICH_DIR)/include -L$(MPICH_DIR)/lib -lfmpich -lmpich
+	      CCOMP=mcc --cc=CC --ompss -I$(MPICH_DIR)/include -L$(MPICH_DIR)/lib -lfmpich -lmpich
+          endif
+      else
+          COMP=mpif90 -O2
+          CCOMP=mpicc -O2 
 
-      F90_CFLAGS_DEBUG=$(SFDEF)-xf95-cpp-input -O0 -g $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file
-      F90_LFLAGS_DEBUG=-O0 -g
+          ifeq ($(findstring smpss,$(COMPILER)),smpss)
+            # find parameters with mpif90/cc -showme	
+	    SFDEF=-Wf,
+	    SCDEF=-Wc,
+	    SLDEF=-Wl,
+	    COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/smpss-cc2/')
+	    CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/smpss-cc2/') 
+          endif
+          ifeq ($(findstring ompss,$(COMPILER)),ompss)
+            # find parameters with mpif90/cc -showme	
+	    #SFDEF=-Wf,
+	    #SCDEF=-Wc,
+	    #SLDEF=-Wl,
+	    COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/mfc --ompss  -g3/') -O2  --instrumentation # -L/opt/mpi/openmpi/1.7.3-gnu-4.8.1/lib -lmpi -g3 -O0  -fPIC 
+	    CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/mcc --ompss -g3 /')  -O2 --instrumentation # -L/opt/mpi/openmpi/1.7.3-gnu-4.8.1/lib -lmpi -g3 -O0  -fPIC  
+          endif
+      endif
 
-      F90_CFLAGS_OPT=$(SFDEF)-xf95-cpp-input -O3 $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
-#-std=f2003  
-      F90_LFLAGS_OPT= -O3
+      F90_CFLAGS_DEBUG+=$(SFDEF)-xf95-cpp-input -O0 -K -g3 -fcheck=all -fcheck=bounds -debug -Wall -fbacktrace $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file
+      F90_LFLAGS_DEBUG+=-O0 -g3 -fbacktrace -K  -fcheck=all -Wall -fcheck=bounds -debug
+
+      #F90_CFLAGS_OPT=$(SFDEF)-xf95-cpp-input -O3 $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
+#-std=f2003
+      F90_CFLAGS_OPT+=-O3
+      F90_LFLAGS_OPT+=
       #--------------------------------
       # OpenMP
       ifeq ($(findstring omp,$(COMPILER)),omp)
-	 F90_CFLAGS_DEBUG += -fopenmp
-         F90_LFLAGS_DEBUG += -fopenmp
-         F90_CFLAGS_OPT   += -fopenmp
-         F90_LFLAGS_OPT   += -fopenmp    
+	ifeq ($(findstring ompss,$(COMPILER)),ompss)
+	# ignore, this is ompss
+	else  # this is really omp
+	   F90_CFLAGS_DEBUG += -fopenmp
+           F90_LFLAGS_DEBUG += -fopenmp
+           F90_CFLAGS_OPT   += -fopenmp
+           F90_LFLAGS_OPT   += -fopenmp
+	endif
       endif 	
       # PROFILING 
       ifeq ($(findstring profile,$(COMPILER)),profile)
@@ -373,6 +399,10 @@ else
 	  F90_LFLAGS_DEBUG += -t -k
 	  F90_CFLAGS_OPT   += -t -k
 	  F90_LFLAGS_OPT   += -t -k
+        endif
+	ifeq ($(findstring ompss,$(COMPILER)),ompss)  # ompss events
+          COMP = mfc --cc=ftn --ompss --instrumentation  -I$(MPICH_DIR)/include -L$(EXTRAE_HOME)/lib -lnanosmpitracef
+          COMP = mfc --cc=CC --ompss --instrumentation  -I$(MPICH_DIR)/include -L$(EXTRAE_HOME)/lib -lnanosmpitracef
         endif
      endif
    endif
@@ -542,8 +572,10 @@ ifeq ($(findstring TEC_OUT,$(LBMODEL)),TEC_OUT)
 else
    TEC_LIB=
 endif
-
-
+ifeq ($(findstring USE_OMPSS_MPI,$(PARALLEL)),USE_OMPSS_MPI)
+   INCLUDES+=-I$(OMPSS_MPI_HOME)
+   LIBS+=-L$(OMPSS_MPI_HOME) -lompssmpi
+endif
 
 # paramesh
 # Shell:

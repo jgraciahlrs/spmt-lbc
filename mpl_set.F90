@@ -98,7 +98,7 @@ contains
    !
       type(measure),intent(inout) :: meas
       type(mpl_var)   :: prc
-
+      integer	      :: mpi_thread_level
 
       prc%ierr           =  0
       prc%root_th        = -1
@@ -129,7 +129,18 @@ contains
 
 
 #ifdef USE_MPI
-      call MPI_INIT(prc%ierr)
+      call MPI_INIT_THREAD(MPI_THREAD_SERIALIZED, mpi_thread_level, prc%ierr)
+      if (MPI_THREAD_SERIALIZED /= mpi_thread_level) then
+         ! did not get suffifient guarantees on MPI thread safety
+#ifdef USE_SMPSS
+         write (*,*) "This MPI version is running with low thread safety levels"
+         write (*,*) "Exiting ..."
+         call abort()
+#else 
+         write (*,*) "Warning: This MPI version is running with low thread safety levels"
+#endif
+      end if
+
       call MPI_COMM_RANK(MPI_COMM_WORLD,prc%rk,prc%ierr)
       call MPI_COMM_SIZE(MPI_COMM_WORLD,prc%size,prc%ierr)
 
@@ -1636,11 +1647,19 @@ prc,meas)
       call cpu_time_measure(comm_start)
 
 #if defined SENDRECV
+#ifdef USE_OMPSS_MPI
+call ompss_mpi_sendrecv(  mpl_buffer(neighbor)%send,                                     &
+                    prc%length(neighbor),mpi_double_precision,prc%nghb(neighbor), 1,      &
+                    mpl_buffer(neighbor)%recv,                                     &
+                    prc%length(neighbor),mpi_double_precision,prc%nghb(neighbor),1,       &
+                    prc%cart_comm,prc%stat,prc%ierr)
+#else
       call mpi_sendrecv(  mpl_buffer(neighbor)%send,                                     &
                           prc%length(neighbor),mpi_double_precision,prc%nghb(neighbor), 1,      &
                           mpl_buffer(neighbor)%recv,                                     & 
                           prc%length(neighbor),mpi_double_precision,prc%nghb(neighbor),1,       &
                           prc%cart_comm,prc%stat,prc%ierr)
+#endif /*USE_OMPSS_MPI*/
 
 #elif defined ISEND_IRECV
       call mpi_irecv(mpl_buffer(neighbor)%recv,                &
@@ -2313,19 +2332,3 @@ end subroutine mpl_set_nodes_to_send
 
 
 end module mpl_set
-
-#ifdef USE_SMPSS
-!$CSS TASK REDUCTION(meas)
-subroutine mpl_exchange_sentinel(lb_dom,sentinel,prc,meas)
-  use nrt_lib
-  use mpl_set
-  type(lb_block),intent(inout) :: lb_dom
-  integer,dimension(6),intent(inout)  :: sentinel
-  type(mpl_var),intent(in)     :: prc
-  type(measure),intent(inout)  :: meas
-
-  
-  call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
-
-end subroutine mpl_exchange_sentinel
-#endif  /* USE_SMPSS */

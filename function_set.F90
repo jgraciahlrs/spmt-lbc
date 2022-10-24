@@ -467,12 +467,8 @@ end subroutine
       s_par%modelname = "d3q19"
 #endif
       temp_name       = s_par%modelname
-#ifdef MRT 
-      s_par%modelname = trim(temp_name)//'_mrt'
-#else
 #ifdef TRT 
       s_par%modelname = trim(temp_name)//'_trt'
-#endif
 #endif
 #ifdef SPONGE
       s_par%modelname = "spg_"//s_par%modelname
@@ -512,14 +508,6 @@ end subroutine
          read(1,*) s_par%save_output                        ! save output t / f
          read(1,*) s_par%obst_l                             ! Additional obstacle Parameter. For CRVP: Distance of vortices 
          read(1,*) s_par%read_obs                           ! Read obstacles from lbc.obs file??
-#ifdef MRT
-         read(1,*) s_par%bulkViscosity                      ! 
-           
-         if(s_par%bulkViscosity < 0.000001) then
-            s_par%bulkViscosity = 2.d0/9.d0*(1.d0/s_par%omega-0.5d0)
-            write(*,*) "MRT: Setting bulk Viscosity to standard value of bgk: ",s_par%bulkViscosity
-         endif
-#endif /* MRT */
          close(1)
 
       !------------------------------------
@@ -628,16 +616,11 @@ end subroutine
          write(*,*) "Model:    D3Q19"
 #endif
          write(*,*) "Relaxation is: ", &
-#ifdef MRT
-"mrt"
-         write(*,*) "Bulk relaxation rate: ",2.0_R8B/(9.0_R8B * s_par%bulkViscosity + 1.0_R8B)
-#else /* MRT > TRT/BGK */
 #ifdef TRT
 "trt"
 #else /* TRT > BGK */
 "bgk"
 #endif /* TRT */
-#endif /* MRT */
 #ifdef LES_SMAGORINSKY
          write(*,*) "Turbulence Model: LES-Smagorinsky"
 #endif /* LES_SMAGORINSKY */

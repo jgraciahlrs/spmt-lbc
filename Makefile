@@ -94,15 +94,6 @@ LBMODEL += $(FDEF)-DD3Q19
 # Relaxation modes (optional)
 # Standard is BGK
 
-# MRT: multi-relaxation time model (not working yet)
-#LBMODEL += $(FDEF)-DMRT
-#LBMODEL += $(FDEF)-DTEST_MRT
-# Check mass and momentum conservation in MRT routine
-#LBMODEL += $(FDEF)-DMRT_MASS_MOMENTUM
-#LBMODEL += $(FDEF)-DMRT_BGK_PARAMS
-# Debug option with sample data for the MRT routine
-#LBMODEL += $(FDEF)-DCHECK_MRT
-
 # Use the incompressible model for higher stability
 #LBMODEL += $(FDEF)-DINCOMPRESSIBLE
 #LBMODEL += $(FDEF)-DSPONGE

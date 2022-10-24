@@ -48,11 +48,7 @@ contains
 #ifdef TRT
     call collide_trt(lb_dom,pnt_nxt,pnt_cur,s_par%omega)
 #else
-#ifdef MRT
-    call collide_mrt( lb_dom,pnt_nxt,pnt_cur,s_par,meas)
-#else
     call collide_bgk( lb_dom,pnt_nxt,pnt_cur,s_par,meas)
-#endif
 #endif
 #endif
 

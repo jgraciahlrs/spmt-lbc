@@ -26,8 +26,6 @@
 !------------------------------------------------------------------------
 !
 !
-! - MRT Model parameter was tuned, so that bulk viscosity is set equal to bgk. Watch parameter s1 s_mrt(2)
-!
 !========================================================================
 
 PROGRAM lbmain

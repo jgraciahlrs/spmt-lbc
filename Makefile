@@ -20,7 +20,7 @@ HPC_TYPE=nehalem
 
 COMPILER=gnu#_ompss#_omp#_trace#_debug
 #COMPILER=vampir
-#COMPILER=intel_debug
+#COMPILER=intel#_profile#_debug#_vampir#_omp
 #COMPILER=intel
 
 
@@ -106,29 +106,29 @@ CPPDEFINES=$(LBMODEL) $(PARALLEL)
 
 #--------------------------------
 # INTEL 
-   ifeq ($(findstring intel,$(COMPILER)),intel)
-      COMP=mpif90
-      CCOMP=mpicc
+ifeq ($(findstring intel,$(COMPILER)),intel)
+   COMP=mpif90
+   CCOMP=mpicc
 
-      F90_CFLAGS_DEBUG=$(SFDEF)-fpp -O0 -g $(SFDEF)-check all $(SFDEF)-r8 $(SFDEF)-i4 $(SFDEF)-traceback $(SFDEF)-implicitnone $(SFDEF)-warn $(SFDEF)all $(SFDEF)-keep
-      F90_LFLAGS_DEBUG=-g -O0 $(SLDEF)-r8 $(SLDEF)-i4  -L$(MPI_LIB_DIR) -lmpi_f90  
-      #F90_CFLAGS_DEBUG+=-warn alignments,declarations,errors,general,ignore_loc,interfaces,truncated_source,uncalled,nounused,usage
+   F90_CFLAGS_DEBUG=$(SFDEF)-fpp -O0 -g $(SFDEF)-check all $(SFDEF)-r8 $(SFDEF)-i4 $(SFDEF)-traceback $(SFDEF)-implicitnone $(SFDEF)-warn $(SFDEF)all $(SFDEF)-keep
+   F90_LFLAGS_DEBUG=-g -O0 $(SLDEF)-r8 $(SLDEF)-i4  -L$(MPI_LIB_DIR) -lmpi_f90  
+   #F90_CFLAGS_DEBUG+=-warn alignments,declarations,errors,general,ignore_loc,interfaces,truncated_source,uncalled,nounused,usage
 
-      F90_CFLAGS_OPT=$(SFDEF)-fpp $(SFDEF)-r8 $(SFDEF)-i4 -O3 $(SFDEF)-i-dynamic 
-      F90_LFLAGS_OPT=$(SLDEF)-r8 $(SLDEF)-i4 -O3 $(SLDEF)-i-dynamic   -L$(MPI_LIB_DIR) -lmpi_f90
-      #--------------------------------
-      # PROFILING 
-      ifeq ($(findstring profile,$(COMPILER)),profile)
-         F90_CFLAGS_DEBUG+=$(SFDEF)-p -g
-         F90_LFLAGS_DEBUG+=$(SLDEF)-p
-         F90_CFLAGS_OPT+=$(SFDEF)-p -g
-         F90_LFLAGS_OPT+=$(SLDEF)-p
-      endif
-      ifeq ($(findstring vamp,$(COMPILER)),vamp)
-      COMP=vtf90 -vt:f90 mpif90
-      CCOMP=vtcc -vt:cc mpicc
-      endif
+   F90_CFLAGS_OPT=$(SFDEF)-fpp $(SFDEF)-r8 $(SFDEF)-i4 -O3 $(SFDEF)-i-dynamic 
+   F90_LFLAGS_OPT=$(SLDEF)-r8 $(SLDEF)-i4 -O3 $(SLDEF)-i-dynamic   -L$(MPI_LIB_DIR) -lmpi_f90
+   #--------------------------------
+   # PROFILING 
+   ifeq ($(findstring profile,$(COMPILER)),profile)
+      F90_CFLAGS_DEBUG+=$(SFDEF)-p -g
+      F90_LFLAGS_DEBUG+=$(SLDEF)-p
+      F90_CFLAGS_OPT+=$(SFDEF)-p -g
+      F90_LFLAGS_OPT+=$(SLDEF)-p
    endif
+   ifeq ($(findstring vamp,$(COMPILER)),vampir)
+   COMP=vtf90 -vt:f90 mpif90
+   CCOMP=vtcc -vt:cc mpicc
+   endif
+endif
 
 #--------------------------------
 # GNU

@@ -133,58 +133,57 @@ endif
 #--------------------------------
 # GNU
 
-    ifeq ($(findstring gnu,$(COMPILER)),gnu)
-          COMP=mpif90 -O2
-          CCOMP=mpicc -O2 
-
-          ifeq ($(findstring ompss,$(COMPILER)),ompss)
-            # find parameters with mpif90/cc -showme	
-	    #SFDEF=-Wf,
-	    #SCDEF=-Wc,
-	    #SLDEF=-Wl,
-	    COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/mfc --ompss  -g3/') -O2  --instrumentation # -L/opt/mpi/openmpi/1.7.3-gnu-4.8.1/lib -lmpi -g3 -O0  -fPIC 
-	    CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/mcc --ompss -g3 /')  -O2 --instrumentation # -L/opt/mpi/openmpi/1.7.3-gnu-4.8.1/lib -lmpi -g3 -O0  -fPIC  
-          endif
-
-      F90_CFLAGS_DEBUG+=$(SFDEF)-xf95-cpp-input -O0 -K -g3 -fcheck=all -fcheck=bounds -debug -Wall -fbacktrace $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file
-      F90_LFLAGS_DEBUG+=-O0 -g3 -fbacktrace -K  -fcheck=all -Wall -fcheck=bounds -debug
-
-      #F90_CFLAGS_OPT=$(SFDEF)-xf95-cpp-input -O3 $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
-#-std=f2003
-      F90_CFLAGS_OPT+=-O3
-      F90_LFLAGS_OPT+=
-      #--------------------------------
-      # OpenMP
-      ifeq ($(findstring omp,$(COMPILER)),omp)
-	ifeq ($(findstring ompss,$(COMPILER)),ompss)
-	# ignore, this is ompss
-	else  # this is really omp
-	   F90_CFLAGS_DEBUG += -fopenmp
-           F90_LFLAGS_DEBUG += -fopenmp
-           F90_CFLAGS_OPT   += -fopenmp
-           F90_LFLAGS_OPT   += -fopenmp
-	endif
-      endif 	
-      # PROFILING 
-      ifeq ($(findstring profile,$(COMPILER)),profile)
-         F90_CFLAGS_DEBUG+=$(SFDEF)-pg
-         F90_LFLAGS_DEBUG+=$(SLDEF)-pg
-         F90_CFLAGS_OPT+=$(SFDEF)-pg
-         F90_LFLAGS_OPT+=$(SLDEF)-pg
-      endif
-     #
-     # paraver tracing
-     ifeq ($(findstring trace,$(COMPILER)),trace)
-	F90_CFLAGS_DEBUG += -g       # paraver caller stack unwinding
-	F90_LFLAGS_DEBUG += -g
-	F90_CFLAGS_OPT   += -g
-	F90_LFLAGS_OPT   += -g
-	ifeq ($(findstring ompss,$(COMPILER)),ompss)  # ompss events
-          COMP = mfc --cc=ftn --ompss --instrumentation  -I$(MPICH_DIR)/include -L$(EXTRAE_HOME)/lib -lnanosmpitracef
-          COMP = mfc --cc=CC --ompss --instrumentation  -I$(MPICH_DIR)/include -L$(EXTRAE_HOME)/lib -lnanosmpitracef
-        endif
-     endif
+ifeq ($(findstring gnu,$(COMPILER)),gnu)
+   COMP=mpif90 -O2
+   CCOMP=mpicc -O2 
+   ifeq ($(findstring ompss,$(COMPILER)),ompss)
+      # find parameters with mpif90/cc -showme	
+      #SFDEF=-Wf,
+      #SCDEF=-Wc,
+      #SLDEF=-Wl,
+      COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/mfc --ompss  -g3/') -O2  --instrumentation # -L/opt/mpi/openmpi/1.7.3-gnu-4.8.1/lib -lmpi -g3 -O0  -fPIC 
+      CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/mcc --ompss -g3 /')  -O2 --instrumentation # -L/opt/mpi/openmpi/1.7.3-gnu-4.8.1/lib -lmpi -g3 -O0  -fPIC  
    endif
+
+   F90_CFLAGS_DEBUG+=$(SFDEF)-xf95-cpp-input -O0 -K -g3 -fcheck=all -fcheck=bounds -debug -Wall -fbacktrace $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file
+   F90_LFLAGS_DEBUG+=-O0 -g3 -fbacktrace -K  -fcheck=all -Wall -fcheck=bounds -debug
+
+   #F90_CFLAGS_OPT=$(SFDEF)-xf95-cpp-input -O3 $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
+   #-std=f2003
+   F90_CFLAGS_OPT+=-O3
+   F90_LFLAGS_OPT+=
+   #--------------------------------
+   # OpenMP
+   ifeq ($(findstring omp,$(COMPILER)),omp)
+      ifeq ($(findstring ompss,$(COMPILER)),ompss)
+         # ignore, this is ompss
+      else  # this is really omp
+         F90_CFLAGS_DEBUG += -fopenmp
+         F90_LFLAGS_DEBUG += -fopenmp
+         F90_CFLAGS_OPT   += -fopenmp
+         F90_LFLAGS_OPT   += -fopenmp
+      endif
+   endif 	
+   # PROFILING 
+   ifeq ($(findstring profile,$(COMPILER)),profile)
+      F90_CFLAGS_DEBUG+=$(SFDEF)-pg
+      F90_LFLAGS_DEBUG+=$(SLDEF)-pg
+      F90_CFLAGS_OPT+=$(SFDEF)-pg
+      F90_LFLAGS_OPT+=$(SLDEF)-pg
+   endif
+   #
+   # paraver tracing
+   ifeq ($(findstring trace,$(COMPILER)),trace)
+      F90_CFLAGS_DEBUG += -g       # paraver caller stack unwinding
+      F90_LFLAGS_DEBUG += -g
+      F90_CFLAGS_OPT   += -g
+      F90_LFLAGS_OPT   += -g
+      ifeq ($(findstring ompss,$(COMPILER)),ompss)  # ompss events
+         COMP = mfc --cc=ftn --ompss --instrumentation  -I$(MPICH_DIR)/include -L$(EXTRAE_HOME)/lib -lnanosmpitracef
+         COMP = mfc --cc=CC --ompss --instrumentation  -I$(MPICH_DIR)/include -L$(EXTRAE_HOME)/lib -lnanosmpitracef
+      endif
+   endif
+endif
 
 #--------------------------------
 # Vampir

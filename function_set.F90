@@ -948,7 +948,7 @@ end subroutine dealloc_mem
       & meas%mean_total," s     (th0: " , meas%duration, " )" !meas%comm_duration+meas%sbnd_duration+meas%cceq_duration+ &
     !  & meas%coll_duration+meas%prop_duration+meas%ccmv_duration+meas%bncb_duration
       write(*,'(a35,e8.3,a2)') "initialization duration         ", meas%init_duration," s       min     max"
-#if defined USE_MPI || defined USE_CAF
+#if defined USE_MPI
       if(prc%np(1)*prc%np(2)*prc%np(3) > 1) then
       write(*,'(a35,f8.3,a2)') "Communication duration          ", &
       & meas%mean_comm," s"

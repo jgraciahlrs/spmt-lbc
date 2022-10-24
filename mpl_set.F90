@@ -14,11 +14,8 @@ module mpl_lib
 ! 
 ! Message Passing Library 
 !
-! Supports MPI and Coarray Fortran. 
+! Supports MPI
 ! MPI is activated via the preprocessing Variable USE_MPI
-!         Then a routine has to be chosen
-! CAF ... USE_CAF
-!
 !
 !
 !
@@ -745,10 +742,6 @@ subroutine mpl_finish(prc)
    do i = 1,prc%nnghb
       deallocate(mpl_buffer(i)%send,stat=ierr)
       deallocate(mpl_buffer(i)%recv,stat=ierr)
-#ifdef CAF_DER_TYPE
-      deallocate(mpl_buffer(i)%send,stat=ierr)
-      deallocate(mpl_buffer(i)%recv,stat=ierr)
-#endif
 #if defined MPI_NOT_ALL_DENS
       deallocate(mpl_buffer(i)%idx,stat=ierr)
       deallocate(mpl_buffer(i)%idx_recv,stat=ierr)

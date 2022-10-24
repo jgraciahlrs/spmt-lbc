@@ -323,14 +323,6 @@ contains
       meas%mem_thread = real(R8B*(int(lb_dom%lx(1)+2)*int(lb_dom%lx(2)+2)*int(2+lb_dom%lx(3))*int(1+NDIM+nnod) + & 
             & int(lb_dom%lx(1)+2) + int(lb_dom%lx(2)+2) + int(lb_dom%lx(3)+2)) + &
             & int(I4B)*(int(2+gx)*int(2+gy)*int(2+gz)),R8B)/10**6
-#ifdef USE_ADCL
-#ifdef D2Q9
-      meas%mem_thread = meas%mem_thread + real((lb_dom%lx(1)+2)*(lb_dom%lx(2)+2)*R8B*nnod,R8B)/10**6
-#endif
-#ifdef D3Q19
-      meas%mem_thread = meas%mem_thread + real((lb_dom%lx(1)+2)*(lb_dom%lx(2)+2)*(lb_dom%lx(3)+2)*R8B*nnod,R8B)/10**6
-#endif
-#endif
       write(*,'(a35,f28.3)') "Memory allocated per thread  [MB]",meas%mem_thread
       write(*,'(a35,f28.3)') "Additional Memory for master [MB]",meas%mem_master
       write(*,'(a35,f28.3)') "Total Memory needed          [MB]",meas%mem_thread*real(prc%size)+meas%mem_master

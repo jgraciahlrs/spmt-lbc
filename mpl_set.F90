@@ -146,10 +146,6 @@ contains
 
 
 
-#ifdef USE_ADCL
-      call ADCL_Init(prc%ierr)
-      call ADCL_Vmap_halo_allocate(prc%n_ghost_nodes,prc%adcl_vmap,prc%ierr)
-#endif
 #endif  
 #ifdef USE_CAF
       prc%size          = num_images()
@@ -804,48 +800,6 @@ end subroutine mpl_assign_neighbors
 
 
 
-#ifdef USE_ADCL
-!------------------------------------------------------------------------
-subroutine mpl_adcl_init(lb_dom,s_par,prc) 
-   use LBMODEL
-   type(lb_block),intent(inout)     :: lb_dom
-   type(sim_parameter),intent(in)   :: s_par
-   type(mpl_var)                    :: prc
-   integer                     :: dims(4)
-   integer                     :: lx,ly,lz
-#ifdef LAYOUT_LIJK
-   integer                     :: allocstat
-#endif
-
-   lx = lb_dom%lx(1)
-   ly = lb_dom%lx(2)
-   lz = lb_dom%lx(3)
-
-      dims = (/lx+2,ly+2,lz+2,nnod/)
-#ifdef LAYOUT_LIJK
-      allocate(prc%adcl_data(0:lx+1,0:ly+1,0:lz+1,nnod),stat=allocstat)
-      if(allocstat/=0) write(*,*) "Error allocating prc%adcl_data"
-      call ADCL_Vector_register_generic(3,dims,nnod,prc%adcl_vmap,mpi_double_precision,&
-                                       & prc%adcl_data,prc%adcl_vec,prc%ierr) 
-#endif
-#ifdef LAYOUT_IJKL
-      call ADCL_Vector_register_generic(3,dims,nnod,prc%adcl_vmap,mpi_double_precision,&
-                                       & lb_dom%fIn,prc%adcl_vec_fin,prc%ierr) 
-      call ADCL_Vector_register_generic(3,dims,nnod,prc%adcl_vmap,mpi_double_precision,&
-                                       & lb_dom%fOut,prc%adcl_vec_fout,prc%ierr) 
-#endif
-      call ADCL_Topology_create_extended(prc%cart_comm, prc%adcl_topo, prc%ierr )
-      call ADCL_Request_create(prc%adcl_vec_fIn,prc%adcl_topo,ADCL_FNCTSET_NEIGHBORHOOD, prc%adcl_request_fIn, prc%ierr)
-      call ADCL_Request_create(prc%adcl_vec_fOut,prc%adcl_topo,ADCL_FNCTSET_NEIGHBORHOOD, prc%adcl_request_fOut, prc%ierr)
-
-end subroutine mpl_adcl_init
-!------------------------------------------------------------------------
-#endif /*USE_ADCL*/
-
-
-
-
-
 
 
 
@@ -861,16 +815,6 @@ subroutine mpl_finish(prc)
 
 
 #ifdef USE_MPI
-#ifdef USE_ADCL
-   ! finalize ADCL
-   call ADCL_Request_free ( prc%adcl_request_fIn, ierr )
-   call ADCL_Request_free ( prc%adcl_request_fOut, ierr )
-   call ADCL_Vector_deregister ( prc%adcl_vec_fIn, ierr )
-   call ADCL_Vector_deregister ( prc%adcl_vec_fOut, ierr )
-   call ADCL_Vmap_free ( prc%adcl_vmap, ierr )
-   call ADCL_Topology_free ( prc%adcl_topo, ierr )
-   call ADCL_finalize( ierr )
-#endif
 
 #if defined(PERSISTENT2)
    ! kill persistent mpi requests
@@ -1407,40 +1351,6 @@ endif
 
 #if defined USE_MPI
 
-#ifdef USE_ADCL
-
-!-----------------------------------------------------------------------
-! ADCL Communication 
-!-----------------------------------------------------------------------
-
-#ifdef LAYOUT_LIJK
-   write(*,*) "For ADCL, please use Layout IJKL for good performance. Stopping..."
-   stop
-#endif /* LAYOUT_LIJK */
-
-!----------------------------------
-! ADCL data exchange (ADCL Request) 
-
-   call cpu_time_measure(comm_start) 
-   if ( prc%adcl_active_req == 0 ) then 
-      call ADCL_Request_start(prc%adcl_request_fIn, prc%ierr)
-   else
-      call ADCL_Request_start(prc%adcl_request_fOut, prc%ierr)
-   end if
-   call cpu_time_measure(comm_end) 
-   meas%mpl_exch = meas%mpl_exch + comm_end - comm_start
-
-   ! Measure the size of the exchange-buffers
-   if(prc%nghb(1) /= mpl_proc_null) meas%mpl_comm_size = meas%mpl_comm_size   + real(prc%length(1)*R8B)
-   if(prc%nghb(2) /= mpl_proc_null) meas%mpl_comm_size = meas%mpl_comm_size   + real(prc%length(2)*R8B)
-   if(prc%nghb(3) /= mpl_proc_null) meas%mpl_comm_size = meas%mpl_comm_size   + real(prc%length(3)*R8B)
-   if(prc%nghb(4) /= mpl_proc_null) meas%mpl_comm_size = meas%mpl_comm_size   + real(prc%length(4)*R8B)
-   if(prc%nghb(5) /= mpl_proc_null) meas%mpl_comm_size = meas%mpl_comm_size   + real(prc%length(5)*R8B)
-   if(prc%nghb(6) /= mpl_proc_null) meas%mpl_comm_size = meas%mpl_comm_size   + real(prc%length(6)*R8B)
-
-
-#else /* if no USE_ADCL !! */
-
 
 !------------------------------------------------------------------------------
 ! MPI Isend Irecv, Sendrecv and Persistent,... 
@@ -1487,7 +1397,6 @@ endif
    enddo
 #endif
 
-#endif /* USE_ADCL */
 #endif /* USE_MPI */
 
 

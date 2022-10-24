@@ -79,9 +79,6 @@ PROGRAM lbmain
    call mpl_init_domain(lb_dom,s_par,prc)
 
    call alloc_mem(lb_dom,s_par,prc)
-#ifdef USE_ADCL
-   call mpl_adcl_init(lb_dom,s_par,prc)
-#endif /*USE_ADCL*/
 
 
 !------------------------------------------------------------------------
@@ -184,18 +181,6 @@ endif
 #else
       swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
 #endif /* USE_SMPSS */
-
-#ifdef USE_ADCL
-#ifdef COMBINE_STREAM_COLLIDE
-      if(mod(tStep,2)==0) then
-      prc%adcl_active_req=1
-      else
-      prc%adcl_active_req=0
-      endif
-#else
-      prc%adcl_active_req=0
-#endif
-#endif /*USE_ADCL*/
 
       !---------------------------
       ! Exchange between domains

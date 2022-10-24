@@ -11,14 +11,9 @@
 
 module nrt_lib
    implicit none
-#ifndef USE_ADCL
    include 'mpif.h'
-#endif
 
 #ifdef USE_MPI
-#ifdef USE_ADCL
-   include 'ADCL.inc'
-#endif
 #endif
     integer(4), parameter :: MAXDIMS=3
     integer, parameter :: dEAST=1,dWEST=3,dNORTH=2,dSOUTH=4,dTOP=5,dBOTTOM=6
@@ -226,11 +221,6 @@ module nrt_lib
       
 #ifdef USE_MPI
       integer                  :: stat(MPI_STATUS_SIZE) 
-#ifdef USE_ADCL
-      integer                  :: adcl_vmap, adcl_vec_fIn, adcl_vec_fOut, adcl_topo, & 
-                                  adcl_request_fIn, adcl_request_fOut, adcl_active_req
-      real(R8B),pointer        :: adcl_data(:,:,:,:) => NULL() 
-#endif /* USE_ADCL */
 #endif /* USE_MPI */
       ! number of mpi-processes in each cartesian direction
       integer                  :: np(3)    ! 

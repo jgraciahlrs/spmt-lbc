@@ -479,8 +479,6 @@ end subroutine
  "sendrecv" &
 #elif defined MPI_SUBARRAY 
  "subarray" &
-#elif defined USE_ADCL
- "adcl" &
 #elif defined USE_CAF
  "caf" &
 #elif defined PERSISTENT 

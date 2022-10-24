@@ -67,10 +67,7 @@ PARALLEL += $(FDEF)-DSENDRECV          # use MPI_SENDRECV
 #PARALLEL += $(FDEF)-DMPI_SUBARRAY      # use a mpi derived type subarray for the exchange
 #PARALLEL += $(FDEF)-DBUFFER_EACH       # Use separate buffers for each direction 
 PARALLEL += $(FDEF)-DCOMM_REDUCED      # Only Exchange necessary densities
-#PARALLEL += $(FDEF)-DSYNCHRONIZE_COMM  # mpl_barrier before communication
-#                              
-# Use ADCL. USE_MPI has to be activated 
-#PARALLEL += $(FDEF)-DUSE_ADCL          
+#PARALLEL += $(FDEF)-DSYNCHRONIZE_COMM  # mpl_barrier before communication       
 
 # CoArray Fortran Usage (use instead of mpi)
 #PARALLEL += $(FDEF)-DUSE_CAF           
@@ -544,12 +541,6 @@ PARAMESH_INC = amr_headers
 
 LINK_BASELIB=-L$(BASELIB_DIR) 
 
-
-ifeq ($(findstring ADCL,$(PARALLEL)),ADCL)
-ADCL_INCLUDES=$(INCLUDE_DIR)
-LINK_BASELIB+=-ladcl$(LIBEXT)
-INCLUDES=-I$(BASELIB_DIR) -I$(ADCL_INCLUDES)
-endif
 
 LIBS= $(LINK_BASELIB)
 ifeq ($(findstring USE_CAF,$(PARALLEL)),USE_CAF)

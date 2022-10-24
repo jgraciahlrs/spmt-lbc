@@ -236,14 +236,6 @@ else
    endif
 
 #--------------------------------
-# Marmot
-
-   ifeq ($(findstring marmot,$(COMPILER)),marmot)
-      COMP=marmotf90
-      CCOMP=marmotcc
-   endif
-
-#--------------------------------
 # Vampir
 
    ifeq ($(findstring vampir,$(COMPILER)),vampir)

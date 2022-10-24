@@ -15,7 +15,6 @@
 
 #HPC_TYPE=sx8
 #HPC_TYPE=sx9
-#HPC_TYPE=cray
 #HPC_TYPE=xe6
 HPC_TYPE=nehalem
 #HPC_TYPE=bluegene
@@ -31,7 +30,6 @@ COMPILER=gnu#_ompss#_smpss#_omp#_trace#_debug
 #COMPILER=intel_debug
 #COMPILER=intel#_smpss
 #COMPILER=ibmxl
-#COMPILER=cray
 #COMPILER=g95
 
 
@@ -353,44 +351,6 @@ else
    endif
 
 #--------------------------------
-# CRAY 
-
-   ifeq ($(findstring cray,$(HPC_TYPE)),cray) 
-      ifeq ($(findstring cray,$(COMPILER)),cray)
-         COMP=ftn 
-         CCOMP=cc
-   
-         # -eZ preprocessing
-   
-         # -ec Interface checking
-         # -eC call site checking
-         # -eD all debugging information (same as -O0, -g, -m2, -R bcdspi, and -rl)
-         # -eI all variables must be typed
-         # -en report nonstandard Fortran usage
-         # -g  debugging support (same as -G0)
-         # -m 0 messages of type Error, warning, caution, note, and comment
-         # -M 300 supress messages of type 300
-         # -O0 no optimization
-         # -R abcdps runtime checks
-   
-         F90_CFLAGS_DEBUG= -eZ -ec -eC -eD -eI -en -g  -m 0 -O0 -R abcdps -F 
-# -s real64 integer32 
-         F90_LFLAGS_DEBUG= -ec -eC -eD -eI -en -g  -m 0 -O0 -R abcdps -F 
-   
-         # -eo display optimizations options to stderr
-         # -G2 full optimization
-         # -h msgs write optimization messages to stderr.
-         # -h negmsgs write messages explaining why optimizations did not occur in a given instance to stderr
-         # -O3 optimization
-         # -O ipa5 Aggressive interprocedural analysis (IPA)
-         # #-O aggress compiler treats a program unit as a single optimization region => increases compile time
-   
-         F90_CFLAGS_OPT=-eZ -eo -G2 -h msgs -h negmsgs -O3 -O ipa5 -F
-         F90_LFLAGS_OPT=-eo -G2 -h msgs -h negmsgs -O3 -O ipa5 -F
-      endif
-   endif
-
-#--------------------------------
 # Scalasca: simply add scalasca -instrument before command
 
    ifeq ($(findstring scalasca,$(COMPILER)),scalasca)
@@ -399,9 +359,6 @@ else
    endif
 
 
-   ifeq ($(findstring cray,$(HPC_TYPE)),cray) 
-      COMP=ftn
-   endif
 
 #--------------------------------
 # LIBRARIES

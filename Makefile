@@ -17,7 +17,6 @@
 #HPC_TYPE=sx9
 #HPC_TYPE=xe6
 HPC_TYPE=nehalem
-#HPC_TYPE=bluegene
 
 #---------------------
 # Compiler:
@@ -29,15 +28,8 @@ COMPILER=gnu#_ompss#_smpss#_omp#_trace#_debug
 #COMPILER=vampir
 #COMPILER=intel_debug
 #COMPILER=intel#_smpss
-#COMPILER=ibmxl
 
 
-
-
-# IBM Compiler: Pass Arguments with additional switch -wf,-D...
-ifeq ($(findstring ibmxl,$(COMPILER)),ibmxl) 
- FDEF = -WF,
-endif
 
 
 #-------------------------------------------------------------------------
@@ -143,38 +135,6 @@ else
 
 #--------------------------------
 # no vector machine
-
-#--------------------------------
-# IBM Compiler BlueGene/P
-   ifeq ($(findstring ibmxl,$(COMPILER)),ibmxl)
-      COMP=mpixlf90
-      CCOMP=mpixlc
-
-#      CPPDEFINES=-WF,"$(LBMODEL) $(PARALLEL)"
-
-      F90_CFLAGS_OPT=-O3 -qstrict -qarch=450 -qtune=450
-      F90_LFLAGS_OPT=-O3 -qstrict -qarch=450 -qtune=450
-      ifeq ($(findstring vamp,$(COMPILER)),vamp)
-      COMP=bgvtf90 -vt:f90 mpixlf90
-      CCOMP=bgvtcc -vt:cc mpixlc
-      endif
-      ifeq ($(findstring scalasca,$(COMPILER)),scalasca)
-      COMP=scalasca -instrument mpixlf90
-      CCOMP=scalasca -instrument mpixlc
-      endif
-        #--------------------------------
-      # PROFILING 
-#      ifeq ($(findstring profile,$(COMPILER)),profile)
-#         F90_CFLAGS_DEBUG+=-p -g
-#         F90_LFLAGS_DEBUG+=-p
-#         F90_CFLAGS_OPT+=-p -g
-#         F90_LFLAGS_OPT+=-p
-#      endif
-#      ifeq ($(findstring vamp,$(COMPILER)),vamp)
-#      COMP=vtf90 -vt:f90 mpif90
-#      CCOMP=vtcc -vt:cc mpicc
-#      endif
-   else
 
 #--------------------------------
 # INTEL 
@@ -345,7 +305,6 @@ else
    endif
 
    endif
-endif
 
    LIBEXT=_$(HPC_TYPE)$(PROFEXT)
    ifeq ($(HPC_TYPE),nehalem)

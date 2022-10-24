@@ -30,7 +30,6 @@ COMPILER=gnu#_ompss#_smpss#_omp#_trace#_debug
 #COMPILER=intel_debug
 #COMPILER=intel#_smpss
 #COMPILER=ibmxl
-#COMPILER=g95
 
 
 
@@ -209,27 +208,6 @@ else
       ifeq ($(findstring vamp,$(COMPILER)),vamp)
       COMP=vtf90 -vt:f90 mpif90
       CCOMP=vtcc -vt:cc mpicc
-      endif
-   endif
-
-#--------------------------------
-# G95
-   ifeq ($(findstring g95,$(COMPILER)),g95)
-      COMP=g95   
-      CCOMP=mpicc
-
-      F90_CFLAGS_DEBUG=-xf95-cpp-input -O0 -g -fbounds-check -Wall
-      F90_LFLAGS_DEBUG=-O0 -g -fbounds-check -Wall -pedantic
-
-      F90_CFLAGS_OPT=-std=f2003 -O3
-      F90_LFLAGS_OPT=-std=f2003 -O3
-      #--------------------------------
-      # PROFILING 
-      ifeq ($(findstring profile,$(COMPILER)),profile)
-         F90_CFLAGS_DEBUG+=-pg
-         F90_LFLAGS_DEBUG+=-pg
-         F90_CFLAGS_OPT+=-pg
-         F90_LFLAGS_OPT+=-pg
       endif
    endif
 

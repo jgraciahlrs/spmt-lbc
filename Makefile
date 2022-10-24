@@ -15,7 +15,6 @@
 
 #HPC_TYPE=sx8
 #HPC_TYPE=sx9
-#HPC_TYPE=bwgrid
 #HPC_TYPE=cray
 #HPC_TYPE=xe6
 HPC_TYPE=nehalem
@@ -458,10 +457,6 @@ endif
    LIBEXT=_$(HPC_TYPE)$(PROFEXT)
    ifeq ($(HPC_TYPE),nehalem)
       LIBEXT=_$(HPC_TYPE)_x86_64$(PROFEXT)
-   else 
-      ifeq ($(HPC_TYPE),bwgrid)
-         LIBEXT=_$(HPC_TYPE)_x86_64$(PROFEXT)
-      endif
    endif
 
 

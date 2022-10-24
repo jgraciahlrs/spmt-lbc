@@ -226,21 +226,6 @@ CPPDEFINES=$(LBMODEL) $(PARALLEL)
      endif
    endif
 
-#--------------------------------
-# Scalasca: simply add scalasca -instrument before command
-
-   ifeq ($(findstring scalasca,$(COMPILER)),scalasca)
-      COMP:=scalasca -instrument $(COMP) 
-      CCOMP:=scalasca -instrument $(CCOMP) 
-   endif
-
-
-
-#--------------------------------
-# LIBRARIES
-   ifeq ($(findstring vampir,$(COMPILER)),vampir) 
-      PROFEXT+=_vampir
-   endif
 
 
 

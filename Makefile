@@ -19,12 +19,10 @@ HPC_TYPE=nehalem
 #---------------------
 # Compiler:
 
-# Add _debug for debugging and smpss for StarSs/SMPSs
-#COMPILER=gnu_debug
-COMPILER=gnu#_ompss#_smpss#_omp#_trace#_debug
+COMPILER=gnu#_ompss#_omp#_trace#_debug
 #COMPILER=vampir
 #COMPILER=intel_debug
-#COMPILER=intel#_smpss
+#COMPILER=intel
 
 
 
@@ -113,15 +111,6 @@ CPPDEFINES=$(LBMODEL) $(PARALLEL)
       COMP=mpif90
       CCOMP=mpicc
 
-      ifeq ($(findstring smpss,$(COMPILER)),smpss)
-        # find parameters with mpif90/cc -showme	
-	SFDEF=-Wf,
-	SCDEF=-Wc,
-	SLDEF=-Wl,
-	COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/ifort/smpss-cc/')
-	CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/icc/smpss-cc/') 
-      endif
-
       F90_CFLAGS_DEBUG=$(SFDEF)-fpp -O0 -g $(SFDEF)-check all $(SFDEF)-r8 $(SFDEF)-i4 $(SFDEF)-traceback $(SFDEF)-implicitnone $(SFDEF)-warn $(SFDEF)all $(SFDEF)-keep
       F90_LFLAGS_DEBUG=-g -O0 $(SLDEF)-r8 $(SLDEF)-i4  -L$(MPI_LIB_DIR) -lmpi_f90  
       #F90_CFLAGS_DEBUG+=-warn alignments,declarations,errors,general,ignore_loc,interfaces,truncated_source,uncalled,nounused,usage
@@ -172,15 +161,7 @@ CPPDEFINES=$(LBMODEL) $(PARALLEL)
     ifeq ($(findstring gnu,$(COMPILER)),gnu)
       ifeq ($(findstring xe6,$(HPC_TYPE)),xe6)
           COMP=ftn 
-          CCOMP=cc 
-          ifeq ($(findstring smpss,$(COMPILER)),smpss)
-              # find parameters with mpif90/cc -showme	
-              SFDEF=-Wf,
-	      SCDEF=-Wc,
-	      SLDEF=-Wl,
-              COMP=smpss-cc -I$(MPICH_DIR)/include
-	      CCOMP=smpss-cc -I$(MPICH_DIR)/include
-          endif
+          CCOMP=cc
           ifeq ($(findstring ompss,$(COMPILER)),ompss)
               # find parameters with mpif90/cc -showme	
               SFDEF=-Wf,
@@ -195,14 +176,6 @@ CPPDEFINES=$(LBMODEL) $(PARALLEL)
           COMP=mpif90 -O2
           CCOMP=mpicc -O2 
 
-          ifeq ($(findstring smpss,$(COMPILER)),smpss)
-            # find parameters with mpif90/cc -showme	
-	    SFDEF=-Wf,
-	    SCDEF=-Wc,
-	    SLDEF=-Wl,
-	    COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/smpss-cc2/')
-	    CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/smpss-cc2/') 
-          endif
           ifeq ($(findstring ompss,$(COMPILER)),ompss)
             # find parameters with mpif90/cc -showme	
 	    #SFDEF=-Wf,
@@ -240,18 +213,12 @@ CPPDEFINES=$(LBMODEL) $(PARALLEL)
          F90_LFLAGS_OPT+=$(SLDEF)-pg
       endif
      #
-     # smpss/paraver tracing
+     # paraver tracing
      ifeq ($(findstring trace,$(COMPILER)),trace)
 	F90_CFLAGS_DEBUG += -g       # paraver caller stack unwinding
 	F90_LFLAGS_DEBUG += -g
 	F90_CFLAGS_OPT   += -g
 	F90_LFLAGS_OPT   += -g
-	ifeq ($(findstring smpss,$(COMPILER)),smpss)  # smpss events
-	  F90_CFLAGS_DEBUG += -t -k
-	  F90_LFLAGS_DEBUG += -t -k
-	  F90_CFLAGS_OPT   += -t -k
-	  F90_LFLAGS_OPT   += -t -k
-        endif
 	ifeq ($(findstring ompss,$(COMPILER)),ompss)  # ompss events
           COMP = mfc --cc=ftn --ompss --instrumentation  -I$(MPICH_DIR)/include -L$(EXTRAE_HOME)/lib -lnanosmpitracef
           COMP = mfc --cc=CC --ompss --instrumentation  -I$(MPICH_DIR)/include -L$(EXTRAE_HOME)/lib -lnanosmpitracef
@@ -383,13 +350,13 @@ $(CMD): $(OBJS) $(mainobject)
 .PHONY: $(LIBS)
 
 clean:
-	- rm -f *.o *.mod *.i lbc *.mf95ss smpss_*.{f,F}90 *-adapters.c *-registration.c 
+	- rm -f *.o *.mod *.i lbc *.mf95ss *-adapters.c *-registration.c 
 	@echo '==============================================================='
 	@echo '=  c l e a n e d                                              ='
 	@echo '==============================================================='
 
 cleanall:
-	- rm -f *.o *.mod *.i *.i90 lbc *.mf95ss smpss_*.{F,f}90 *-registration.c *-adapters.c *.tasks
+	- rm -f *.o *.mod *.i *.i90 lbc *.mf95ss *-registration.c *-adapters.c *.tasks
 	@echo '==============================================================='
 	@echo '=  c l e a n e d     u p    a l l                             ='
 	@echo '==============================================================='

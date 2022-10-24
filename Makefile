@@ -31,7 +31,6 @@ COMPILER=gnu#_ompss#_smpss#_omp#_trace#_debug
 #COMPILER=intel_debug
 #COMPILER=intel#_smpss
 #COMPILER=ibmxl
-#COMPILER=pgi_debug
 #COMPILER=cray
 #COMPILER=g95
 
@@ -397,39 +396,6 @@ else
          F90_CFLAGS_OPT=-eZ -eo -G2 -h msgs -h negmsgs -O3 -O ipa5 -F
          F90_LFLAGS_OPT=-eo -G2 -h msgs -h negmsgs -O3 -O ipa5 -F
       endif
-   endif
-
-#--------------------------------
-# PGI Compiler
-
-   ifeq ($(findstring pgi,$(COMPILER)),pgi)
-      COMP=mpif90 
-      CCOMP=cc
-
-      # -Mpreprocess preprocessing
-
-      # #-help=debug display information
-      # -C Exposes Ansi warnings only.
-      # -g Includes debugging information in the object module.
-      # -Ktrap=fp,denorm,unf,inexact
-      # -M bounds, array bound checking
-      #    chkptr,  NULL pointers 
-      #       dclchk,  all variables declared? 
-      # -O0 no optimization
-
-      F90_CFLAGS_DEBUG= -i4 -r8 -Mpreprocess -C -g -Mbounds,chkptr,dclchk -O0  #crashes with: -Ktrap=fp,denorm,unf,inexact  
-      F90_LFLAGS_DEBUG=  -i4 -r8 -C -g -Mbounds,chkptr,dclchk -O0  #crashes with: -Ktrap=fp,denorm,unf,inexact 
-
-      # #-help=opt display information
-      # -fast    Generally optimal set of flags for targets that support SSE capability.
-     # -fastsse Generally optimal set of flags for targets that include SSE/SSE2 capability.
-      # -M info  prints info messages
-	 #    ipa  inter-procedural optimization:w
-      # -nfast Generally optimal set of flags for the target. Doesn't use SSE.
-	 # -O4  Specifies code optimization level where <level> is 0, 1, 2, 3, or 4.
-
-      F90_CFLAGS_OPT= -i4 -r8 -Mpreprocess -fast -fastsse -Minfo,ipa -O4
-      F90_LFLAGS_OPT= -i4 -r8 -fast -fastsse -Minfo,ipa -O4
    endif
 
 #--------------------------------

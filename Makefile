@@ -106,8 +106,6 @@ LBMODEL += $(FDEF)-DCOMBINE_STREAM_COLLIDE
 #  save array in memory as l as density (1...9 / 1...19) and x-,y-,z- component 
 LBMODEL += $(FDEF)-DLAYOUT_LIJK
 
-# Timestep information
-#LBMODEL += $(FDEF)-DWRITE_TSTATUS=2 #    Write info about the timestep duration every ith step
 # Use Fortran 2003 statements
 #LBMODEL += $(FDEF)-DF2003_ALLOC_DERIVED_TYPE # use allocatables in derived type
 #LBMODEL += $(FDEF)-DVERBOSE # write out extra information 

@@ -13,8 +13,6 @@
 #---------------------
 # Define Machine Name here:
 
-#HPC_TYPE=sx8
-#HPC_TYPE=sx9
 #HPC_TYPE=xe6
 HPC_TYPE=nehalem
 
@@ -24,7 +22,6 @@ HPC_TYPE=nehalem
 # Add _debug for debugging and smpss for StarSs/SMPSs
 #COMPILER=gnu_debug
 COMPILER=gnu#_ompss#_smpss#_omp#_trace#_debug
-#COMPILER=sx
 #COMPILER=vampir
 #COMPILER=intel_debug
 #COMPILER=intel#_smpss
@@ -105,33 +102,7 @@ CPPDEFINES=$(LBMODEL) $(PARALLEL)
 #----------------------------------------------------------------
 # Machine specific 
 #----------------------------------------------------------------
-
-#--------------------------------
-# Vector Machine
-
-ifeq ($(findstring sx,$(HPC_TYPE)),sx) #vector machine
-   COMP=sxmpif90
-   CCOMP=sxmpicc
-
-   F90_CFLAGS_DEBUG=-Chopt  -g -EP  -Wf,'-M zdiv,flovf,flunf,fxovf,inv' -Wf,'-init stack=nan,heap=nan'
-   F90_LFLAGS_DEBUG=-g -Cdebug
-
-   #F90CFLAGS_OPT=-float0 -f4 -Pmulti -ew -EP -p -f2003 #-Wf"-ptr byte-pvctl noassume -pvctl chgpwr -pvctl loopcnt=200000" #-Wl"-Z 60G"
-   F90_CFLAGS_OPT=-Chopt -EP -ftrace #-pvctl fullmsg
-   F90_LFLAGS_OPT=-Chopt -ftrace
-   ifeq ($(findstring F2003,$(HPC_TYPE)),F2003) #vector machine
-      F90_CFLAGS_OPT+= -f2003
-      F90_LFLAGS_OPT+= -f2003
-      F90_CFLAGS_DEBUG+= -f2003
-      F90_LFLAGS_DEBUG+= -f2003
-   endif
-#   ifeq ($(HPC_TYPE),sx9)
-#   #-ftrace -mpitrace
-#   else ($(HPC_TYPE),sx8)
-#   #
-#   endif
-
-else 
+ 
 
 #--------------------------------
 # no vector machine
@@ -302,8 +273,6 @@ else
 # LIBRARIES
    ifeq ($(findstring vampir,$(COMPILER)),vampir) 
       PROFEXT+=_vampir
-   endif
-
    endif
 
    LIBEXT=_$(HPC_TYPE)$(PROFEXT)

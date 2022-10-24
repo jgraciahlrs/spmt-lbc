@@ -17,8 +17,8 @@
 #HPC_TYPE=sx9
 #HPC_TYPE=bwgrid
 #HPC_TYPE=cray
-HPC_TYPE=xe6
-#HPC_TYPE=nehalem
+#HPC_TYPE=xe6
+HPC_TYPE=nehalem
 #HPC_TYPE=bluegene
 
 #---------------------
@@ -26,7 +26,7 @@ HPC_TYPE=xe6
 
 # Add _debug for debugging and smpss for StarSs/SMPSs
 #COMPILER=gnu_debug
-COMPILER=gnu_ompss#_smpss#_omp#_trace#_debug
+COMPILER=gnu#_ompss#_smpss#_omp#_trace#_debug
 #COMPILER=sx
 #COMPILER=vampir
 #COMPILER=intel_debug

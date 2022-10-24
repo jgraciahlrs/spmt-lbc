@@ -242,11 +242,6 @@ CPPDEFINES=$(LBMODEL) $(PARALLEL)
       PROFEXT+=_vampir
    endif
 
-   LIBEXT=_$(HPC_TYPE)$(PROFEXT)
-   ifeq ($(HPC_TYPE),nehalem)
-      LIBEXT=_$(HPC_TYPE)_x86_64$(PROFEXT)
-   endif
-
 
 
 ifeq ($(findstring debug,$(COMPILER)),debug)

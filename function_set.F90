@@ -467,9 +467,6 @@ end subroutine
       s_par%modelname = "d3q19"
 #endif
       temp_name       = s_par%modelname
-#ifdef TRT 
-      s_par%modelname = trim(temp_name)//'_trt'
-#endif
 #ifdef SPONGE
       s_par%modelname = "spg_"//s_par%modelname
 #endif
@@ -616,11 +613,7 @@ end subroutine
          write(*,*) "Model:    D3Q19"
 #endif
          write(*,*) "Relaxation is: ", &
-#ifdef TRT
-"trt"
-#else /* TRT > BGK */
 "bgk"
-#endif /* TRT */
 #ifdef LES_SMAGORINSKY
          write(*,*) "Turbulence Model: LES-Smagorinsky"
 #endif /* LES_SMAGORINSKY */

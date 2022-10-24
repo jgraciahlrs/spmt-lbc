@@ -100,8 +100,6 @@ LBMODEL += $(FDEF)-DD3Q19
 # Use the turbulence model LES Smagorinsky for higher Reynolds numbers
 #LBMODEL += $(FDEF)-DLES_SMAGORINSKY
 #LBMODEL += $(FDEF)-DDEBUG_LES
-# TRT: two-relaxation time mode
-#LBMODEL += $(FDEF)-DTRT
 
 #Special options for co-rotating vortex pair (averaging)
 #LBMODEL += $(FDEF)-DCRVP

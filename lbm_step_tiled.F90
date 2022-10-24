@@ -322,11 +322,7 @@ call set_bnds_task(lb_dom, s_par,prc,meas, tStep)
 #error "The tiled version of lbc necessarily requires to set -DCOMBINE_STREAM_COLLIDE in the Makefile."
 #endif
 
-#ifdef TRT
-    call stream_collide_trt(lb_dom,pnt_nxt,pnt_cur,s_par%omega)
-#else
     call stream_collide_bgk( lb_dom,pnt_nxt,pnt_cur,s_par,meas)
-#endif
   end subroutine lb_step_tile
 
 

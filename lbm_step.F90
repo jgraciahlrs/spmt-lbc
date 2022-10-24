@@ -30,11 +30,7 @@ contains
 #ifdef COMBINE_STREAM_COLLIDE
       !---------------------------
       ! Combined Stream-collide Routine
-#ifdef TRT
-    call stream_collide_trt(lb_dom,pnt_nxt,pnt_cur,s_par%omega)
-#else
     call stream_collide_bgk( lb_dom,pnt_nxt,pnt_cur,s_par,meas)
-#endif
 #else
     !---------------------------
     ! Propagation fIn => fOut 
@@ -45,11 +41,7 @@ contains
 
     !---------------------------
     ! Collision routine fOut => fIn, excluding solid nodes 
-#ifdef TRT
-    call collide_trt(lb_dom,pnt_nxt,pnt_cur,s_par%omega)
-#else
     call collide_bgk( lb_dom,pnt_nxt,pnt_cur,s_par,meas)
-#endif
 #endif
 
     ! do boundary conditions after stream and collide steps

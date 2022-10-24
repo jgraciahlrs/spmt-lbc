@@ -136,7 +136,6 @@ LBMODEL += $(FDEF)-DLAYOUT_LIJK
 #LBMODEL += $(FDEF)-DWRITE_TSTATUS=2 #    Write info about the timestep duration every ith step
 # Use Fortran 2003 statements
 #LBMODEL += $(FDEF)-DF2003_ALLOC_DERIVED_TYPE # use allocatables in derived type
-#LBMODEL += $(FDEF)-DTEC_OUT # Write Tecplot Binary output
 #LBMODEL += $(FDEF)-DVERBOSE # write out extra information 
 
 
@@ -523,12 +522,6 @@ LINK_BASELIB=-L$(BASELIB_DIR)
 
 
 LIBS= $(LINK_BASELIB)
-ifeq ($(findstring TEC_OUT,$(LBMODEL)),TEC_OUT)
-   LIBS+= -lstdc++
-   TEC_LIB=./lib/tecio.a
-else
-   TEC_LIB=
-endif
 ifeq ($(findstring USE_OMPSS_MPI,$(PARALLEL)),USE_OMPSS_MPI)
    INCLUDES+=-I$(OMPSS_MPI_HOME)
    LIBS+=-L$(OMPSS_MPI_HOME) -lompssmpi
@@ -583,7 +576,7 @@ all: $(CMD)
 
 
 $(CMD): $(OBJS) $(mainobject)
-	$(COMP) $(F90LFLAGS) -o  $@  $^ $(TEC_LIB) $(INCLUDES) $(LIBS)
+	$(COMP) $(F90LFLAGS) -o  $@  $^ $(INCLUDES) $(LIBS)
 	@echo -e '\033[32m                                                       '
 	@echo '      '
 	@echo '         oooo   .o8                       '

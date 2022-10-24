@@ -614,9 +614,6 @@ end subroutine
 #endif
          write(*,*) "Relaxation is: ", &
 "bgk"
-#ifdef LES_SMAGORINSKY
-         write(*,*) "Turbulence Model: LES-Smagorinsky"
-#endif /* LES_SMAGORINSKY */
 
          write(*,*) "----------------------------------------------"
          write(*,*) 

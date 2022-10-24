@@ -155,17 +155,6 @@ endif
       real(R8B),pointer,dimension(:,:,:,:),intent(out)     :: fOut
       real(R8B),pointer,dimension(:,:,:,:),intent(inout)   :: fIn
       integer                    :: i,j,k,l
-#ifdef LES_SMAGORINSKY
-      integer                    :: is,js,ks,ls
-      real(R8B)  ::  tau0,q_bgk(NDIM,NDIM),q_sum,tau_turb,cs4inv
-      real(R8B),parameter :: sqrt2  = 1.4142135623731d0 
-      real(R8B),parameter :: c_smag = 0.16d0 
-#ifdef DEBUG_LES
-      real(R8B)  ::  omega_min 
-      omega_min = 3.0 
-#endif /* LES_SMAGORINSKY */
-
-#endif /* LES_SMAGORINSKY */
 
 
       call cpu_time_measure(meas%tSt_comm) 
@@ -174,23 +163,13 @@ endif
 
       t2cs4inv = 1._R8B/(2._R8B*cs*cs*cs*cs)
       t2cs2inv = 1._R8B/(2._R8B*cs*cs)
-#ifdef LES_SMAGORINSKY
-      tau0 = 1.d0/omega
-      cs4inv = t2cs4inv*2._R8B 
-#endif /* LES_SMAGORINSKY */
 
 
     ! Single Relaxation time Collision routine
 #ifdef USE_OMP_FINE
-#ifdef LES_SMAGORINSKY	
-      !$omp parallel default(none) private(rholoc,fEq,u,usq,i,j,k,q_bgk,q_sum,tau_turb) &
-      !$omp& shared(fIn,fOut,t2cs2inv,t2cs4inv,s_par,lb_dom,cx,opp,tau0,cs4inv) &	
-      !$omp& firstprivate( omega,rho0 )
-#else
       !$omp parallel default(none) private(rholoc,fEq,u,usq,i,j,k) &
       !$omp& shared(fIn,fOut,t2cs2inv,t2cs4inv,s_par,lb_dom,cx,opp) &	
       !$omp& firstprivate( omega,rho0 )
-#endif/* LES_SMAGORINSKY */
       
       !$omp do collapse(2)
 #endif /* USE_OMP_FINE */
@@ -373,73 +352,6 @@ endif
 
 #endif /* D3Q19 */
 
-#ifdef LES_SMAGORINSKY
-! calculate additional turbulent viscosity with local non-equilibrium parts 
-! acutally, neighbor information is used (after propagation step!)
-q_bgk = 0.d0
-do js = 1,NDIM
-do is = 1,NDIM
-do ls = 1,nnod
-q_bgk(is,js)=q_bgk(is,js) + cx(ls,is)*cx(ls,js)*(fIn(NDX(ls,i,j,k))-fEq(ls)) 
-enddo
-enddo
-enddo
-
-#ifdef UNROLL
-q_bgk(1,1) = cx( 1,1)*cx( 1,1)*(fIn(NDX( 1,i,j,k))-fEq( 1)) &
-           + cx( 2,1)*cx( 2,1)*(fIn(NDX( 2,i,j,k))-fEq( 2)) &
-           + cx( 3,1)*cx( 3,1)*(fIn(NDX( 3,i,j,k))-fEq( 3)) &
-           + cx( 4,1)*cx( 4,1)*(fIn(NDX( 4,i,j,k))-fEq( 4)) &
-           + cx( 5,1)*cx( 5,1)*(fIn(NDX( 5,i,j,k))-fEq( 5)) &
-           + cx( 6,1)*cx( 6,1)*(fIn(NDX( 6,i,j,k))-fEq( 6)) &
-           + cx( 7,1)*cx( 7,1)*(fIn(NDX( 7,i,j,k))-fEq( 7)) &
-           + cx( 8,1)*cx( 8,1)*(fIn(NDX( 8,i,j,k))-fEq( 8)) &
-           + cx( 9,1)*cx( 9,1)*(fIn(NDX( 9,i,j,k))-fEq( 9)) &
-#ifdef D3Q19
-           + cx(10,1)*cx(10,1)*(fIn(NDX(10,i,j,k))-fEq(10)) &
-           + cx(11,1)*cx(11,1)*(fIn(NDX(11,i,j,k))-fEq(11)) &
-           + cx(12,1)*cx(12,1)*(fIn(NDX(12,i,j,k))-fEq(12)) &
-           + cx(13,1)*cx(13,1)*(fIn(NDX(13,i,j,k))-fEq(13)) &
-           + cx(14,1)*cx(14,1)*(fIn(NDX(14,i,j,k))-fEq(14)) &
-           + cx(15,1)*cx(15,1)*(fIn(NDX(15,i,j,k))-fEq(15)) &
-           + cx(16,1)*cx(16,1)*(fIn(NDX(16,i,j,k))-fEq(16)) &
-           + cx(17,1)*cx(17,1)*(fIn(NDX(17,i,j,k))-fEq(17)) &
-           + cx(18,1)*cx(18,1)*(fIn(NDX(18,i,j,k))-fEq(18)) &
-           + cx(19,1)*cx(19,1)*(fIn(NDX(19,i,j,k))-fEq(19)) 
-#else 
-           + 0.d0
-#endif
-#endif /* UNROLL */
-!q_sum = 0.d0
-!do js = 1,NDIM
-!do is = 1,NDIM
-!q_sum=q_sum + 2.d0*q_bgk(is,js)*q_bgk(is,js)
-!enddo
-!enddo
-q_sum = sqrt(2.d0*(q_bgk(1,1)*q_bgk(1,1) & 
-            + q_bgk(2,1)*q_bgk(2,1) & 
-            + q_bgk(1,2)*q_bgk(1,2) & 
-            + q_bgk(2,2)*q_bgk(2,2) & 
-#ifdef D3Q19
-            + q_bgk(3,1)*q_bgk(3,1) & 
-            + q_bgk(3,2)*q_bgk(3,2) & 
-            + q_bgk(1,3)*q_bgk(1,3) & 
-            + q_bgk(2,3)*q_bgk(2,3) & 
-            + q_bgk(3,3)*q_bgk(3,3) ) )
-#else /* D2Q9 */
-           ) )
-#endif /* D3Q19 */
-!q_sum = sqrt(q_sum)
-
-tau_turb = 0.5d0 *(sqrt(tau0*tau0 + 2.d0*c_smag*c_smag/rho0*cs4inv*q_sum)-tau0)
-omega = 1._R8B/(tau0+tau_turb)
-
-#ifdef DEBUG_LES
-if(omega < omega_min) omega_min = omega
-#endif /* DEBUG_LES */
-
-#endif /* LES_SMAGORINSKY */
-
 ! Finally, relax to local equilibrium
 
                fOut(NDX(1,i,j,k)) = fIn(NDX(1,i,j,k)) - omega*(fIn(NDX(1,i,j,k)) - fEq(1))
@@ -498,9 +410,6 @@ endif
       call cpu_time_measure(meas%tEnd_comm)
 
       meas%coll_duration = meas%tEnd_comm - meas%tSt_comm + meas%coll_duration
-#ifdef DEBUG_LES
-      write(66,*) gtstep_cur,omega_min
-#endif /* LES_SMAGORINSKY */
 
 
    end subroutine collide_bgk 

@@ -97,9 +97,6 @@ LBMODEL += $(FDEF)-DD3Q19
 # Use the incompressible model for higher stability
 #LBMODEL += $(FDEF)-DINCOMPRESSIBLE
 #LBMODEL += $(FDEF)-DSPONGE
-# Use the turbulence model LES Smagorinsky for higher Reynolds numbers
-#LBMODEL += $(FDEF)-DLES_SMAGORINSKY
-#LBMODEL += $(FDEF)-DDEBUG_LES
 
 #Special options for co-rotating vortex pair (averaging)
 #LBMODEL += $(FDEF)-DCRVP

@@ -18,9 +18,9 @@ HPC_TYPE=nehalem
 #---------------------
 # Compiler:
 
-COMPILER=gnu#_ompss#_omp#_trace#_debug
+COMPILER=gnu#_profile#_ompss#_openmp#_debug#_vampir
 #COMPILER=vampir
-#COMPILER=intel#_profile#_debug#_vampir#_omp
+#COMPILER=intel#_profile#_debug#_vampir
 #COMPILER=intel
 
 
@@ -154,15 +154,11 @@ ifeq ($(findstring gnu,$(COMPILER)),gnu)
    F90_LFLAGS_OPT+=
    #--------------------------------
    # OpenMP
-   ifeq ($(findstring omp,$(COMPILER)),omp)
-      ifeq ($(findstring ompss,$(COMPILER)),ompss)
-         # ignore, this is ompss
-      else  # this is really omp
-         F90_CFLAGS_DEBUG += -fopenmp
-         F90_LFLAGS_DEBUG += -fopenmp
-         F90_CFLAGS_OPT   += -fopenmp
-         F90_LFLAGS_OPT   += -fopenmp
-      endif
+   ifeq ($(findstring openmp,$(COMPILER)),openmp)
+      F90_CFLAGS_DEBUG += -fopenmp
+      F90_LFLAGS_DEBUG += -fopenmp
+      F90_CFLAGS_OPT   += -fopenmp
+      F90_LFLAGS_OPT   += -fopenmp
    endif 	
    # PROFILING 
    ifeq ($(findstring profile,$(COMPILER)),profile)
@@ -170,18 +166,6 @@ ifeq ($(findstring gnu,$(COMPILER)),gnu)
       F90_LFLAGS_DEBUG+=$(SLDEF)-pg
       F90_CFLAGS_OPT+=$(SFDEF)-pg
       F90_LFLAGS_OPT+=$(SLDEF)-pg
-   endif
-   #
-   # paraver tracing
-   ifeq ($(findstring trace,$(COMPILER)),trace)
-      F90_CFLAGS_DEBUG += -g       # paraver caller stack unwinding
-      F90_LFLAGS_DEBUG += -g
-      F90_CFLAGS_OPT   += -g
-      F90_LFLAGS_OPT   += -g
-      ifeq ($(findstring ompss,$(COMPILER)),ompss)  # ompss events
-         COMP = mfc --cc=ftn --ompss --instrumentation  -I$(MPICH_DIR)/include -L$(EXTRAE_HOME)/lib -lnanosmpitracef
-         COMP = mfc --cc=CC --ompss --instrumentation  -I$(MPICH_DIR)/include -L$(EXTRAE_HOME)/lib -lnanosmpitracef
-      endif
    endif
 endif
 

@@ -53,7 +53,7 @@ endif
 #-----------------------------------------------------
 # arg                             # description
 
-# For parallel either use USE_MPI with suboptions or use USE_CAF
+# For parallel either use USE_MPI with suboptions
 PARALLEL += $(FDEF)-DUSE_MPI    # Activate MPI:              
 #PARALLEL += $(FDEF)-DDEBUG_MPI 
 PARALLEL += $(FDEF)-DVERBOSE   # Output detailed information about parallel execution 
@@ -68,12 +68,6 @@ PARALLEL += $(FDEF)-DSENDRECV          # use MPI_SENDRECV
 #PARALLEL += $(FDEF)-DBUFFER_EACH       # Use separate buffers for each direction 
 PARALLEL += $(FDEF)-DCOMM_REDUCED      # Only Exchange necessary densities
 #PARALLEL += $(FDEF)-DSYNCHRONIZE_COMM  # mpl_barrier before communication       
-
-# CoArray Fortran Usage (use instead of mpi)
-#PARALLEL += $(FDEF)-DUSE_CAF           
-# use  
-#PARALLEL += $(FDEF)-DCAF_DER_TYPE
-#PARALLEL += $(FDEF)-DCAF_BENCH=2       # instead of communication routine, run a little caf benchmark 
 
 # StarSs options
 PARALLEL += $(FDEF)-DUSE_SMPSS $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32
@@ -142,7 +136,6 @@ LBMODEL += $(FDEF)-DLAYOUT_LIJK
 #LBMODEL += $(FDEF)-DWRITE_TSTATUS=2 #    Write info about the timestep duration every ith step
 # Use Fortran 2003 statements
 #LBMODEL += $(FDEF)-DF2003_ALLOC_DERIVED_TYPE # use allocatables in derived type
-#LBMODEL += $(FDEF)-DCHECK_CAF
 #LBMODEL += $(FDEF)-DTEC_OUT # Write Tecplot Binary output
 #LBMODEL += $(FDEF)-DVERBOSE # write out extra information 
 
@@ -439,12 +432,6 @@ else
    
          F90_CFLAGS_OPT=-eZ -eo -G2 -h msgs -h negmsgs -O3 -O ipa5 -F
          F90_LFLAGS_OPT=-eo -G2 -h msgs -h negmsgs -O3 -O ipa5 -F
-         ifeq ($(findstring CAF,$(PARALLEL)),CAF)
-           F90_CFLAGS_OPT   += -hcaf
-           F90_LFLAGS_OPT   += -hcaf
-           F90_CFLAGS_DEBUG += -hcaf
-           F90_LFLAGS_DEBUG += -hcaf
-         endif
       endif
    endif
 
@@ -543,13 +530,6 @@ LINK_BASELIB=-L$(BASELIB_DIR)
 
 
 LIBS= $(LINK_BASELIB)
-ifeq ($(findstring USE_CAF,$(PARALLEL)),USE_CAF)
-   LIB_CAF= 
-#-L/opt/xt-pe/2.1.50HD/lib_TV/snos64
-#   LIBS+=$(LIB_CAF)
-else
-   LIB_CAF=
-endif
 ifeq ($(USE_PARAMESH),1)
    INCLUDES += -I./$(PARAMESH_INC)
    LIBS+= -lmpi_paramesh
@@ -607,7 +587,7 @@ CPP=cpp -C -traditional-cpp
 	$(CPP) $(CPPDEFINES)  $< $(INCLUDES) | grep -v "^#" | grep -v "^$$" > $@  # note $$ is an  escaped $
 
 %.o: %.f90
-	$(COMP) $(CPPDEFINES) $(F90CFLAGS) -c $< $(INCLUDES) $(LIB_CAF)  
+	$(COMP) $(CPPDEFINES) $(F90CFLAGS) -c $< $(INCLUDES) 
 
 # dummy rule to override implicit rule in GNU make; sigh!
 %.o : %.mod

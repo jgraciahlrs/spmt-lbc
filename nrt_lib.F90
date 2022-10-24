@@ -180,10 +180,6 @@ module nrt_lib
    integer :: send_dat(rdcd_ngh),recv_dat(rdcd_ngh) ! why do handles inside prc create errors??
 
    type mpl_var
-#ifdef USE_CAF
-      integer,allocatable :: caf_cart_comm[:,:,:]
-      integer,allocatable :: caf_comm[:]
-#endif
       character(len=14)               :: comm_method
       character(len=14)               :: dens_layout 
       integer                    :: rk, size, comm, ierr, cart_comm
@@ -230,8 +226,6 @@ module nrt_lib
       integer                  :: pos_recv (glob_nnghb,3)
       integer                  :: length(glob_nnghb)
       integer                  :: length_recv(glob_nnghb)
-#ifdef USE_CAF
-#endif
 #ifdef USE_TILES
       integer                                          :: tileSize          ! size of tiles without ghost cells
       integer                                          :: nTiles            ! total # of tiles
@@ -259,22 +253,11 @@ module nrt_lib
 
 
 
-#ifdef USE_CAF
-#ifdef CAF_DER_TYPE
-   type(mpl_buf) :: mpl_buffer(glob_nnghb)[*] 
-#else
-   real(R8B),allocatable,target,dimension(:,:,:,:)[:] :: send1,recv1,send2,recv2,send3,recv3
-   real(R8B),allocatable,target,dimension(:,:,:,:)[:] :: send4,recv4,send5,recv5,send6,recv6
-!   real(R8B),pointer,dimension(:,:,:,:) :: send_pnti,recv_pnti,send_pntn,recv_pntn
-
-#endif
-#else /* NOT USE_CAF -> USE_MPI*/
 !#ifdef BUFFER_EACH /* BUFFER_EACH*/
    type(mpl_buf),save :: mpl_buffer(glob_nnghb) 
 !#else /* BUFFER_EACH*/
 !   type(mpl_buf) :: mpl_buffer(rdcd_ngh) 
 !#endif /* BUFFER_EACH*/
-#endif /* USE_CAF */  
 
 
 

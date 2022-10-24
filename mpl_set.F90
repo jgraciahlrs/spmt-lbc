@@ -46,9 +46,6 @@ module mpl_lib
 #else 
    integer,parameter :: mpl_proc_null = -2
 #endif
-#ifdef USE_CAF
-   integer :: cobnd(3) 
-#endif
 end module mpl_lib
 
 
@@ -147,19 +144,13 @@ contains
 
 
 #endif  
-#ifdef USE_CAF
-      prc%size          = num_images()
-      prc%rk            = this_image()-1
-#endif
 
 #ifndef USE_MPI 
-#ifndef USE_CAF
       prc%rk            = 0
       prc%size          = 1
       prc%root_th       = 0
       prc%root_crd      = (/0,0,0/)
       prc%crd           = (/0,0,0/)
-#endif
 #endif
 
 if(prc%rk==0) then
@@ -176,12 +167,6 @@ write(*,*) ""
 write(*,*) "              Lattice Boltzmann Kernel       "
 write(*,*) " " 
 endif
-#if defined USE_MPI && defined USE_CAF
-      if(prc%rk==0) then
-         write(*,*) "Caution: CAF and MPI are both active !!!"
-         write(*,*)
-      endif
-#endif
 
 
 end subroutine mpl_init 
@@ -233,11 +218,6 @@ subroutine mpl_init_cart_comm(prc)
    call MPI_COMM_RANK(prc%cart_comm,prc%rk,prc%ierr)
 
    call MPI_CART_COORDS(prc%cart_comm,prc%rk,3,prc%crd(1:NDIM),prc%ierr) 
-
-#endif
-#ifdef USE_CAF
-   allocate(prc%caf_cart_comm[prc%np(1),prc%np(2),*])
-   prc%crd = this_image(prc%caf_cart_comm)-1
 
 #endif
       ! Set root thread number and coordinates
@@ -339,7 +319,6 @@ subroutine mpl_divide_and_set_domain_size(lb_dom,s_par,prc)
       ! set all to zero first (there are more buffer entrys than needed for reduced comm)
 
 #ifndef USE_MPI 
-#ifndef USE_CAF
    ! if no parallelism is used, set global = local parameters
    prc%bnd(1,1,1,1,1) = 1
    prc%bnd(1,1,1,1,2) = s_par%gx(1) 
@@ -350,7 +329,6 @@ subroutine mpl_divide_and_set_domain_size(lb_dom,s_par,prc)
    lb_dom%lx(1)       = s_par%gx(1)
    lb_dom%lx(2)       = s_par%gx(2)
    lb_dom%lx(3)       = s_par%gx(3)
-#endif
 #endif
 
 #ifdef USE_MPI
@@ -402,16 +380,6 @@ subroutine mpl_divide_and_set_domain_size(lb_dom,s_par,prc)
          prc%bnd(prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1,3,2) = s_par%gx(3)
       end if
 #endif 
-#ifdef USE_CAF
-      ! the boundary of all coarrays have to be the same! as the first domain is the largest > 
-      ! assign to all coarrays
-      cobnd(1) = prc%bnd(1,1,1,1,2) &
-           &   - prc%bnd(1,1,1,1,1)+1 
-      cobnd(2) = prc%bnd(1,1,1,2,2) &
-           &   - prc%bnd(1,1,1,2,1)+1
-      cobnd(3) = prc%bnd(1,1,1,3,2) & 
-           &   - prc%bnd(1,1,1,3,1)+1
-#endif
       ! get the size of each subdomain
       lb_dom%lx(1) = prc%bnd(prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1,1,2) &
             &   - prc%bnd(prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1,1,1)+1 
@@ -527,32 +495,6 @@ subroutine mpl_create_buffers(lb_dom,prc)
                       (prc%pos_recv(neighbor,3) - prc%pos_recvs(neighbor,3) + 1) /) 
          prc%length(neighbor) = subsizes(1)*subsizes(2)*subsizes(3)*subsizes(4)
 
-#if defined USE_CAF 
-#if defined CAF_DER_TYPE
-      allocate(mpl_buffer(neighbor)%send(subsizes(1),subsizes(2),subsizes(3),subsizes(4)))
-      allocate(mpl_buffer(neighbor)%recv(subsizes(1),subsizes(2),subsizes(3),subsizes(4)))
-#else
-      if(neighbor == 1) then
-      allocate(send1(subsizes(1),subsizes(2),subsizes(3),subsizes(4))[*])
-      allocate(recv1(subsizes(1),subsizes(2),subsizes(3),subsizes(4))[*])
-      elseif(neighbor == 2 ) then
-      allocate(send2(subsizes(1),subsizes(2),subsizes(3),subsizes(4))[*])
-      allocate(recv2(subsizes(1),subsizes(2),subsizes(3),subsizes(4))[*])
-      elseif(neighbor == 3 ) then
-      allocate(send3(subsizes(1),subsizes(2),subsizes(3),subsizes(4))[*])
-      allocate(recv3(subsizes(1),subsizes(2),subsizes(3),subsizes(4))[*])
-      elseif(neighbor == 4 ) then
-      allocate(send4(subsizes(1),subsizes(2),subsizes(3),subsizes(4))[*])
-      allocate(recv4(subsizes(1),subsizes(2),subsizes(3),subsizes(4))[*])
-      elseif(neighbor == 5 ) then
-      allocate(send5(subsizes(1),subsizes(2),subsizes(3),subsizes(4))[*])
-      allocate(recv5(subsizes(1),subsizes(2),subsizes(3),subsizes(4))[*])
-      elseif(neighbor == 6 ) then
-      allocate(send6(subsizes(1),subsizes(2),subsizes(3),subsizes(4))[*])
-      allocate(recv6(subsizes(1),subsizes(2),subsizes(3),subsizes(4))[*])
-      endif
-#endif
-#endif
 #if defined USE_MPI 
       allocate(mpl_buffer(neighbor)%send(subsizes(1),subsizes(2),subsizes(3),subsizes(4)))
       allocate(mpl_buffer(neighbor)%recv(subsizes(1),subsizes(2),subsizes(3),subsizes(4)))
@@ -643,13 +585,8 @@ do ii=istart,iend
    if(lc(1) .ge. 0 .and. lc(1) .lt. prc%np(1)) then
    if(lc(2) .ge. 0 .and. lc(2) .lt. prc%np(2)) then
    if(lc(3) .ge. 0 .and. lc(3) .lt. prc%np(3)) then
-#if defined USE_CAF
-       target_rank = image_index(prc%caf_cart_comm,lc+1) 
-    prc%ng_crd(:,ind) = lc+1
-#else
 #if defined USE_MPI
        call MPI_CART_RANK(prc%cart_comm,lc,target_rank,prc%ierr)
-#endif
 #endif
    prc%nnghb_avail = prc%nnghb_avail + 1
    ! assign
@@ -765,34 +702,6 @@ enddo
 
 
 
-#ifdef USE_CAF
-!-----------------------------------
-! build team (get neighbors) and include invoking image
-
-prc%team=0
-counter  = 0 
-do i=1,prc%nnghb
-   if(prc%nghb(i) > 0) then
-      counter=counter+1
- !     prc%team(counter) = prc%nghb(i)
-   endif
-enddo
-!allocate(prc%team(counter))
-allocate(g_team(counter+1))
-! invoking image is part of team
-counter=1
-g_team(counter) = prc%rk+1 
-do i=1,prc%nnghb
-   if(prc%nghb(i) > 0) then
-      counter=counter+1
-!      prc%team(counter) = prc%nghb(i)
-      g_team(counter) = prc%nghb(i)
-   endif
-enddo
-#endif
-
-
-
 end subroutine mpl_assign_neighbors
 !------------------------------------------------------------------------
 
@@ -834,10 +743,8 @@ subroutine mpl_finish(prc)
    deallocate(prc%drecv_pdf,stat=ierr)
 
    do i = 1,prc%nnghb
-#ifndef USE_CAF 
       deallocate(mpl_buffer(i)%send,stat=ierr)
       deallocate(mpl_buffer(i)%recv,stat=ierr)
-#endif
 #ifdef CAF_DER_TYPE
       deallocate(mpl_buffer(i)%send,stat=ierr)
       deallocate(mpl_buffer(i)%recv,stat=ierr)
@@ -847,25 +754,6 @@ subroutine mpl_finish(prc)
       deallocate(mpl_buffer(i)%idx_recv,stat=ierr)
 #endif
    end do
-#if defined USE_CAF
-#ifndef CAF_DER_TYPE
-      deallocate(send1,stat=ierr)
-      deallocate(recv1,stat=ierr)
-      deallocate(send2,stat=ierr)
-      deallocate(recv2,stat=ierr)
-      deallocate(send3,stat=ierr)
-      deallocate(recv3,stat=ierr)
-      deallocate(send4,stat=ierr)
-      deallocate(recv4,stat=ierr)
-      deallocate(send5,stat=ierr)
-      deallocate(recv5,stat=ierr)
-      deallocate(send6,stat=ierr)
-      deallocate(recv6,stat=ierr)
-#endif
-!   deallocate(prc%team,stat=ierr)
-   deallocate(g_team,stat=ierr)
-   deallocate(prc%caf_cart_comm,stat=ierr)
-#endif 
 
 #ifdef WRITE_TSTATUS
    close(42)
@@ -879,441 +767,6 @@ write(*,*)
 endif
 end subroutine mpl_finish 
 !------------------------------------------------------------------------
-
-
-
-
-#ifdef USE_CAF
-
-
-  !------------------------------------------------------------------------
-  !  This is the CAF COmmunication routine
-  !------------------------------------------------------------------------
-
-
-
-  subroutine mpl_exchange(lb_dom,fIn,prc,meas)
-  !------------------------------------------------------------------------
-  !
-  ! Data from the border cells are written to the ghost cells and vice versa
-  !
-  ! Note: This is the exchange routine, where diagonal communication is done 
-  !       via two orthogonal communcations. This reduces the overall communcations to six.
-  !       Diagonally related domains interchange the node values
-  !       by first doing the communication in the first orthogonal direction, 
-  !       then do a sync, and then exchange in the other orthogonal direction.
-  !
-
-      type(lb_block),intent(inout) :: lb_dom
-      type(mpl_var)  :: prc
-      type(measure)  :: meas
-      integer        :: ii,jj,kk,i,j,k,l,lx,ly,lz
-      integer        :: counter,i_req(2*prc%nnghb)
-      real(R8B)      :: copy_start,copy_end,comm_start,comm_end
-      integer        :: next
-      real(R8B)      :: sync_start,sync_end
-      real(R8B)      :: copyb_st,copyb_end,copied_amount 
-#ifdef OLD_CAF
-      real(R8B) :: fIn(NDX(nnod,0:lb_dom%lx(1)+1,0:lb_dom%lx(2)+1,0:lb_dom%lx(3)+1))[prc%np(1),prc%np(2),*]
-#else
-      real(R8B) :: fIn(NDX(nnod,0:lb_dom%lx(1)+1,0:lb_dom%lx(2)+1,0:lb_dom%lx(3)+1))
-#endif
-
-
-#ifdef CAF_BENCH
-
-!-------------------------------------------
-!  small CoArray Fortran bandwidth benchmark
-!  with differently allocated arrays
-!
-
-   real(R8B),allocatable,dimension(:,:,:,:)    :: test1
-   real(R8B),allocatable,dimension(:,:,:,:)[:] :: test2 
-   integer :: s1,s2,s3,s4 
-
-   s1=size(send1,1)
-   s2=size(send1,2)
-   s3=size(send1,3)
-   s4=size(send1,4)
-   if(prc%rk==0) then
-      write(*,*) 
-      write(*,*) "CAF BENCHMARK"
-      write(*,*) 
-   endif
-   ! Receive Array
-   allocate(test1(s1,s2,s3,s4))
-#if CAF_BENCH>1
-   if(prc%rk==0)       write(*,*) "CAF-Arrays: locally defined allocatable array"
-
-   ! Send Array
-   allocate(test2(s1,s2,s3,s4)[*])
-   sync all
-   test2=real(prc%rk+1)
-#else
-   if(prc%rk==0)       write(*,*) "CAF-Arrays: globally defined send buffer" 
-
-   ! Send Array
-   send1=real(prc%rk+1)
-#endif
-
-   sync all
-   call cpu_time_measure(meas%tStart)
-
-
-#if CAF_BENCH>1
-   test1(:,:,:,:) = test2(:,:,:,:)[2]
-#else
-   if(prc%rk==0)    test1(:,:,:,:) = send1(:,:,:,:)[2]
-#endif
-
-   sync all 
-   call cpu_time_measure(meas%tEnd)
-
-   write(*,*) prc%rk+1,"Res         ",test1(1,1,1,1)
-if(prc%rk==0) then
-   write(*,*) "duration was",meas%tEnd - meas%tStart
-   write(*,*) "Buf size    ",real(size(test1,1)*size(test1,2)*size(test1,3)*size(test1,4)*8)
-   write(*,*) "BW          ",real(size(test1,1)*size(test1,2)*size(test1,3)*size(test1,4)*8)&
-/(meas%tEnd - meas%tStart)/1000000.
-endif
-sync all
-
-
-   deallocate(test1)
-#if CAF_BENCH>1
-   deallocate(test2)
-#endif
-
-stop
-
-! End of CAF Benchmark
-!-------------------------------------------
-
-#endif /* CAF_BENCH*/
-
-
-
-#ifdef SYNCHRONIZE_COMM 
-   call mpl_barrier()
-#endif
-
-   call cpu_time_measure(meas%tSt_comm) 
-
-   lx = lb_dom%lx(1)
-   ly = lb_dom%lx(2)
-   lz = lb_dom%lx(3)
-
-
-   do i = 1, prc%nnghb,2
-      next = i+1
-
-!if(i==1) then
-!   send_pnti => send1
-!   send_pntn => send2
-!   recv_pnti => recv1
-!   recv_pntn => recv2
-!elseif(i==3) then
-!   send_pnti => send3
-!   send_pntn => send4
-!   recv_pnti => recv3
-!   recv_pntn => recv4
-!elseif(i==5) then
-!   send_pnti => send5
-!   send_pntn => send6
-!   recv_pnti => recv5
-!   recv_pntn => recv6
-!endif
-
-      ! do loop over the six cartesian neighbors. 
-      ! diagonal speeds are communicated by recopying the buffer 
-      ! after each communication.
-      call cpu_time_measure(copy_start)
-
-      ! is there a neighbor in x- / y- / z- direction?
-      if(prc%nghb(i) /= mpl_proc_null .and. prc%nghb(i) .ge. 0) then
-
-      do kk = 1, prc%pos_send(i,3)-prc%pos_sends(i,3)+1
-         do jj = 1, prc%pos_send(i,2)-prc%pos_sends(i,2)+1
-            do ii = 1, prc%pos_send(i,1)-prc%pos_sends(i,1)+1
-               do l = 1,prc%ndir_pdf
-#ifdef CAF_DER_TYPE
-                  mpl_buffer(i)%send(l,ii,jj,kk)  =   & 
-fIn(NDX(prc%dsend_pdf(i,l),ii+prc%pos_sends(i,1)-1, jj+prc%pos_sends(i,2)-1, kk+prc%pos_sends(i,3)-1))
-#else
-!send_pnti(l,ii,jj,kk) = &
-!fIn(NDX(prc%dsend_pdf(i,l),ii+prc%pos_sends(i,1)-1, jj+prc%pos_sends(i,2)-1, kk+prc%pos_sends(i,3)-1))
-if(i==1) then
-                  send1(l,ii,jj,kk) = & 
-fIn(NDX(prc%dsend_pdf(i,l),ii+prc%pos_sends(i,1)-1, jj+prc%pos_sends(i,2)-1, kk+prc%pos_sends(i,3)-1))
-elseif(i==3) then
-                  send3(l,ii,jj,kk) = & 
-fIn(NDX(prc%dsend_pdf(i,l),ii+prc%pos_sends(i,1)-1, jj+prc%pos_sends(i,2)-1, kk+prc%pos_sends(i,3)-1))
-elseif(i==5) then
-                  send5(l,ii,jj,kk) = & 
-fIn(NDX(prc%dsend_pdf(i,l),ii+prc%pos_sends(i,1)-1, jj+prc%pos_sends(i,2)-1, kk+prc%pos_sends(i,3)-1))
-endif
-#endif
-                 enddo
-            enddo
-         enddo
-      enddo
-      endif
-
-      if(prc%nghb(next) /= mpl_proc_null .and. prc%nghb(next) .ge. 0) then
-      do kk = 1, prc%pos_send(next,3)-prc%pos_sends(next,3)+1
-         do jj = 1, prc%pos_send(next,2)-prc%pos_sends(next,2)+1
-            do ii = 1, prc%pos_send(next,1)-prc%pos_sends(next,1)+1
-               do l = 1,prc%ndir_pdf
-#ifdef CAF_DER_TYPE
-                  mpl_buffer(next)%send(l,ii,jj,kk) =    & 
-fIn(NDX(prc%dsend_pdf(next,l), ii+prc%pos_sends(next,1)-1, jj+prc%pos_sends(next,2)-1, kk+prc%pos_sends(next,3)-1))
-#else
-!send_pntn(l,ii,jj,kk) = &
-!fIn(NDX(prc%dsend_pdf(next,l), ii+prc%pos_sends(next,1)-1, jj+prc%pos_sends(next,2)-1, kk+prc%pos_sends(next,3)-1))
-if(i==1) then
-                  send2(l,ii,jj,kk) = & 
-fIn(NDX(prc%dsend_pdf(next,l), ii+prc%pos_sends(next,1)-1, jj+prc%pos_sends(next,2)-1, kk+prc%pos_sends(next,3)-1))
-elseif(i==3) then
-                  send4(l,ii,jj,kk) = & 
-fIn(NDX(prc%dsend_pdf(next,l), ii+prc%pos_sends(next,1)-1, jj+prc%pos_sends(next,2)-1, kk+prc%pos_sends(next,3)-1))
-elseif(i==5) then
-                  send6(l,ii,jj,kk) = & 
-fIn(NDX(prc%dsend_pdf(next,l), ii+prc%pos_sends(next,1)-1, jj+prc%pos_sends(next,2)-1, kk+prc%pos_sends(next,3)-1))
-endif
-#endif
-                 enddo
-            enddo
-         enddo
-      enddo
-      endif
-      call cpu_time_measure(copy_end)
-
-     
-
-!---------------------------------------
-! Do  Exchange         
-
-      call cpu_time_measure(sync_start)
-!      call sync_images(prc%team)
-      call sync_images(g_team)
-      call cpu_time_measure(sync_end)
- 
-      call cpu_time_measure(comm_start)
-
-      if(prc%nghb(i) /= mpl_proc_null .and. prc%nghb(i) .ge. 0) then
-#ifdef CAF_DER_TYPE
-          mpl_buffer(i)%recv(:,:,:,:) =       mpl_buffer(next)[prc%nghb(i)]%send(:,:,:,:)
-#else
-if(i==1) then
-          recv1(:,:,:,:) = send2(:,:,:,:)[prc%nghb(i)]
-elseif(i==3) then
-          recv3(:,:,:,:) = send4(:,:,:,:)[prc%nghb(i)]
-elseif(i==3) then
-          recv5(:,:,:,:) = send6(:,:,:,:)[prc%nghb(i)]
-endif
-          call sync_memory()
-#endif
-      endif
-      if(prc%nghb(next) /= mpl_proc_null .and. prc%nghb(next) .ge. 0) then
-#ifdef CAF_DER_TYPE
-          mpl_buffer(next)%recv(:,:,:,:) = mpl_buffer(i)[prc%nghb(next)]%send(:,:,:,:)
-#else
-if(i==1) then
-          recv2(:,:,:,:) = send1(:,:,:,:)[prc%nghb(next)]
-elseif(i==3) then
-          recv4(:,:,:,:) = send3(:,:,:,:)[prc%nghb(next)]
-elseif(i==5) then
-          recv6(:,:,:,:) = send5(:,:,:,:)[prc%nghb(next)]
-endif
-          call sync_memory()
-#endif
-      endif
-   call cpu_time_measure(comm_end)
-
-
-      call cpu_time_measure(sync_start)
-!      call sync_images(prc%team)
-      call sync_images(g_team)
-      call cpu_time_measure(sync_end)
-      meas%mpl_sync = meas%mpl_sync +sync_end - sync_start
-
-
-!-------------------------------------
-! Copy back from buffer 
- 
-      call cpu_time_measure(copyb_st) 
-      
-      if(prc%nghb(i) /= mpl_proc_null .and. prc%nghb(i) .ge. 0) then
-      meas%mpl_comm_size   = meas%mpl_comm_size   + real(prc%length(i)*R8B)
-      do kk = 1, prc%pos_recv(i,3)-prc%pos_recvs(i,3)+1
-         do jj = 1, prc%pos_recv(i,2)-prc%pos_recvs(i,2)+1
-            do ii = 1, prc%pos_recv(i,1)-prc%pos_recvs(i,1)+1
-               do l = 1,prc%ndir_pdf
-#ifdef CAF_DER_TYPE
-fIn(NDX(prc%drecv_pdf(i,l),ii+prc%pos_recvs(i,1)-1,jj+prc%pos_recvs(i,2)-1, kk+prc%pos_recvs(i,3)-1)) & 
-            =  mpl_buffer(i)%recv(l,ii,jj,kk)  
-#else
-!fIn(NDX(prc%drecv_pdf(i,l),ii+prc%pos_recvs(i,1)-1,jj+prc%pos_recvs(i,2)-1, kk+prc%pos_recvs(i,3)-1)) & 
-!               =  recv_pnti(l,ii,jj,kk) 
-if(i==1) then
-fIn(NDX(prc%drecv_pdf(i,l),ii+prc%pos_recvs(i,1)-1,jj+prc%pos_recvs(i,2)-1, kk+prc%pos_recvs(i,3)-1)) & 
-               =  recv1(l,ii,jj,kk) 
-elseif(i==3) then
-fIn(NDX(prc%drecv_pdf(i,l),ii+prc%pos_recvs(i,1)-1,jj+prc%pos_recvs(i,2)-1, kk+prc%pos_recvs(i,3)-1)) & 
-               =  recv3(l,ii,jj,kk) 
-elseif(i==5) then
-fIn(NDX(prc%drecv_pdf(i,l),ii+prc%pos_recvs(i,1)-1,jj+prc%pos_recvs(i,2)-1, kk+prc%pos_recvs(i,3)-1)) & 
-               =  recv5(l,ii,jj,kk) 
-endif
-#endif
-               enddo
-            enddo
-         enddo
-      enddo
-      endif
-
-      if(prc%nghb(next) /= mpl_proc_null .and. prc%nghb(next) .ge. 0) then
-      meas%mpl_comm_size   = meas%mpl_comm_size   + real(prc%length(next)*R8B)
-      do kk = 1, prc%pos_recv(next,3)-prc%pos_recvs(next,3)+1
-         do jj = 1, prc%pos_recv(next,2)-prc%pos_recvs(next,2)+1
-            do ii = 1, prc%pos_recv(next,1)-prc%pos_recvs(next,1)+1
-               do l = 1,prc%ndir_pdf
-#ifdef CAF_DER_TYPE
-fIn(NDX(prc%drecv_pdf(next,l),ii+prc%pos_recvs(next,1)-1,jj+prc%pos_recvs(next,2)-1, kk+prc%pos_recvs(next,3)-1))   & 
-            =  mpl_buffer(next)%recv(l,ii,jj,kk)  
-#else
-!fIn(NDX(prc%drecv_pdf(next,l),ii+prc%pos_recvs(next,1)-1,jj+prc%pos_recvs(next,2)-1, kk+prc%pos_recvs(next,3)-1))   & 
-!               =  recv_pntn(l,ii,jj,kk) 
-if(i==1) then
-fIn(NDX(prc%drecv_pdf(next,l),ii+prc%pos_recvs(next,1)-1,jj+prc%pos_recvs(next,2)-1, kk+prc%pos_recvs(next,3)-1))   & 
-               =  recv2(l,ii,jj,kk) 
-elseif(i==3) then
-fIn(NDX(prc%drecv_pdf(next,l),ii+prc%pos_recvs(next,1)-1,jj+prc%pos_recvs(next,2)-1, kk+prc%pos_recvs(next,3)-1))   & 
-               =  recv4(l,ii,jj,kk) 
-elseif(i==5) then
-fIn(NDX(prc%drecv_pdf(next,l),ii+prc%pos_recvs(next,1)-1,jj+prc%pos_recvs(next,2)-1, kk+prc%pos_recvs(next,3)-1))   & 
-               =  recv6(l,ii,jj,kk) 
-endif
-#endif
-               enddo
-            enddo
-         enddo
-      enddo
-      endif
-      call cpu_time_measure(copyb_end) 
-
-      meas%mpl_cp_buf      = meas%mpl_cp_buf      + copy_end - copy_start
-      meas%mpl_cp_buf_back = meas%mpl_cp_buf_back + copyb_end - copyb_st
-      meas%mpl_exch        = meas%mpl_exch        + comm_end - comm_start
-      enddo
-
-!---------------------------------------
-! End of CAF Communication 
-
-
-
-
-#if defined USE_CAF && defined OLD_CAF
-!-----------------------------------------------------------------------
-! Coarray communication    OLD 
-!-----------------------------------------------------------------------
-! 
-! 
-   call cpu_time_measure(comm_start)
-   call sync_images(g_team)
-   call cpu_time_measure(comm_end)
-   meas%mpl_sync = meas%mpl_sync + comm_end - comm_start
-
-!------------------------------
-! x+/-
-
-   if(prc%crd(1) < prc%np(1) - 1) then  ! x+
-      call cpu_time_measure(comm_start) 
-      fIn(NDX(1:nnod,lx+1,0:ly+1,0:lz+1))  & 
-    & = fIn(NDX(1:nnod,1,   0:ly+1,0:lz+1)) [prc%crd(1)+1+1,prc%crd(2)+1,prc%crd(3)+1]
-      call cpu_time_measure(comm_end) 
-      meas%mpl_exch = meas%mpl_exch + comm_end - comm_start
-   end if
-   if(prc%crd(1) > 0 ) then             ! x-
-      call cpu_time_measure(comm_start) 
-      fIn(NDX(1:nnod,0   ,0:ly+1,0:lz+1))  & 
-      = fIn(NDX(1:nnod,lx,  0:ly+1,0:lz+1))[prc%crd(1)-1 +1,prc%crd(2)+1,prc%crd(3)+1]
-      call cpu_time_measure(comm_end) 
-      meas%mpl_exch = meas%mpl_exch + comm_end - comm_start
-   end if
-
-   call cpu_time_measure(comm_start) 
-   call sync_images(g_team)
-   call cpu_time_measure(comm_end) 
-   meas%mpl_sync = meas%mpl_sync + comm_end - comm_start
-
-
-!------------------------------
-! y+/-
-
-  if(prc%crd(2) < prc%np(2) - 1) then  ! y+
-      call cpu_time_measure(comm_start) 
-      fIn(NDX(1:nnod,0:lx+1,ly+1,0:lz+1))  & 
-      = fIn(NDX(1:nnod,0:lx+1,1   ,0:lz+1))[prc%crd(1)+1,prc%crd(2)+1+1,prc%crd(3)+1]
-      call cpu_time_measure(comm_end) 
-      meas%mpl_exch = meas%mpl_exch + comm_end - comm_start
-   end if
-   if(prc%crd(2) > 0 ) then            ! y-
-      call cpu_time_measure(comm_start) 
-      fIn(NDX(1:nnod,0:lx+1,0,0:lz+1))     & 
-      = fIn(NDX(1:nnod,0:lx+1,ly  ,0:lz+1))[prc%crd(1)+1,prc%crd(2)+1-1,prc%crd(3)+1]
-      call cpu_time_measure(comm_end) 
-      meas%mpl_exch = meas%mpl_exch + comm_end - comm_start
-   end if
-
-   call cpu_time_measure(comm_start) 
-   call sync_images(g_team)
-   call cpu_time_measure(comm_end) 
-   meas%mpl_sync = meas%mpl_sync + comm_end - comm_start
-
-!------------------------------
-! z+/-
-
-   if(prc%crd(3) < prc%np(3) - 1) then  ! z+
-      call cpu_time_measure(comm_start) 
-      fIn(NDX(1:nnod,0:lx+1,0:ly+1,lz+1))  & 
-      = fIn(NDX(1:nnod,0:lx+1,0:ly+1,1   ))[prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1+1]
-      call cpu_time_measure(comm_end) 
-      meas%mpl_exch = meas%mpl_exch + comm_end - comm_start
-   end if
-   if(prc%crd(3) > 0 ) then            ! z-
-      call cpu_time_measure(comm_start) 
-      fIn(NDX(1:nnod,0:lx+1,0:ly+1,0))  & 
-     = fIn(NDX(1:nnod,1:lx,1:ly,lz  )) [prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1-1]
-      call cpu_time_measure(comm_end) 
-      meas%mpl_exch = meas%mpl_exch + comm_end - comm_start
-   end if
-
-!----------------------------------------------------------------------------
-
-   call cpu_time_measure(comm_start) 
-   call sync_images(g_team)
-   call cpu_time_measure(comm_end) 
-   meas%mpl_sync = meas%mpl_sync + comm_end - comm_start
-
-   call cpu_time_measure(comm_end) 
-#endif /* USE_CAF */
-
-
-   call cpu_time_measure(meas%tEnd_comm)
-   meas%comm_duration = meas%tEnd_comm - meas%tSt_comm + meas%comm_duration
-
-  end subroutine mpl_exchange
-!------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-#else /* not USE_CAF */
 
 
 
@@ -1416,10 +869,6 @@ stop
   end subroutine mpl_exchange
 !------------------------------------------------------------------------
 
-
-
-
-#endif /* USE_CAF */
 
 
 
@@ -1691,22 +1140,6 @@ write(*,*) prc%rk,"waiting"
    integer                :: i,j,k,length,lx,ly,lz
    integer                :: b_l(3),b_u(3),ul(3)
    integer :: ab(prc%np(1),prc%np(2),prc%np(3),3),ae(prc%np(1),prc%np(2),prc%np(3),3)
-#ifdef USE_CAF
-    real(R8B),allocatable       :: fIn_buf(:,:,:,:)[:,:,:],rho_buf(:,:,:)[:,:,:]
-    real(R8B),allocatable       :: u_buf(:,:,:,:)[:,:,:]
-    real(R8B),allocatable       :: omega_buf(:,:,:)[:,:,:]
-    integer,allocatable    :: state_buf(:,:,:)[:,:,:]
- 
-
-
-
-
-    allocate(fIn_buf(NDX(nnod,cobnd(1),cobnd(2),cobnd(3)))[prc%np(1),prc%np(2),*])
-    allocate(rho_buf(cobnd(1),cobnd(2),cobnd(3))[prc%np(1),prc%np(2),*])
-    allocate(u_buf(NDX(NDIM,cobnd(1),cobnd(2),cobnd(3)))[prc%np(1),prc%np(2),*])
-    allocate(state_buf(cobnd(1),cobnd(2),cobnd(3))[prc%np(1),prc%np(2),*])
-    allocate(omega_buf(cobnd(1),cobnd(2),cobnd(3))[prc%np(1),prc%np(2),*])
-#endif 
 
    lx =  lb_dom%lx(1)
    ly =  lb_dom%lx(2)
@@ -1776,34 +1209,6 @@ NDX(:,ab(i,j,k,1):ae(i,j,k,1),ab(i,j,k,2):ae(i,j,k,2),ab(i,j,k,3):ae(i,j,k,3)))
                            &  target_rank,tag_rho,prc%cart_comm,prc%ierr)
 #endif
 #endif /*USE_MPI*/
-#ifdef USE_CAF
-                   rho_buf(1:lx,1:ly,1:lz)[i,j,k]&
-                     & = lb_dom%grho(prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2), & 
-                     &        prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2), &
-                     &        prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2))
-
-                   fIn_buf(NDX(1:nnod,1:lx,1:ly,1:lz))[i,j,k]&
-                     & = lb_dom%gfIn( & 
-NDX(:,ab(i,j,k,1):ae(i,j,k,1),ab(i,j,k,2):ae(i,j,k,2),ab(i,j,k,3):ae(i,j,k,3)))
-!& NDX(1:nnod,prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2), prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2),prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2)))
-
-                   u_buf(NDX(1:NDIM,1:lx,1:ly,1:lz))[i,j,k]&
-                     & = lb_dom%gu( & 
-NDX(:,ab(i,j,k,1):ae(i,j,k,1),ab(i,j,k,2):ae(i,j,k,2),ab(i,j,k,3):ae(i,j,k,3)))
-!& NDX(1:NDIM,prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2),prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2), prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2)))
-
-                   state_buf(1:lx,1:ly,1:lz)[i,j,k]&
-                     & = lb_dom%gstate(prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2), & 
-                     &        prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2), &
-                     &        prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2))
-#ifdef SPONGE
-                   omega_buf(1:lx,1:ly,1:lz)[i,j,k]&
-                     & = lb_dom%gomega(prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2), & 
-                     &        prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2), &
-                     &        prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2))
-#endif /* SPONGE */
-
-#endif /*USE_CAF*/
                 end if
              end do  
           end do  
@@ -1832,27 +1237,6 @@ NDX(:,ab(i,j,k,1):ae(i,j,k,1),ab(i,j,k,2):ae(i,j,k,2),ab(i,j,k,3):ae(i,j,k,3)))
 #endif
 #endif /* USE_MPI */
    end if
-#ifdef USE_CAF
-   call sync_images(g_team)
-   if (prc%rk /= 0 ) then ! copy from coarrays to local arrays
-      lb_dom%rho(1:lx,1:ly,1:lz)        = rho_buf(1:lx,1:ly,1:lz)
-      lb_dom%u(NDX(1:NDIM,1:lx,1:ly,1:lz))   = u_buf(NDX(1:NDIM,1:lx,1:ly,1:lz))
-      lb_dom%fIn(NDX(1:nnod,1:lx,1:ly,1:lz)) = fIn_buf(NDX(1:nnod,1:lx,1:ly,1:lz))
-      lb_dom%state(1:lx,1:ly,1:lz)      = state_buf(1:lx,1:ly,1:lz)
-#ifdef SPONGE
-      lb_dom%omega(1:lx,1:ly,1:lz)      = omega_buf(1:lx,1:ly,1:lz)
-#endif
-   end if
-   ! deallocate buffers
-   deallocate(rho_buf)
-   deallocate(fIn_buf)
-   deallocate(u_buf)
-   deallocate(state_buf)
-#ifdef SPONGE
-   deallocate(omega_buf)
-#endif /* SPONGE  */
-
-#endif /* USE_CAF */
  end subroutine mpl_decompose_domain
 !------------------------------------------------------------------------
 #endif /* INIT_WITH_ROOT */
@@ -1874,9 +1258,6 @@ NDX(:,ab(i,j,k,1):ae(i,j,k,1),ab(i,j,k,2):ae(i,j,k,2),ab(i,j,k,3):ae(i,j,k,3)))
 
 #ifdef USE_MPI
    call mpi_barrier(mpi_comm_world,ierr)
-#endif
-#ifdef USE_CAF
-   call sync_all()
 #endif
 
    end subroutine mpl_barrier

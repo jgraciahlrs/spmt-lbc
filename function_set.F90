@@ -83,11 +83,6 @@ subroutine gather_output(lb_dom,countOut,tStep,s_par,prc)
    integer :: i,j,k
 #endif
    integer :: ab(prc%np(1),prc%np(2),prc%np(3),3),ae(prc%np(1),prc%np(2),prc%np(3),3)
-#ifdef USE_CAF
-   real(R8B),allocatable       :: u_buf(:,:,:,:)[:,:,:]
-   real(R8B),allocatable       :: rho_buf(:,:,:)[:,:,:]
-   integer,allocatable         :: state_buf(:,:,:)[:,:,:]
-#endif 
 
    lx = lb_dom%lx(1)
    ly = lb_dom%lx(2)
@@ -99,17 +94,6 @@ subroutine gather_output(lb_dom,countOut,tStep,s_par,prc)
 
 
 #ifdef INIT_WITH_ROOT
-#ifdef USE_CAF
-   allocate(rho_buf(cobnd(1),cobnd(2),cobnd(3))[prc%np(1),prc%np(2),*])
-   allocate(u_buf(NDX(NDIM,cobnd(1),cobnd(2),cobnd(3)))[prc%np(1),prc%np(2),*])
-   allocate(state_buf(cobnd(1),cobnd(2),cobnd(3))[prc%np(1),prc%np(2),*])
-   ! for caf worker threads: have to copy local data to buffers
-    if (prc%rk /= 0 ) then ! copy local arrays to coarray buffers
-      u_buf(NDX(1:NDIM,1:lx,1:ly,1:lz))   = lb_dom%u(NDX(1:NDIM,1:lx,1:ly,1:lz))
-      state_buf(1:lx,1:ly,1:lz)      = lb_dom%state(1:lx,1:ly,1:lz)
-      rho_buf(1:lx,1:ly,1:lz)      = lb_dom%rho(1:lx,1:ly,1:lz)
-   end if
-#endif 
 
    call mpl_barrier()
 
@@ -179,21 +163,6 @@ subroutine gather_output(lb_dom,countOut,tStep,s_par,prc)
                                     target_rank,tagomega,prc%cart_comm,prc%stat,prc%ierr)
 #endif /* SPONGE */
 #endif /* USE_MPI */
-#ifdef USE_CAF
-                lb_dom%gu(&
-            NDX(:,ab(i,j,k,1):ae(i,j,k,1),ab(i,j,k,2):ae(i,j,k,2),ab(i,j,k,3):ae(i,j,k,3))) &
-                       =     u_buf(NDX(:,1:lx,1:ly,1:lz))[i,j,k]
-
-                 lb_dom%grho(prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2), & 
-                              prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2), &
-                              prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2)) &
-                       =      rho_buf(1:lx,1:ly,1:lz)[i,j,k]
-
-                 lb_dom%gstate(prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2), & 
-                              prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2), &
-                              prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2)) &
-                       =      state_buf(1:lx,1:ly,1:lz)[i,j,k]
-#endif 
                 end if
             end do  
          end do  
@@ -222,11 +191,6 @@ subroutine gather_output(lb_dom,countOut,tStep,s_par,prc)
 #endif /* SPONGE */
 #endif /* USE_MPI */
    end if
-#ifdef USE_CAF
-   deallocate(rho_buf)
-   deallocate(u_buf)
-   deallocate(state_buf)
-#endif
 #else /* INIT_WITH_ROOT */
 #ifdef TEC_OUT
    call write_tec_output(lb_dom,countOut,tstep,s_par,prc)
@@ -479,8 +443,6 @@ end subroutine
  "sendrecv" &
 #elif defined MPI_SUBARRAY 
  "subarray" &
-#elif defined USE_CAF
- "caf" &
 #elif defined PERSISTENT 
  "persistent" &
 #elif defined PERSISTENT2
@@ -911,11 +873,7 @@ end subroutine dealloc_mem
    subroutine write_status(meas,result_state,cur_tstep,s_par,prc)
 
       implicit none
-#ifdef USE_CAF
-      type(measure),intent(inout) :: meas[*]
-#else
       type(measure),intent(inout) :: meas
-#endif
       type(sim_parameter),intent(inout) :: s_par
       type(mpl_var)   :: prc
       integer,intent(in)  :: result_state,cur_tstep
@@ -926,9 +884,6 @@ end subroutine dealloc_mem
       real(R8B) :: mpl_sync_max,mpl_sync_min,mpl_sync_sum
       real(R8B) :: totl_min,totl_max,totl_sum
       real(R8B) :: mpl_comm_size_min,mpl_comm_size_max,mpl_comm_size_sum 
-#if defined USE_CAF
-      integer :: i
-#endif
 
       comm_min             = 1.e37 
       mpl_cp_buf_min       = 1.e37 
@@ -988,36 +943,6 @@ end subroutine dealloc_mem
       call mpi_reduce(meas%mpl_comm_size,mpl_comm_size_sum,1,mpi_double_precision,mpi_sum,0,prc%cart_comm,prc%ierr)
 
 
-#elif defined USE_CAF
-      do i = 1,prc%size
-         if(meas[i]%sbnd_duration < sbnd_min) sbnd_min =  meas[i]%sbnd_duration
-         if(meas[i]%sbnd_duration > sbnd_max) sbnd_max =  meas[i]%sbnd_duration
-         if(meas[i]%sbnd_duration > 0.d0    ) sbnd_sum =  meas[i]%sbnd_duration + sbnd_sum
-         if(meas[i]%coll_duration < coll_min) coll_min =  meas[i]%coll_duration
-         if(meas[i]%coll_duration > coll_max) coll_max =  meas[i]%coll_duration
-         if(meas[i]%coll_duration > 0.d0    ) coll_sum =  meas[i]%coll_duration + coll_sum
-         if(meas[i]%prop_duration < prop_min) prop_min =  meas[i]%prop_duration
-         if(meas[i]%prop_duration > prop_max) prop_max =  meas[i]%prop_duration
-         if(meas[i]%prop_duration > 0.d0    ) prop_sum =  meas[i]%prop_duration + prop_sum
-         if(meas[i]%comm_duration < comm_min) comm_min =  meas[i]%comm_duration
-         if(meas[i]%comm_duration > comm_max) comm_max =  meas[i]%comm_duration
-         if(meas[i]%comm_duration > 0.d0    ) comm_sum =  meas[i]%comm_duration + comm_sum
-         if(meas[i]%mpl_cp_buf    < mpl_cp_buf_min) mpl_cp_buf_min =  meas[i]%mpl_cp_buf
-         if(meas[i]%mpl_cp_buf    > mpl_cp_buf_max) mpl_cp_buf_max =  meas[i]%mpl_cp_buf
-         if(meas[i]%mpl_cp_buf    > 0.d0    ) mpl_cp_buf_sum =  meas[i]%mpl_cp_buf + mpl_cp_buf_sum
-         if(meas[i]%mpl_cp_buf_back < mpl_cp_buf_back_min) mpl_cp_buf_back_min =  meas[i]%mpl_cp_buf_back
-         if(meas[i]%mpl_cp_buf_back > mpl_cp_buf_back_max) mpl_cp_buf_back_max =  meas[i]%mpl_cp_buf_back
-         if(meas[i]%mpl_cp_buf_back > 0.d0    ) mpl_cp_buf_back_sum =  meas[i]%mpl_cp_buf_back + mpl_cp_buf_back_sum
-         if(meas[i]%mpl_exch      < mpl_exch_min) mpl_exch_min =  meas[i]%mpl_exch
-         if(meas[i]%mpl_exch      > mpl_exch_max) mpl_exch_max =  meas[i]%mpl_exch
-         if(meas[i]%mpl_exch      > 0.d0    ) mpl_exch_sum =  meas[i]%mpl_exch + mpl_exch_sum
-         if(meas[i]%mpl_sync      < mpl_sync_min) mpl_sync_min =  meas[i]%mpl_sync
-         if(meas[i]%mpl_sync      > mpl_sync_max) mpl_sync_max =  meas[i]%mpl_sync
-         if(meas[i]%mpl_sync      > 0.d0    ) mpl_sync_sum =  meas[i]%mpl_sync      + mpl_sync_sum
-         if(meas[i]%mpl_comm_size < mpl_comm_size_min) mpl_comm_size_min =  meas[i]%mpl_comm_size
-         if(meas[i]%mpl_comm_size > mpl_comm_size_max) mpl_comm_size_max =  meas[i]%mpl_comm_size
-         if(meas[i]%mpl_comm_size > 0.d0    ) mpl_comm_size_sum =  meas[i]%mpl_comm_size + mpl_comm_size_sum
-      enddo
 #endif
 
 ! Mean values
@@ -1116,11 +1041,6 @@ subroutine alloc_mem(lb_dom,s_par,prc)
    type(mpl_var)         :: prc
    type(sim_parameter)   :: s_par
    integer               :: alloc_stat,lx,ly,lz
-#ifdef USE_CAF
-#ifdef CHECK_CAF
-   real   ,dimension(:,:,:)[:,:,:],allocatable :: caf_test
-#endif
-#endif
 
    lx = lb_dom%lx(1) 
    ly = lb_dom%lx(2) 

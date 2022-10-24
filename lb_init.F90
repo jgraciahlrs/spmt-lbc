@@ -1455,9 +1455,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       integer,intent(in)         :: tStep  
       integer                    :: i,j,k,l
       real(R8B)                  :: sum_rho,uc(3),umax(3)
-#ifdef USE_CAF
-      real(R8B)                  :: rho_tmp[*]
-#endif
       sum_rho  = 0.0d0
       rho_ges  = 0.0d0
       umax     = 0.0d0
@@ -1493,9 +1490,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
             enddo
          enddo
       enddo
-#ifdef USE_CAF
-      rho_tmp = rho_ges 
-#endif /* USE_CAF */
 
       if(prc%size > 0) then
 #ifdef USE_MPI
@@ -1503,14 +1497,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
          call MPI_REDUCE(rho_ges,sum_rho,1,mpi_double_precision,MPI_SUM,prc%root_th,prc%cart_comm,prc%ierr)
          rho_ges=sum_rho
 #endif /* MPI */
-#ifdef USE_CAF
-      sync all
-      if(prc%rk==0) then
-      do i=1,prc%size
-        sum_rho = sum_rho + rho_tmp[i] 
-      enddo
-      endif
-#endif /* USE_CAF */
       end if
       if(prc%rk == 0) then
 #ifdef CALC_MAX_VELOCITY

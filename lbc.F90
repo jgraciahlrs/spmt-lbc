@@ -47,11 +47,7 @@ PROGRAM lbmain
 
 #include "include/replace.h"
    implicit none
-#ifdef USE_CAF
-   type(measure)        :: meas[*]
-#else
    type(measure)        :: meas
-#endif
    type(lb_block)       :: lb_dom
    type(sim_parameter)  :: s_par
    type(mpl_var)        :: prc

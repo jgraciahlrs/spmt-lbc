@@ -106,11 +106,6 @@ LBMODEL += $(FDEF)-DCOMBINE_STREAM_COLLIDE
 #  save array in memory as l as density (1...9 / 1...19) and x-,y-,z- component 
 LBMODEL += $(FDEF)-DLAYOUT_LIJK
 
-# Initialization of geometry and boundaries (for parallel execution)
-#  First process assigns geometry and distributes to other processes
-#  Gathers data to output from other processes
-#LBMODEL += $(FDEF)-DINIT_WITH_ROOT  
-#
 # Timestep information
 #LBMODEL += $(FDEF)-DWRITE_TSTATUS=2 #    Write info about the timestep duration every ith step
 # Use Fortran 2003 statements

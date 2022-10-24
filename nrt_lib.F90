@@ -97,18 +97,10 @@ module nrt_lib
       real(R8B)            :: mem,mem_thread,mem_master
    end type measure
 
-#ifdef D3Q19
 !number of neighbors, is copied into prc%nnghb 
    integer, parameter :: glob_nnghb = 18
 !number of reduced neighbors 18 
    integer, parameter :: rdcd_ngh = 6
-#else /* D2Q9 */
-!number of neighbors, is copied into prc%nnghb 
-   integer, parameter :: glob_nnghb = 8 
-!number of reduced neighbors 18 
-   integer, parameter :: rdcd_ngh = 4
-
-#endif
 
    integer, parameter :: n_ghost = 1     !number of ghost layers. is copied into prc%n_ghost_nodes
 
@@ -255,9 +247,7 @@ module nrt_lib
 
 
 
-#ifdef D3Q19
    integer(4), parameter                    :: NDIM= 3 
-#endif
 
    data mpl_dir(:,1) /-1,+1, 0, 0, 0, 0, +1, +1, -1, -1, +1, +1, -1, -1, 0, 0, 0, 0  /
    data mpl_dir(:,2) / 0, 0,-1,+1, 0, 0, +1, -1, -1, +1,  0,  0,  0,  0,+1,+1,-1,-1  /

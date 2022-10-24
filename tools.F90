@@ -31,7 +31,6 @@ contains
      intent(in)      :: fpdf
      intent(out)     :: rho,u 
 
-#ifdef D3Q19
                rho =  fpdf(I__0) + &
                       fpdf(I__E) + fpdf(I__W) + &
                       fpdf(I__N) + fpdf(I__S) + &
@@ -57,7 +56,6 @@ contains
                       fpdf(I_TW) - fpdf(I_BE)  + &
                       fpdf(I_TN) - fpdf(I_BS)  + &
                       fpdf(I_TS) - fpdf(I_BN)
-#endif
                u=u/rho
    end subroutine pdf_to_macro
    !------------------------------------------------------------------------
@@ -113,8 +111,6 @@ contains
       cs2inv  = 1._R8B/cs**2
       t2cs4inv = 1._R8B/(2*cs**4)
       t2cs2inv = 1._R8B/(2*cs**2)
-
-#ifdef D3Q19
 
           usq =  (u(NDX(1,i,j,k))**2 + u(NDX(2,i,j,k))**2 + u(NDX(3,i,j,k))**2)*t2cs2inv
           rholoc   = rho(i,j,k) 
@@ -193,7 +189,6 @@ contains
                 + (-u(NDX(2,i,j,k)) + u(NDX(3,i,j,k)))**2*t2cs4inv  &
                 - usq) )
                
-#endif    
       return
   end subroutine lb_feq_all
   !------------------------------------------------------------------------

@@ -284,7 +284,6 @@ contains
          enddo
 
             else ! if third dimension has to be extrapolated
-#ifdef D3Q19
 
          !z-
          if(btest(lb_dom%obs_nrwall(i,0),6)) then
@@ -301,7 +300,6 @@ contains
             
           endif !z- in / out
           endif 
-#endif
          end if
 
 
@@ -412,7 +410,6 @@ endif
 
          ! calculate current macroscopic variables
          do jj = 0,3
-#if   defined D3Q19 /**/
         rhoc(jj) = fIn(NDX(1,xc(jj),yc(jj),zc(jj)))  + fIn(NDX(2,xc(jj),yc(jj),zc(jj)))  + &
                    fIn(NDX(3,xc(jj),yc(jj),zc(jj)))  + fIn(NDX(4,xc(jj),yc(jj),zc(jj)))  + &
                    fIn(NDX(5,xc(jj),yc(jj),zc(jj)))  +                                         &
@@ -445,7 +442,6 @@ endif
                    fIn(NDX(15,xc(jj),yc(jj),zc(jj))) + fIn(NDX(16,xc(jj),yc(jj),zc(jj))) - &
                    fIn(NDX(17,xc(jj),yc(jj),zc(jj))) - fIn(NDX(18,xc(jj),yc(jj),zc(jj))) + &
                    fIn(NDX(19,xc(jj),yc(jj),zc(jj))))/rhoc(jj)
-#endif
          enddo
          ! Calculate the distance of the nodes from the neighbor nodes
          dist(1) = sqrt(real(yc(1) - yc(0))**2 + real(xc(1)-xc(0))**2 + real(zc(1)-zc(0))**2)
@@ -457,42 +453,26 @@ endif
 
          ud(1) = uc(1,0) - u0(1)
          ud(2) = uc(2,0) - u0(2)
-#ifdef D3Q19
          ud(3) = uc(3,0) - u0(3)
-#else /* D3Q19 */
-         ud(3) = 0.d0 
-#endif /* D3Q19 */
          rhod = rhoc(0) - rho0
 
 
          ! calculate the fluctuating part of the first neighbor
          ud1(1) = uc(1,1) - u0(1)
          ud1(2) = uc(2,1) - u0(2)
-#ifdef D3Q19
          ud1(3) = uc(3,1) - u0(3)
-#else /* D3Q19 */
-         ud1(3) = 0.d0 
-#endif /* D3Q19 */
          rhod1 = rhoc(1) - rho0
 
          ! calculate the fluctuating part of the second neighbor
          ud2(1) = uc(1,2) - u0(1)
          ud2(2) = uc(2,2) - u0(2)
-#ifdef D3Q19             
          ud2(3) = uc(3,2) - u0(3)
-#else /* D3Q19 */
-         ud2(3) = 0.d0 
-#endif /* D3Q19 */
          rhod2 = rhoc(2) - rho0
 
          ! calculate the fluctuating part of the third neighbor
          ud3(1) = uc(1,3) - u0(1)
          ud3(2) = uc(2,3) - u0(2)
-#ifdef D3Q19             
          ud3(3) = uc(3,3) - u0(3)
-#else /* D3Q19 */
-         ud3(3) = 0.d0 
-#endif /* D3Q19 */
          rhod3 = rhoc(3) - rho0
 
 
@@ -737,7 +717,6 @@ endif
                factoru(3)=c3(0)
             endif ! y+ inlet/outlet
             else ! if third dimension has to be extrapolated
-#ifdef D3Q19
 
          !z-
          if(btest(lb_dom%obs_nrwall(i,0),6)) then
@@ -850,7 +829,6 @@ endif
 
 
 
-#endif
             end if
 
 
@@ -894,7 +872,6 @@ endif
          rhoc(0)      = rho0 + damping*(cs2inv*0.5*(c4(0) + c5(0)))
          ! calculate  equilibrium distribution
          usq =  (uc(1,0)*uc(1,0) + uc(2,0)*uc(2,0) + uc(3,0)*uc(3,0))*t2cs2inv
-#if   defined D3Q19
            fIn(NDX(1,xc(0),yc(0),zc(0))) = t(1)*rhoc(0)*(1  &
                 - usq) 
            fIn(NDX(2,xc(0),yc(0),zc(0))) = t(2)*rhoc(0)*(1._R8B + (uc(1,0))*cs2inv &
@@ -963,7 +940,6 @@ endif
                 + (-uc(2,0) + uc(3,0))*cs2inv &
                 + (-uc(2,0) + uc(3,0))**2*t2cs4inv  &
                 - usq) 
-#endif /* D3Q19 */
 #endif /* NRBC_SPEEDUP */     
       end do
 
@@ -1089,10 +1065,8 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
    if(prc%crd(1) == prc%np(1)-1) then; x_end   = lx-1; else; x_end  =lx; end if
    if(prc%crd(2) == 0)          then; y_start = 2;    else; y_start=1;  end if
    if(prc%crd(2) == prc%np(2)-1) then; y_end   = ly-1; else; y_end  =ly; end if
-#ifdef D3Q19
    if(prc%crd(3) == 0)          then; z_start = 2;    else; z_start=1;  end if
    if(prc%crd(3) == prc%np(3)-1) then; z_end   = lz-1; else; z_end  =lz; end if
-#endif
 
    ! Set the delta increase of coordinates for process coordinates > 1 
    incr_x = prc%crd(1)*lx
@@ -1153,12 +1127,10 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
          do j=y_start,y_end
             i=1
             u(NDX(2,i,j,k)) = 0._R8B 
-#if   defined D3Q19
 !FIXME errorous u calculation
             u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d(real(j+incr_y,R8B) &
             ,real(s_par%gx(2)+1,R8B),real(k+incr_z,R8B),real(s_par%gx(3)+1,R8B))
             u(NDX(3,i,j,k)) = 0._R8B 
-#endif
             rho(i,j,k) = 1._R8B 
             call calc_fEq(lb_dom,rho,u,fIn,i,i,j,j,k,k,s_par)
          end do
@@ -1167,11 +1139,9 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
          do j=y_start,y_end
             i=lx
             u(NDX(2,i,j,k)) = 0._R8B 
-#if   defined D3Q19
             u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d(real(j+incr_y,R8B)        &
          ,real(s_par%gx(2)+1,R8B),real(k+incr_z,R8B),real(s_par%gx(3)+1,R8B))
             u(NDX(3,i,j,k)) = 0._R8B 
-#endif
             rho(i,j,k) = 1._R8B 
             call calc_fEq(lb_dom,rho,u,fIn,i,i,j,j,k,k,s_par)
          end do
@@ -1190,12 +1160,10 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
          do j=y_start,y_end
             i=1
             u(NDX(2,i,j,k)) = 0._R8B 
-#if   defined D3Q19
 !FIXME errorous u calculation
             u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d(real(j+incr_y,R8B) &
             ,real(s_par%gx(2)+1,R8B),real(k+incr_z,R8B),real(s_par%gx(3)+1,R8B))
             u(NDX(3,i,j,k)) = 0._R8B 
-#endif
             rho(i,j,k) = 1._R8B 
             call calc_fEq(lb_dom,rho,u,fIn,i,i,j,j,k,k,s_par)
          end do
@@ -1204,11 +1172,9 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
          do j=y_start,y_end
             i=lx
             u(NDX(2,i,j,k)) = 0._R8B 
-#if   defined D3Q19
             u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d(real(j+incr_y,R8B)        &
          ,real(s_par%gx(2)+1,R8B),real(k+incr_z,R8B),real(s_par%gx(3)+1,R8B))
             u(NDX(3,i,j,k)) = 0._R8B 
-#endif
             rho(i,j,k) = 1._R8B 
             call calc_fEq(lb_dom,rho,u,fIn,i,i,j,j,k,k,s_par)
          end do
@@ -1243,7 +1209,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
      case(cavity)
         ! Reset boundary 
         ! macroscopic Variables
-#ifdef D3Q19
         j = ly
         if(prc%crd(2) == prc%np(2)-1) then !wenn Block in oberster Reihe
          do k=z_start,z_end
@@ -1260,7 +1225,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
          if(prc%crd(2) == prc%np(2)-1) then
             call calc_fEq(lb_dom,rho,u,fIn,x_start,x_end,ly,ly,z_start,z_end,s_par) !top lid
          end if
-#endif
 
 
 
@@ -1274,7 +1238,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
      case(cavity_same)
         ! Reset boundary 
         ! macroscopic Variables
-#ifdef D3Q19
         j = ly
          do k=2,lz-1
             do i=2,lx-1       
@@ -1287,7 +1250,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
          end do
 
         call calc_fEq(lb_dom,rho,u,fIn,2      ,lx-1 ,ly,ly,2      ,lz-1,s_par ) !top lid
-#endif
 
 
 

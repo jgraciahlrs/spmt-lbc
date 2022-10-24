@@ -138,12 +138,10 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       do k=1,s_par%gx(3)
         do j=1,s_par%gx(2)
           do i=1,s_par%gx(1)
-#ifdef D3Q19
                u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d(real(j,R8B),real(s_par%gx(2)+1,R8B), &
                                        real(k,R8B),real(s_par%gx(3)+1,R8B))
                u(NDX(2,i,j,k))   = 0._R8B
                u(NDX(3,i,j,k))   = 0._R8B
-#endif
                rho(i,j,k)   = 1._R8B
              end do
           end do
@@ -164,9 +162,7 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
                rho(i,j,k)   = 1.0_R8B !2.7
                u(NDX(1,i,j,k))   = 0._R8B
                u(NDX(2,i,j,k))   = 0._R8B
-#ifdef D3Q19
                u(NDX(3,i,j,k))   = 0._R8B
-#endif
              end do
           end do
        end do
@@ -186,25 +182,17 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
                rho(i,j,k)   = 1.0_R8B 
                u(NDX(1,i,j,k))   = 0._R8B
                u(NDX(2,i,j,k))   = 0._R8B
-#ifdef D3Q19
                u(NDX(3,i,j,k))   = 0._R8B
-#endif
              end do
           end do
           end do
-#ifdef D3Q19
       do k=s_par%gx(3)/2-2,s_par%gx(3)/2+2
-#else
-      k=1
-#endif
           do j=s_par%gx(2)/2-1 ,s_par%gx(2)/2+1
              do i=s_par%gx(1)/2-1,s_par%gx(1)/2+1
                rho(i,j,k)   = s_par%umax*rho(i,j,k)
              end do
           end do
-#ifdef D3Q19
        end do
-#endif
 
 
 
@@ -219,9 +207,7 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
         rho(i,j,k)   = s_par%umax      &
 *exp(-log(2.)*real(i-s_par%gx(1)/2)*real(i-s_par%gx(1)/2)/radius/radius)  &
 *exp(-log(2.)*real(j-s_par%gx(2)/2)*real(j-s_par%gx(2)/2)/radius/radius)  &
-#ifdef D3Q19
 !                                 *exp(-log(2.)*real(k-s_par%gx(3)/2)*real(k-s_par%gx(3)/2)/radius/radius)  &
-#endif
                                 + rho(i,j,k)
 !               u(NDX(1,i,j,k)) = s_par%umax
 !               u(NDX(2,i,j,k)) = s_par%umax
@@ -237,9 +223,7 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
         rho(i,j,k)   = s_par%umax      &
 *exp(-log(2.)*real(i-s_par%gx(1)/2)*real(i-s_par%gx(1)/2)/radius/radius)  &
 !*exp(-log(2.)*real(j-s_par%gx(2)/2)*real(j-s_par%gx(2)/2)/radius/radius)  &
-#ifdef D3Q19
 !                                 *exp(-log(2.)*real(k-s_par%gx(3)/2)*real(k-s_par%gx(3)/2)/radius/radius)  &
-#endif
                                 + rho(i,j,k)
 !               u(NDX(1,i,j,k)) = -s_par%umax
              enddo
@@ -258,17 +242,11 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
              do i=1,s_par%gx(1)  
           rho(i,j,k)   = s_par%umax/cs2inv*exp(-log(2.)*real(i-s_par%gx(1)/2)*real(i-s_par%gx(1)/2)/radius/radius)  &
                                    *exp(-log(2.)*real(j-s_par%gx(2)/2)*real(j-s_par%gx(2)/2)/radius/radius)  &
-#ifdef D3Q19
                                    *exp(-log(2.)*real(k-s_par%gx(3)/2)*real(k-s_par%gx(3)/2)/radius/radius)  &
-#endif
                      + rho(i,j,k)
 
                u(NDX(1:NDIM,i,j,k)) =  0.0 !s_par%umax !0.0
-#ifdef D3Q19
                u(NDX(3,i,j,k)) = s_par%umax  !(rho(i,j,k) - 1.0)/cs         !s_par%umax
-#else 
-               u(NDX(1,i,j,k)) = s_par%umax  !(rho(i,j,k) - 1.0)/cs         !s_par%umax
-#endif
              enddo
          enddo
       enddo
@@ -731,9 +709,7 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
 
                lb_dom%u(NDX(1,i,j,k))   = 0._R8B
                lb_dom%u(NDX(2,i,j,k))   = 0._R8B
-#ifdef D3Q19
                lb_dom%u(NDX(3,i,j,k))   = 0._R8B
-#endif
              end do
           end do
        end do
@@ -766,9 +742,7 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
         lb_dom%rho(i,j,k)   = s_par%umax      &
 *exp(-log(2.)*real(i-lb_dom%lx(1)/2)*real(i-lb_dom%lx(1)/2)/radius/radius)  &
 *exp(-log(2.)*real(j-lb_dom%lx(2)/2)*real(j-lb_dom%lx(2)/2)/radius/radius)  &
-#ifdef D3Q19
 !                                 *exp(-log(2.)*real(k-s_par%gx(3)/2)*real(k-s_par%gx(3)/2)/radius/radius)  &
-#endif
                                 + lb_dom%rho(i,j,k)
 !               u(NDX(1,i,j,k)) = s_par%umax
 !               u(NDX(2,i,j,k)) = s_par%umax
@@ -806,13 +780,11 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       do k=1,lx(3)
         do j=1,lx(2)
           do i=1,lx(1)
-#ifdef D3Q19
                lb_dom%u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d( &
                   real(j+lb_dom%lx(2)*prc%crd(2),R8B),real(s_par%gx(2)+1,R8B), &
                   real(k+lb_dom%lx(3)*prc%crd(3),R8B),real(s_par%gx(3)+1,R8B))
                lb_dom%u(NDX(2,i,j,k))   = 0._R8B
                lb_dom%u(NDX(3,i,j,k))   = 0._R8B
-#endif
                lb_dom%rho(i,j,k)   = 1._R8B
              end do
           end do
@@ -821,12 +793,10 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
        do k=1,s_par%gx(3)
         do j=1,s_par%gx(2)
           do i=1,s_par%gx(1)
-#ifdef D3Q19
                lb_dom%u(NDX(1,i,j,k))   = 4._R8B*s_par%umax/real(s_par%gx(2)+1)**2  &
          & *(real(j*s_par%gx(2)+1)-real(j)*real(j))*(real(k*s_par%gx(3)+1)-real(k)*real(k))
                lb_dom%u(NDX(2,i,j,k))   = 0._R8B
                lb_dom%u(NDX(3,i,j,k))   = 0._R8B
-#endif
                lb_dom%rho(i,j,k)   = 1._R8B
 
              end do
@@ -842,9 +812,7 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
                lb_dom%rho(i,j,k)   = 1.0_R8B 
                lb_dom%u(NDX(1,i,j,k))   = 0._R8B
                lb_dom%u(NDX(2,i,j,k))   = 0._R8B
-#ifdef D3Q19
                lb_dom%u(NDX(3,i,j,k))   = 0._R8B
-#endif
              end do
           end do
        end do
@@ -858,9 +826,7 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
                lb_dom%rho(i,j,k)        = 1.0_R8B 
                lb_dom%u(NDX(1,i,j,k))   = 0._R8B
                lb_dom%u(NDX(2,i,j,k))   = 0._R8B
-#ifdef D3Q19
                lb_dom%u(NDX(3,i,j,k))   = 0._R8B
-#endif
              end do
           end do
        end do
@@ -991,7 +957,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
          lb_dom%obs_nrwall(i,14) = y 
       endif 
 
-#ifdef D3Q19
       if(z == 1.and.  prc%crd(3)==0) then ! if on left boarder, use right neighbors
          lb_dom%obs_nrwall(i,6) = z+1 
          lb_dom%obs_nrwall(i,9) = z+2 
@@ -1010,12 +975,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
          lb_dom%obs_nrwall(i,12) = z 
          lb_dom%obs_nrwall(i,15) = z 
       endif  ! z
-#else
-         lb_dom%obs_nrwall(i,6) = z
-         lb_dom%obs_nrwall(i,9) = z
-         lb_dom%obs_nrwall(i,12) = z 
-         lb_dom%obs_nrwall(i,15) = z 
-#endif
 
 
 #else /* NRBC_DIAGONAL */
@@ -1185,7 +1144,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       else ! if not, use same coordinate
          lb_dom%obs_per(i,5) = y
       endif
-#ifdef D3Q19
       ! z coordinate
       if(z == 1) then ! if on left boarder, use right neighbors
          lb_dom%obs_per(i,6) = lb_dom%lx(3)-1 
@@ -1196,10 +1154,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       else ! if not, use same coordinate
          lb_dom%obs_per(i,6) = z
       endif
-#else
-      ! if 2d, set third coord to 1
-      lb_dom%obs_per(i,6) = 1
-#endif
    end do
    end subroutine per_find_neighbors
   !------------------------------------------------------------------------
@@ -1491,7 +1445,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       cs2inv  = 1._R8B/cs**2
       t2cs4inv = 1._R8B/(2._R8B*cs**4)
       t2cs2inv = 1._R8B/(2._R8B*cs**2)
-#ifdef D3Q19
       do k=1,s_par%gx(3)
          do j=1,s_par%gx(2)
             do i=1,s_par%gx(1)
@@ -1636,7 +1589,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
             end do
          end do
       end do
-#endif    
    end subroutine calc_fEq_global
 !------------------------------------------------------------------------
 #endif  /*INIT_WITH_ROOT  */
@@ -1680,7 +1632,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       t2cs4inv = 1._R8B/(2*cs**4)
       t2cs2inv = 1._R8B/(2*cs**2)
 
-#ifdef D3Q19
     do k=z_l,z_u
        do j=y_l,y_u
           do i=x_l,x_u
@@ -1765,7 +1716,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
           end do
        end do
     end do
-#endif    
   end subroutine calc_fEq
   !------------------------------------------------------------------------
 
@@ -1799,10 +1749,8 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       if(prc%crd(1) == prc%np(1)-1) then; x_end   = lx-1; else; x_end  =lx; end if
       if(prc%crd(2) == 0)          then; y_start = 2;    else; y_start=1;  end if
       if(prc%crd(2) == prc%np(2)-1) then; y_end   = ly-1; else; y_end  =ly; end if
-#ifdef D3Q19
       if(prc%crd(3) == 0)          then; z_start = 2;    else; z_start=1;  end if
       if(prc%crd(3) == prc%np(3)-1) then; z_end   = lz-1; else; z_end  =lz; end if
-#endif
 
       do i=1,prc%bnd(prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1,1,2)-prc%bnd(prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1,1,1)+1
          lb_dom%x(i)  = prc%bnd(prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1,1,1)+real(i,8) - 2
@@ -1856,11 +1804,9 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
          if(prc%crd(2)==prc%np(1)-1) &
             lb_dom%state(x_start:x_end,ly,:) = ibset(lb_dom%state(x_start:x_end,ly,:),wall)
 
-#ifdef D3Q19
          ! wall boundaries
          if(prc%crd(3) ==0)            lb_dom%state(:,:,1)  = ibset(lb_dom%state(:,:,1), wall)
          if(prc%crd(3) ==prc%np(3)-1)  lb_dom%state(:,:,lz) = ibset(lb_dom%state(:,:,lz),wall)
-#endif
          ! cylinder
          write(*,*) "todo: implement cylinder"
 
@@ -2134,11 +2080,9 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
          lb_dom%gstate(1:lx,1,:)    = ibset(lb_dom%gstate(1:lx,1,:), wall)
          lb_dom%gstate(1:lx,ly,:)   = ibset(lb_dom%gstate(1:lx,ly,:),wall)
 
-#ifdef D3Q19
          ! wall boundaries
          lb_dom%gstate(:,:,1)    = ibset(lb_dom%gstate(:,:,1),wall)
          lb_dom%gstate(:,:,lz)   = ibset(lb_dom%gstate(:,:,lz),wall)
-#endif
          radius= min(s_par%gx(2)/2,s_par%gx(3)/2)
          do k=1,lz
             do j=1,ly
@@ -2169,11 +2113,9 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
          lb_dom%gstate(1:lx,1,:)    = ibset(lb_dom%gstate(1:lx,1,:), wall)
          lb_dom%gstate(1:lx,ly,:)   = ibset(lb_dom%gstate(1:lx,ly,:),wall)
 
-#ifdef D3Q19
          ! wall boundaries
          lb_dom%gstate(:,:,1)    = ibset(lb_dom%gstate(:,:,1),wall)
          lb_dom%gstate(:,:,lz)   = ibset(lb_dom%gstate(:,:,lz),wall)
-#endif
          ! cylinder
          do i=1,lx
             do j=1,ly
@@ -2506,7 +2448,6 @@ ibset(lb_dom%gstate(1:s_par%gx(1)/2,s_par%gx(2)/2-1:s_par%gx(2)/2+1,:),wall)
            do i=1,lb_dom%lx(1)
 !               if(btest(lb_dom%state(i,j,k),wall) .eqv. .false.) then
 !if(lb_dom%state(i,j,k) /= wall) then
-#ifdef D3Q19
        rho(i,j,k)  =  fIn(NDX(I__0,i,j,k)) + &
                       fIn(NDX(I__E,i,j,k)) + fIn(NDX(I__W,i,j,k)) + &
                       fIn(NDX(I__N,i,j,k)) + fIn(NDX(I__S,i,j,k)) + &
@@ -2534,7 +2475,6 @@ ibset(lb_dom%gstate(1:s_par%gx(1)/2,s_par%gx(2)/2-1:s_par%gx(2)/2+1,:),wall)
                       fIn(NDX(I_TS,i,j,k)) - fIn(NDX(I_BN,i,j,k))
 
 
-#endif
                u(NDX(:,i,j,k))=u(NDX(:,i,j,k))/rho(i,j,k)
 !endif
 

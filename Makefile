@@ -86,7 +86,7 @@ PARALLEL += $(FDEF)-DUSE_OMPSS_MPI
 # Model arguments 
 # Lattice Boltzmann Model: 
 # 3D:  use three-dimensional model with nineteen velocities
-LBMODEL += $(FDEF)-DD3Q19
+# Standard is D3Q19
 
 # Relaxation modes (optional)
 # Standard is BGK

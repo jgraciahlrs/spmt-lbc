@@ -24,7 +24,6 @@
             ftmp(7)=fIn(LB_NODE(7,i-cx(7,1),j-cx(7,2),k-cx(7,3)))
             ftmp(8)=fIn(LB_NODE(8,i-cx(8,1),j-cx(8,2),k-cx(8,3)))
             ftmp(9)=fIn(LB_NODE(9,i-cx(9,1),j-cx(9,2),k-cx(9,3)))
-#ifdef D3Q19
             ftmp(10)=fIn(LB_NODE(10,i-cx(10,1),j-cx(10,2),k-cx(10,3)))
             ftmp(11)=fIn(LB_NODE(11,i-cx(11,1),j-cx(11,2),k-cx(11,3)))
             ftmp(12)=fIn(LB_NODE(12,i-cx(12,1),j-cx(12,2),k-cx(12,3)))
@@ -35,12 +34,10 @@
             ftmp(17)=fIn(LB_NODE(17,i-cx(17,1),j-cx(17,2),k-cx(17,3)))
             ftmp(18)=fIn(LB_NODE(18,i-cx(18,1),j-cx(18,2),k-cx(18,3)))
             ftmp(19)=fIn(LB_NODE(19,i-cx(19,1),j-cx(19,2),k-cx(19,3)))
-#endif
 
             !--------------------------------------------
             ! Calculate macroscopic variables 
 
-#ifdef D3Q19
             ! local density
             loc_dens =  ftmp(1)  + ftmp(2)  + &
                         ftmp(3)  + ftmp(4)  + ftmp(5) + &
@@ -71,7 +68,6 @@
                    ftmp(15) + ftmp(16) - &
                    ftmp(17) - ftmp(18) + &
                    ftmp(19))
-#endif
             ! inverse
             inv_loc_dens = 1.d0 / loc_dens
 
@@ -92,7 +88,6 @@
 
             fOut(LB_NODE(1,i,j,k)) = ftmp(1)*(1.d0-omega) + omega*t0*feq_common
 
-#ifdef D3Q19
             t2x2 = t2x2_0 * loc_dens
             fac2 = t2x2 * inv2csq2
 
@@ -152,7 +147,6 @@
             asym = asym_omega_h*( ftmp(6) - ftmp(7) - 3.d0*t1x2*ui )
             fOut(LB_NODE(6,i,j,k)) = ftmp(6) - sym - asym
             fOut(LB_NODE(7,i,j,k)) = ftmp(7) - sym + asym
-#endif
          end do
       end do
    end do
@@ -173,7 +167,6 @@
             ftmp(7)=fIn(LB_NODE(7,i-cx(7,1),j-cx(7,2),k-cx(7,3)))
             ftmp(8)=fIn(LB_NODE(8,i-cx(8,1),j-cx(8,2),k-cx(8,3)))
             ftmp(9)=fIn(LB_NODE(9,i-cx(9,1),j-cx(9,2),k-cx(9,3)))
-#ifdef D3Q19
             ftmp(10)=fIn(LB_NODE(10,i-cx(10,1),j-cx(10,2),k-cx(10,3)))
             ftmp(11)=fIn(LB_NODE(11,i-cx(11,1),j-cx(11,2),k-cx(11,3)))
             ftmp(12)=fIn(LB_NODE(12,i-cx(12,1),j-cx(12,2),k-cx(12,3)))
@@ -184,7 +177,6 @@
             ftmp(17)=fIn(LB_NODE(17,i-cx(17,1),j-cx(17,2),k-cx(17,3)))
             ftmp(18)=fIn(LB_NODE(18,i-cx(18,1),j-cx(18,2),k-cx(18,3)))
             ftmp(19)=fIn(LB_NODE(19,i-cx(19,1),j-cx(19,2),k-cx(19,3)))
-#endif
 
             fOut(LB_NODE(1,i,j,k)) = ftmp(opp(1))
             fOut(LB_NODE(2,i,j,k)) = ftmp(opp(2))
@@ -195,7 +187,6 @@
             fOut(LB_NODE(7,i,j,k)) = ftmp(opp(7))
             fOut(LB_NODE(8,i,j,k)) = ftmp(opp(8))
             fOut(LB_NODE(9,i,j,k)) = ftmp(opp(9))
-#ifdef D3Q19
             fOut(LB_NODE(10,i,j,k)) = ftmp(opp(10))
             fOut(LB_NODE(11,i,j,k)) = ftmp(opp(11))
             fOut(LB_NODE(12,i,j,k)) = ftmp(opp(12))
@@ -206,7 +197,6 @@
             fOut(LB_NODE(17,i,j,k)) = ftmp(opp(17))
             fOut(LB_NODE(18,i,j,k)) = ftmp(opp(18))
             fOut(LB_NODE(19,i,j,k)) = ftmp(opp(19))
-#endif
          end do
       end do
    end do

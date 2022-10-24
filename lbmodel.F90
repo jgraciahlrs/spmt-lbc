@@ -21,7 +21,6 @@ module LBMODEL
    !      8   5   9
     
 
-#ifdef D3Q19
    integer, parameter                  :: nnod= 19
    real(R8B), dimension(19),parameter    :: t   = (/ 1._R8B/3._R8B, &
              1._R8B/18._R8B,1._R8B/18._R8B,1._R8B/18._R8B,1._R8B/18._R8B,1._R8B/18._R8B,1._R8B/18._R8B,& 
@@ -51,7 +50,6 @@ module LBMODEL
 
    data opp /1,3,2,5,4,7,6,9,8,11,10,13,12,15,14,17,16,19,18/
 
-#endif
 end module LBMODEL
 !------------------------------------------------------------------------
 

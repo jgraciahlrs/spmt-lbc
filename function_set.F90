@@ -238,9 +238,7 @@ end subroutine gather_output
 #endif
 //""
 
-#if   defined D3Q19
       s_par%modelname = "d3q19"
-#endif
       temp_name       = s_par%modelname
 #ifdef INCOMPRESSIBLE
       s_par%modelname = "inc_"//s_par%modelname
@@ -378,9 +376,7 @@ end subroutine gather_output
          write(*,'(a12,i8)')     'Beg Out at  ',   s_par%tOutBeg
          write(*,'(a12,i8)')     'Init until  ',   s_par%tInitial
          if(s_par%setObstacles .EQV. .TRUE.) write(*,*) 'Insert regular obstacles ', s_par%setObstacles 
-#ifdef D3Q19
          write(*,*) "Model:    D3Q19"
-#endif
          write(*,*) "Relaxation is: ", &
 "bgk"
 

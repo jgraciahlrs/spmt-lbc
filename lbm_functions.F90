@@ -62,7 +62,6 @@ contains
                   fOut(NDX(I_SW,i,j,k))=fIn(NDX(I_SW,i-cx(I_SW,1),j-cx(I_SW,2),k-cx(I_SW,3)))
                   fOut(NDX(I_SE,i,j,k))=fIn(NDX(I_SE,i-cx(I_SE,1),j-cx(I_SE,2),k-cx(I_SE,3)))
                   fOut(NDX(I_NW,i,j,k))=fIn(NDX(I_NW,i-cx(I_NW,1),j-cx(I_NW,2),k-cx(I_NW,3)))
-#ifdef D3Q19
                   fOut(NDX(I__T,i,j,k))=fIn(NDX(I__T,i-cx(I__T,1),j-cx(I__T,2),k-cx(I__T,3)))
                   fOut(NDX(I__B,i,j,k))=fIn(NDX(I__B,i-cx(I__B,1),j-cx(I__B,2),k-cx(I__B,3)))
                   fOut(NDX(I_TE,i,j,k))=fIn(NDX(I_TE,i-cx(I_TE,1),j-cx(I_TE,2),k-cx(I_TE,3)))
@@ -73,7 +72,6 @@ contains
                   fOut(NDX(I_BS,i,j,k))=fIn(NDX(I_BS,i-cx(I_BS,1),j-cx(I_BS,2),k-cx(I_BS,3)))
                   fOut(NDX(I_BN,i,j,k))=fIn(NDX(I_BN,i-cx(I_BN,1),j-cx(I_BN,2),k-cx(I_BN,3)))
                   fOut(NDX(I_TS,i,j,k))=fIn(NDX(I_TS,i-cx(I_TS,1),j-cx(I_TS,2),k-cx(I_TS,3)))
-#endif
    if(btest(state(i,j,k),wall) .eqv. .true.) then
                   ftmp = fOut(NDX(:,i,j,k)) 
                   fOut(NDX(opp(I__0),i,j,k))=ftmp(I__0)
@@ -85,7 +83,6 @@ contains
                   fOut(NDX(opp(I_SW),i,j,k))=ftmp(I_SW)
                   fOut(NDX(opp(I_SE),i,j,k))=ftmp(I_SE)
                   fOut(NDX(opp(I_NW),i,j,k))=ftmp(I_NW)
-#ifdef D3Q19
                   fOut(NDX(opp(I__T),i,j,k))=ftmp(I__T)
                   fOut(NDX(opp(I__B),i,j,k))=ftmp(I__B)
                   fOut(NDX(opp(I_TE),i,j,k))=ftmp(I_TE)
@@ -96,7 +93,6 @@ contains
                   fOut(NDX(opp(I_BS),i,j,k))=ftmp(I_BS)
                   fOut(NDX(opp(I_BN),i,j,k))=ftmp(I_BN)
                   fOut(NDX(opp(I_TS),i,j,k))=ftmp(I_TS)
-#endif
 endif
             enddo
          enddo
@@ -181,7 +177,6 @@ endif
 
 
 ! Calculate current Density 
-#ifdef D3Q19
        rholoc = fIn(NDX(I__0,i,j,k)) + &
                 fIn(NDX(I__E,i,j,k)) + fIn(NDX(I__W,i,j,k)) + &
                 fIn(NDX(I__N,i,j,k)) + fIn(NDX(I__S,i,j,k)) + &
@@ -192,13 +187,6 @@ endif
                 fIn(NDX(I_BE,i,j,k)) + fIn(NDX(I_TW,i,j,k)) + &
                 fIn(NDX(I_TN,i,j,k)) + fIn(NDX(I_BS,i,j,k)) + &
                 fIn(NDX(I_BN,i,j,k)) + fIn(NDX(I_TS,i,j,k))
-#else /* D2Q9 */
-       rholoc = fIn(NDX(I__0,i,j,k)) + fIn(NDX(I__E,i,j,k))  + &
-                fIn(NDX(I__W,i,j,k)) + fIn(NDX(I__N,i,j,k))  + &
-                fIn(NDX(I__S,i,j,k)) + fIn(NDX(I_NE,i,j,k))  + &
-                fIn(NDX(I_SW,i,j,k)) + fIn(NDX(I_SE,i,j,k))  + &
-                fIn(NDX(I_NW,i,j,k))
-#endif /* D3Q9 */
 
 
 ! Choose which reference density is used. 
@@ -212,7 +200,6 @@ endif
   
 ! Calculate Momentum
 
-#ifdef D3Q19
               if(s_par%initial .eqv. .false.) then
     u(1) = fIn(NDX(I__E,i,j,k)) - fIn(NDX(I__W,i,j,k)) + &
                       fIn(NDX(I_NE,i,j,k)) - fIn(NDX(I_SW,i,j,k)) + &
@@ -239,29 +226,8 @@ endif
  
                usq =  (u(1)**2 + u(2)**2 + u(3)**2)*t2cs2inv
 
-#else /* D3Q19 -> D2Q9*/ 
-
-              if(s_par%initial .eqv. .false.) then
-         u(1) =  fIn(NDX(I__E,i,j,k)) - fIn(NDX(I__W,i,j,k))  + &
-                 fIn(NDX(I_NE,i,j,k)) - fIn(NDX(I_SW,i,j,k))  + &
-                 fIn(NDX(I_SE,i,j,k)) - fIn(NDX(I_NW,i,j,k))    
-         u(2) =  fIn(NDX(I__N,i,j,k)) - fIn(NDX(I__S,i,j,k))  + &
-                 fIn(NDX(I_NE,i,j,k)) - fIn(NDX(I_SW,i,j,k))  + &  
-                 fIn(NDX(I_NW,i,j,k)) - fIn(NDX(I_SE,i,j,k) )    
-         u = u/rho0
-               else
-         ! Decide, if a constant velocity field is used for initial relaxation process
-                  u(1) = lb_dom%u0(NDX(1,i,j,k))
-                  u(2) = lb_dom%u0(NDX(2,i,j,k))
-               endif
-
-                usq =  (u(1)*u(1) + u(2)*u(2))*t2cs2inv
-
-#endif /* D3Q19 */
-
 ! Calculate equilibrium distributions
 
-#ifdef D3Q19
                fEq(1) = t(1)*(rholoc -rho0*usq)
  
                fEq(2) = t(2)*(rholoc + rho0*((u(1))*cs2inv &
@@ -318,34 +284,6 @@ endif
                fEq(19) = t(19)*(rholoc + rho0*((-u(2) + u(3))*cs2inv &
                       + (-u(2) + u(3))**2*t2cs4inv  &
                       - usq)) 
-#else /* D2Q9 */
-                fEq(1) = t(1)*(rholoc  - rho0*usq)
-                fEq(2) = t(2)*(rholoc  + rho0*((u(1))*cs2inv &
-                      + (u(1))**2*t2cs4inv & 
-                      - usq))
-                fEq(3) = t(3)*(rholoc + rho0*((u(2))*cs2inv &
-                      + (u(2))**2*t2cs4inv  &
-                      - usq))
-                fEq(4) = t(4)*(rholoc + rho0*((-u(1) )*cs2inv &
-                      + (-u(1))**2*t2cs4inv  &
-                      - usq))
-                fEq(5) = t(5)*(rholoc + rho0*((-u(2))*cs2inv &
-                      + (-u(2))**2*t2cs4inv  &
-                      - usq))
-                fEq(6) = t(6)*(rholoc + rho0*((u(1) + u(2))*cs2inv &
-                      + (u(1)+u(2))**2*t2cs4inv  &
-                      - usq))
-                fEq(7) = t(7)*(rholoc + rho0*((-u(1) + u(2))*cs2inv &
-                      + (-u(1)+u(2))**2*t2cs4inv  &
-                      - usq))
-                fEq(8) = t(8)*(rholoc + rho0*((-u(1) -u(2))*cs2inv &
-                      + (-u(1)-u(2))**2*t2cs4inv  &
-                      - usq))
-                fEq(9) = t(9)*(rholoc + rho0*((u(1) -u(2))*cs2inv &
-                      + (u(1)-u(2))**2*t2cs4inv  &
-                      - usq))
-
-#endif /* D3Q19 */
 
 ! Finally, relax to local equilibrium
 
@@ -358,7 +296,6 @@ endif
                fOut(NDX(7,i,j,k)) = fIn(NDX(7,i,j,k)) - omega*(fIn(NDX(7,i,j,k)) - fEq(7))
                fOut(NDX(8,i,j,k)) = fIn(NDX(8,i,j,k)) - omega*(fIn(NDX(8,i,j,k)) - fEq(8))
                fOut(NDX(9,i,j,k)) = fIn(NDX(9,i,j,k)) - omega*(fIn(NDX(9,i,j,k)) - fEq(9))
-#ifdef D3Q19
                fOut(NDX(10,i,j,k)) = fIn(NDX(10,i,j,k)) - omega*(fIn(NDX(10,i,j,k)) - fEq(10))
                fOut(NDX(11,i,j,k)) = fIn(NDX(11,i,j,k)) - omega*(fIn(NDX(11,i,j,k)) - fEq(11))
                fOut(NDX(12,i,j,k)) = fIn(NDX(12,i,j,k)) - omega*(fIn(NDX(12,i,j,k)) - fEq(12))
@@ -369,7 +306,6 @@ endif
                fOut(NDX(17,i,j,k)) = fIn(NDX(17,i,j,k)) - omega*(fIn(NDX(17,i,j,k)) - fEq(17))
                fOut(NDX(18,i,j,k)) = fIn(NDX(18,i,j,k)) - omega*(fIn(NDX(18,i,j,k)) - fEq(18))
                fOut(NDX(19,i,j,k)) = fIn(NDX(19,i,j,k)) - omega*(fIn(NDX(19,i,j,k)) - fEq(19))
-#endif /* D3Q19 */
 
 #ifdef DEBUG
 if(i==5 .and. j==8 .and. k==5) then
@@ -445,10 +381,8 @@ endif
       real(R8B),dimension(SPLITDIMENSION) :: rholoc,u1,u2,u3,omega,usq
       real(R8B),dimension(SPLITDIMENSION) :: ftmp1,ftmp2,ftmp3,ftmp4,ftmp5,ftmp6,ftmp7,ftmp8,ftmp9
       real(R8B)                           :: fEq1,fEq2,fEq3,fEq4,fEq5,fEq6,fEq7,fEq8,fEq9
-#ifdef D3Q19
       real(R8B),dimension(SPLITDIMENSION) :: ftmp10,ftmp11,ftmp12,ftmp13,ftmp14,ftmp15,ftmp16,ftmp17,ftmp18,ftmp19
       real(R8B)                           :: fEq10,fEq11,fEq12,fEq13,fEq14,fEq15,fEq16,fEq17,fEq18,fEq19
-#endif
       call cpu_time_measure(meas%tSt_comm) 
 
       omega = s_par%omega
@@ -482,7 +416,6 @@ endif
                   ftmp7(INDEXVAR)=fIn(NDX(7,i-cx(7,1),j-cx(7,2),k-cx(7,3)))
                   ftmp8(INDEXVAR)=fIn(NDX(8,i-cx(8,1),j-cx(8,2),k-cx(8,3)))
                   ftmp9(INDEXVAR)=fIn(NDX(9,i-cx(9,1),j-cx(9,2),k-cx(9,3)))
-#ifdef D3Q19
                   ftmp10(INDEXVAR)=fIn(NDX(10,i-cx(10,1),j-cx(10,2),k-cx(10,3)))
                   ftmp11(INDEXVAR)=fIn(NDX(11,i-cx(11,1),j-cx(11,2),k-cx(11,3)))
                   ftmp12(INDEXVAR)=fIn(NDX(12,i-cx(12,1),j-cx(12,2),k-cx(12,3)))
@@ -493,7 +426,6 @@ endif
                   ftmp17(INDEXVAR)=fIn(NDX(17,i-cx(17,1),j-cx(17,2),k-cx(17,3)))
                   ftmp18(INDEXVAR)=fIn(NDX(18,i-cx(18,1),j-cx(18,2),k-cx(18,3)))
                   ftmp19(INDEXVAR)=fIn(NDX(19,i-cx(19,1),j-cx(19,2),k-cx(19,3)))
-#endif
 
             ! Split loops. (Thomas: 3 und 5 splitloops)
                if(btest(lb_dom%state(i,j,k),wall) .eqv. .false.) then
@@ -502,7 +434,6 @@ endif
          !--------------------------------------------
          ! Calculate macroscopic variables 
 
-#ifdef D3Q19
                rholoc(INDEXVAR)  = ftmp1(INDEXVAR)  + ftmp2(INDEXVAR)  + &
                          ftmp3(INDEXVAR)  + ftmp4(INDEXVAR)  + ftmp5(INDEXVAR) + &
                          ftmp6(INDEXVAR)  + ftmp7(INDEXVAR)  + &
@@ -530,7 +461,6 @@ endif
                          ftmp15(INDEXVAR) + ftmp16(INDEXVAR) - &
                          ftmp17(INDEXVAR) - ftmp18(INDEXVAR) + &
                          ftmp19(INDEXVAR))/rholoc(INDEXVAR)    
-#endif
  
                usq(INDEXVAR)=  (u1(INDEXVAR)**2 + u2(INDEXVAR)**2 + u3(INDEXVAR)**2)*t2cs2inv
 
@@ -539,7 +469,6 @@ endif
          ! Calculate equilibrium distribution
 
 
-#ifdef D3Q19
                fEq1 = t(1)*rholoc(INDEXVAR)*(1._R8B  &
                       - usq(INDEXVAR)) 
                fEq2 = t(2)*rholoc(INDEXVAR)*(1._R8B + (u1(INDEXVAR))*cs2inv &
@@ -637,14 +566,11 @@ endif
 
 
 
-#endif
-
 else
 
          !--------------------------------------------
          ! Do Bounce Back 
 
-#ifdef D3Q19
          fOut(NDX(opp(1),i,j,k)) = ftmp1(INDEXVAR)
          fOut(NDX(opp(2),i,j,k)) = ftmp2(INDEXVAR)
          fOut(NDX(opp(3),i,j,k)) = ftmp3(INDEXVAR)
@@ -676,7 +602,6 @@ else
          fOut(NDX(opp(17),i,j,k)) = ftmp17(INDEXVAR)
          fOut(NDX(opp(18),i,j,k)) = ftmp18(INDEXVAR)
          fOut(NDX(opp(19),i,j,k)) = ftmp19(INDEXVAR)
-#endif
       endif ! not wall
             end do
          end do
@@ -724,7 +649,6 @@ subroutine bounceback(lb_dom,fOut,fIn,meas,s_par,prc) !
       fOut(NDX(7,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(7),cdx(1),cdx(2),cdx(3)))
       fOut(NDX(8,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(8),cdx(1),cdx(2),cdx(3)))
       fOut(NDX(9,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(9),cdx(1),cdx(2),cdx(3)))
-#ifdef D3Q19
       fOut(NDX(10,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(10),cdx(1),cdx(2),cdx(3))) 
       fOut(NDX(11,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(11),cdx(1),cdx(2),cdx(3))) 
       fOut(NDX(12,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(12),cdx(1),cdx(2),cdx(3))) 
@@ -735,7 +659,6 @@ subroutine bounceback(lb_dom,fOut,fIn,meas,s_par,prc) !
       fOut(NDX(17,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(17),cdx(1),cdx(2),cdx(3))) 
       fOut(NDX(18,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(18),cdx(1),cdx(2),cdx(3))) 
       fOut(NDX(19,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(19),cdx(1),cdx(2),cdx(3))) 
-#endif
 
    end do
 

@@ -78,10 +78,6 @@ subroutine gather_output(lb_dom,countOut,tStep,s_par,prc)
    integer,parameter :: tagrho=101,tagu=102,tagomega=103,tagstate=104 
    integer,parameter :: tagrho_inc=105
    integer :: b_l(3),b_u(3)
-#ifdef INIT_WITH_ROOT
-   integer :: length
-   integer :: i,j,k
-#endif
    integer :: ab(prc%np(1),prc%np(2),prc%np(3),3),ae(prc%np(1),prc%np(2),prc%np(3),3)
 
    lx = lb_dom%lx(1)
@@ -93,75 +89,6 @@ subroutine gather_output(lb_dom,countOut,tStep,s_par,prc)
    ae = prc%bnd(:,:,:,:,2)
 
 
-#ifdef INIT_WITH_ROOT
-
-   call mpl_barrier()
-
-  ! Master Thread gathers all data
-  ! and executes output
-  if(prc%rk == prc%root_th) then
-       ! master thread distributes the subdomains
-
-       ! go over all subdomains, one by one
-       do k=1,prc%np(3)
-          do j=1,prc%np(2)
-             do i=1,prc%np(1)
-                b_l(1:3) = prc%bnd(i,j,k,1:3,1) 
-                b_u(1:3) = prc%bnd(i,j,k,1:3,2) 
-                length = (b_u(1)-b_l(1) + 1) * (b_u(2)-b_l(2)+1) * (b_u(3)-b_l(3)+1)
-                if(i == (prc%root_crd(1)+1) .and. & 
-                   j == (prc%root_crd(2)+1) .and. &
-                   k == (prc%root_crd(3)+1)) then ! is master thread
-               ! copy values of local arrays to global array
-
-
-                  lb_dom%grho(prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2), & 
-                     &        prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2), &
-                     &        prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2)) &
-                     &  = lb_dom%rho(1:lx,1:ly, 1:lz)
-
-               lb_dom%gu(&
-               NDX(:,ab(i,j,k,1):ae(i,j,k,1),ab(i,j,k,2):ae(i,j,k,2),ab(i,j,k,3):ae(i,j,k,3))) &
-                       = lb_dom%u(NDX(:,1:lx,1:ly,1:lz))
-
-                 lb_dom%gstate(prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2), & 
-                     &        prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2), &
-                     &        prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2)) &
-                     & =  lb_dom%state(1:lx,1:ly,1:lz)
-
-                       s_par%g_x(prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2)) =  lb_dom%x(1:lx)
-                       s_par%g_y(prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2)) =  lb_dom%y(1:ly)
-                       s_par%g_z(prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2)) =  lb_dom%z(1:lz)
-                else ! if master threads loop is at another crd than 0,0,0 -> recv from other threads 
-#ifdef USE_MPI
-                call MPI_CART_RANK(prc%cart_comm,(/(i-1),(j-1),(k-1)/),target_rank,prc%ierr)
-                call MPI_RECV(lb_dom%gu(NDX(1:NDIM,b_l(1):b_u(1),b_l(2):b_u(2),b_l(3):b_u(3))),&
-                                    length*NDIM,MPI_DOUBLE_PRECISION,&
-                                    target_rank,tagu,prc%cart_comm,prc%stat,prc%ierr)
-                call MPI_RECV(lb_dom%grho(b_l(1):b_u(1),b_l(2):b_u(2),b_l(3):b_u(3)),length,mpi_double_precision,&
-                                    target_rank,tagrho,prc%cart_comm,prc%stat,prc%ierr)
-                call MPI_RECV(lb_dom%gstate(b_l(1):b_u(1),b_l(2):b_u(2),b_l(3):b_u(3)),length,MPI_INTEGER,&
-                                    target_rank,tagstate,prc%cart_comm,prc%stat,prc%ierr)
-#endif /* USE_MPI */
-                end if
-            end do  
-         end do  
-      end do  
- else ! If current rank is not master -> send local array values to master 
-#ifdef USE_MPI
-       ! all other threads: 
-       ! wait until mpi_recv is done
-      length = lx*ly*lz !(b_u(1)-b_l(1) + 1) * (b_u(2)-b_l(2)+1) * (b_u(3)-b_l(3)+1)
-      call MPI_SEND(lb_dom%u(NDX(1:NDIM,1:lx,1:ly,1:lz)),length*NDIM,           &
-                     MPI_DOUBLE_PRECISION,prc%root_th,tagu,prc%cart_comm,prc%ierr)
-      call MPI_SEND(lb_dom%rho(1:lx,1:ly,1:lz),length,                              &
-                     MPI_DOUBLE_PRECISION,prc%root_th,tagrho,prc%cart_comm,prc%ierr)
-      call MPI_SEND(lb_dom%state(1:lx,1:ly,1:lz),length,MPI_INTEGER,                &
-                     prc%root_th,tagstate,prc%cart_comm,prc%ierr)
-#endif /* USE_MPI */
-   end if
-#else /* INIT_WITH_ROOT */
-#endif /* INIT_WITH_ROOT */
 end subroutine gather_output
 
 !------------------------------------------------------------------------
@@ -493,22 +420,6 @@ subroutine  dealloc_mem(lb_dom,s_par)
    type(lb_block)             :: lb_dom
    type(sim_parameter)        :: s_par 
    integer                    :: alloc_stat
-#ifdef INIT_WITH_ROOT
-   deallocate(lb_dom%gfIn,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%gfIn"
-   deallocate(lb_dom%gu,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%gu"
-   deallocate(lb_dom%grho,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%grho"
-   deallocate(lb_dom%gstate,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%g_state"
-   deallocate( s_par%g_x,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%g_x"
-   deallocate( s_par%g_y,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%g_y"
-   deallocate( s_par%g_z,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%g_z"
-#endif /* INIT_WITH_ROOT */
    deallocate(lb_dom%obs,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating obs       "
    deallocate(lb_dom%obs_nrwall,stat=alloc_stat)
@@ -726,40 +637,6 @@ subroutine alloc_mem(lb_dom,s_par,prc)
    lx = lb_dom%lx(1) 
    ly = lb_dom%lx(2) 
    lz = lb_dom%lx(3) 
-
-#ifdef INIT_WITH_ROOT
-   if(prc%rk == 0) then
-      allocate(lb_dom%gu(NDX(NDIM,s_par%gx(1),s_par%gx(2),s_par%gx(3))),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%gu"
-      allocate(lb_dom%gfIn(NDX(nnod,s_par%gx(1),s_par%gx(2),s_par%gx(3))),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%gfIn"
-      allocate(lb_dom%grho(s_par%gx(1),s_par%gx(2),s_par%gx(3)),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%grho"
-      allocate(lb_dom%gstate(s_par%gx(1),s_par%gx(2),s_par%gx(3)),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%g_state"
-      allocate(s_par%g_x(s_par%gx(1)),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%g_x"
-      allocate(s_par%g_y(s_par%gx(2)),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%g_y"
-      allocate(s_par%g_z(s_par%gx(3)),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%g_z"
-   else 
-      allocate(lb_dom%gu(NDX(1,1,1,1)),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%gu"
-      allocate(lb_dom%gfIn(NDX(1,1,1,1)),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%gfIn"
-      allocate(lb_dom%grho(1,1,1),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%grho"
-      allocate(lb_dom%gstate(1,1,1),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%g_state"
-      allocate( s_par%g_x(s_par%gx(1)),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%g_x"
-      allocate( s_par%g_y(s_par%gx(2)),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%g_y"
-      allocate( s_par%g_z(s_par%gx(3)),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%g_z"
-   end if
-#endif
 
    if(prc%rk==0) call calc_mem(prc,lb_dom,s_par)
    allocate(lb_dom%fOut(NDX(nnod,0:(lx+1),0:(ly+1),0:(lz+1))),stat=alloc_stat)

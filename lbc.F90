@@ -106,22 +106,9 @@ endif
    !---------------------------
    ! Master thread initializes initial field and geometry
 
-#ifdef INIT_WITH_ROOT
-   if(prc%rk==0) then
-      call get_geo(lb_dom,s_par,prc)
-      call init_field(lb_dom%gfIn,lb_dom%gu,lb_dom%grho,lb_dom%gstate,s_par,lb_dom,prc)
-      call calc_fEq_global(lb_dom%grho,lb_dom%gu,lb_dom%gfIn,s_par) ! reset complete domain to eq
-   end if
-
-   !---------------------------
-   ! Decompose domain
-   call mpl_decompose_domain(lb_dom,s_par,prc)
-
-#else
    call get_geo_each(lb_dom,s_par,prc)
    call init_field_each(lb_dom,s_par,prc)
    call calc_fEq(lb_dom,lb_dom%rho,lb_dom%u,lb_dom%fIn,0,0,0,0,0,0,s_par)
-#endif
    !---------------------------
    ! Initialize the obstacle and boundary vectors
    call init_vector(lb_dom,s_par,prc)

@@ -128,11 +128,6 @@ module nrt_lib
       integer,dimension(:,:),allocatable        :: obs_per  ! periodic vector
       real(R8B),dimension(:,:),allocatable      :: nrwall_0val  ! 0 values for nrbc
       real(R8B),dimension(:,:),allocatable      :: nrwall_prev  ! 0 values for nrbc
-#ifdef INIT_WITH_ROOT
-      real(R8B),dimension(:,:,:),   allocatable :: grho
-      real(R8B),dimension(:,:,:,:), allocatable :: gfIn, gu
-      integer,dimension(:,:,:),allocatable      :: gstate
-#endif /* INIT_WITH_ROOT */
       ! coordinates
       real(R8B), dimension(:),allocatable      :: x,y,z
       real(R8B),pointer  :: fIn(:,:,:,:) => NULL()
@@ -151,11 +146,6 @@ module nrt_lib
       integer,dimension(:,:),pointer        :: obs_per => NULL()   ! periodic vector
       real(R8B),dimension(:,:),pointer      :: nrwall_0val => NULL()   ! 0 values for nrbc
       real(R8B),dimension(:,:),pointer      :: nrwall_prev => NULL()   ! 0 values for nrbc
-#ifdef INIT_WITH_ROOT
-      real(R8B),dimension(:,:,:),   pointer :: grho => NULL(), grho_inc => NULL() 
-      real(R8B),dimension(:,:,:,:), pointer :: gfIn => NULL(), gu => NULL() 
-      integer,dimension(:,:,:),pointer      :: gstate => NULL() 
-#endif /* INIT_WITH_ROOT */
       ! coordinates
       real(R8B), dimension(:),pointer       :: x => NULL(), y => NULL() ,z => NULL() 
       real(R8B),pointer                     :: fIn(:,:,:,:) => NULL() 

@@ -256,10 +256,6 @@ contains
       gy = s_par%gx(2)
       gz = s_par%gx(3)
       meas%mem_master = 0.d0
-#ifdef INIT_WITH_ROOT
-      meas%mem_master = real(R8B*(int(gx)*int(gy)*int(gz)*int(1+NDIM+nnod) + &
-            &  int(gx) + int(gy) + int(gz)) + int(I4B)*(int(gx)*int(gy)*int(gz)),R8B)/10**6
-#endif
       meas%mem_thread = real(R8B*(int(lb_dom%lx(1)+2)*int(lb_dom%lx(2)+2)*int(2+lb_dom%lx(3))*int(1+NDIM+nnod) + & 
             & int(lb_dom%lx(1)+2) + int(lb_dom%lx(2)+2) + int(lb_dom%lx(3)+2)) + &
             & int(I4B)*(int(2+gx)*int(2+gy)*int(2+gz)),R8B)/10**6

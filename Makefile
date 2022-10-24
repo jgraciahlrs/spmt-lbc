@@ -96,7 +96,6 @@ LBMODEL += $(FDEF)-DD3Q19
 
 # Use the incompressible model for higher stability
 #LBMODEL += $(FDEF)-DINCOMPRESSIBLE
-#LBMODEL += $(FDEF)-DSPONGE
 
 #Special options for co-rotating vortex pair (averaging)
 #LBMODEL += $(FDEF)-DCRVP

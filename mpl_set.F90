@@ -1175,12 +1175,6 @@ NDX(:,ab(i,j,k,1):ae(i,j,k,1),ab(i,j,k,2):ae(i,j,k,2),ab(i,j,k,3):ae(i,j,k,3)))
                      &        prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2), &
                      &        prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2))
 
-#ifdef SPONGE
-                   lb_dom%omega(1:lx,1:ly,1:lz)&
-                     & = lb_dom%gomega(prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2), & 
-                     &        prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2), &
-                     &        prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2))
-#endif
                    lb_dom%x(1:lx) = s_par%g_x(prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2)) 
                    lb_dom%y(1:ly) = s_par%g_y(prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2)) 
                    lb_dom%z(1:lz) = s_par%g_z(prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2)) 
@@ -1197,10 +1191,6 @@ NDX(:,ab(i,j,k,1):ae(i,j,k,1),ab(i,j,k,2):ae(i,j,k,2),ab(i,j,k,3):ae(i,j,k,3)))
                            &  mpi_double_precision,target_rank,tag_rho,prc%cart_comm,prc%ierr)
                 call MPI_SEND(lb_dom%gstate(b_l(1):b_u(1),b_l(2):b_u(2),b_l(3):b_u(3)),length,MPI_INTEGER,&
                            &  target_rank,tag_rho,prc%cart_comm,prc%ierr)
-#ifdef SPONGE
-                call MPI_SEND(lb_dom%gomega(b_l(1):b_u(1),b_l(2):b_u(2),b_l(3):b_u(3)),length,MPI_double_precision,&
-                           &  target_rank,tag_rho,prc%cart_comm,prc%ierr)
-#endif
 #endif /*USE_MPI*/
                 end if
              end do  
@@ -1224,10 +1214,6 @@ NDX(:,ab(i,j,k,1):ae(i,j,k,1),ab(i,j,k,2):ae(i,j,k,2),ab(i,j,k,3):ae(i,j,k,3)))
                         &  prc%root_th,tag_rho,prc%cart_comm,prc%stat,prc%ierr)
        call MPI_RECV(     lb_dom%state(1:ul(1),1:ul(2),1:ul(3)),length,MPI_INTEGER,&
                         &  prc%root_th,tag_rho,prc%cart_comm,prc%stat,prc%ierr)
-#ifdef SPONGE
-       call MPI_RECV(     lb_dom%omega(1:ul(1),1:ul(2),1:ul(3)),length,mpi_double_precision,&
-                        &  prc%root_th,tag_rho,prc%cart_comm,prc%stat,prc%ierr)
-#endif
 #endif /* USE_MPI */
    end if
  end subroutine mpl_decompose_domain

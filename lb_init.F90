@@ -54,10 +54,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       rho = 1.0_R8B
       u = 0.0_R8B
 
-#ifdef SPONGE
-   lb_dom%gomega = s_par%omega
-#endif
-
 !--------------------------------------------------------------------
 ! now assign initial conditions depending on the problem 
 
@@ -963,16 +959,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
    integer                :: x,y,z ,x1,y1,z1,x2,y2,z2,x3,y3,z3  
    integer                :: nsp 
    real(R8B)              :: outer_omega,om_sponge(0:3)
-
-#ifdef SPONGE
-   !----------------------------
-   ! calculate the sponge viscosities
-   outer_omega = 1.2 
-   nsp = 3
-   do i = 0,nsp
-      om_sponge(i) = outer_omega + (s_par%omega - outer_omega)/dble(nsp+1)*(dble(i))
-   enddo
-#endif
 
    do i=1,lb_dom%nnr_wall   
       x = lb_dom%obs_nrwall(i,1)
@@ -1936,10 +1922,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       integer        :: lx,ly,lz,gx,gy,gz
       real   (R8B)   :: x_pos, xs,xe,radius
       integer        :: ys,ye,posbc,offset(3)
-#ifdef SPONGE
-      real(R8B)             :: distance,dist_max,outer_omega
-      integer               :: sponge_radius,lchar
-#endif /* SPONGE */
       ! Fill up the Coordinates for the Grid
       lx = lb_dom%lx(1)
       ly = lb_dom%lx(2)
@@ -1975,54 +1957,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       ! Set all nodes to fluid
       lb_dom%state(:,:,:)   = 0 
       lb_dom%state = ibset(lb_dom%state,fluid) 
-
-
-#ifdef SPONGE
-!   write(*,*) "calculation of omega for sponge layer not implemented yet."
-!   stop
-
-
-#endif
-
-#ifdef SPONGE
-!--------------------------------------------------------------------
-! Spongelayer: assign viscosity to domain 
-
-      lb_dom%omega = s_par%omega
-
-         ! set the radius, from where the sponge layer starts, starting from the middle of the domain
-         if(NDIM==2) then
-            lchar = min(gx,gy)
-         else
-            lchar = min(gx,gy,gz)
-         endif
-         sponge_radius =int(real(lchar)*0.41d0)
-
-         ! set the minimal omega
-         outer_omega = 0.5 
-         dist_max = real(lchar)*0.59d0
-
-         ! assign the viscosity to each grid point
-         do k=1,lz
-            do j=1,ly
-               do i=1,lx
-
-                  distance = sqrt((real(i+offset(1))-real(gx)/2.)**2 + &
-                                  (real(j+offset(2))-real(gy)/2.)**2 + &
-                                  (real(k+offset(3))-real(gz)/2.)**2 ) 
-
-                  if(distance .ge. dist_max) then
-                     lb_dom%omega(i,j,k) =outer_omega 
-                  elseif(distance .ge. sponge_radius .and. distance .lt.dist_max) then
-                     lb_dom%omega(i,j,k) = s_par%omega + (outer_omega - s_par%omega)  &
-                                       /(dist_max-sponge_radius)*(distance-sponge_radius)
-                  else 
-                     lb_dom%omega(i,j,k) = s_par%omega
-                  endif
-               enddo
-            enddo
-         enddo
-#endif /* SPONGE_GLOBAl */
 
 
 
@@ -2215,10 +2149,6 @@ end do
       integer               :: i,j,k,l,lx,ly,lz
       real(R8B)             :: xs,xe,ys,ye,x_pos,radius 
       integer               :: in_xmax,right_wall_min,posbc 
-#ifdef SPONGE
-      real(R8B)             :: distance,dist_max,outer_omega
-      integer               :: sponge_radius,lchar
-#endif /* SPONGE */
       ! Fill up the Coordinates for the Grid
       lx=s_par%gx(1)
       ly=s_par%gx(2)

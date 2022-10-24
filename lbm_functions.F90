@@ -177,11 +177,6 @@ endif
          do j=1,lb_dom%lx(2)
             do i=1,lb_dom%lx(1)
         !       if(btest(lb_dom%state(i,j,k),wall) .eqv. .false.) then
-#ifdef SPONGE
-! In the sponge layer, the viscosity is increased up to the border to reduce reflections
-! Not working very well so far....
-            omega = lb_dom%omega(i,j,k)
-#endif
 
 
 
@@ -456,9 +451,7 @@ endif
 #endif
       call cpu_time_measure(meas%tSt_comm) 
 
-#ifndef SPONGE
       omega = s_par%omega
-#endif
       t2cs4inv = 1._R8B/(2._R8B*cs*cs*cs*cs)
       t2cs2inv = 1._R8B/(2._R8B*cs*cs)
 
@@ -504,9 +497,6 @@ endif
 
             ! Split loops. (Thomas: 3 und 5 splitloops)
                if(btest(lb_dom%state(i,j,k),wall) .eqv. .false.) then
-#ifdef SPONGE
-               omega(INDEXVAR) = lb_dom%omega(i,j,k)
-#endif
 
 
          !--------------------------------------------

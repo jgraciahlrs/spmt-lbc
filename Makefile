@@ -13,7 +13,6 @@
 #---------------------
 # Define Machine Name here:
 
-#HPC_TYPE=xe6
 HPC_TYPE=nehalem
 
 #---------------------
@@ -159,20 +158,6 @@ CPPDEFINES=$(LBMODEL) $(PARALLEL)
 # GNU
 
     ifeq ($(findstring gnu,$(COMPILER)),gnu)
-      ifeq ($(findstring xe6,$(HPC_TYPE)),xe6)
-          COMP=ftn 
-          CCOMP=cc
-          ifeq ($(findstring ompss,$(COMPILER)),ompss)
-              # find parameters with mpif90/cc -showme	
-              SFDEF=-Wf,
-	      SCDEF=-Wc,
-	      SLDEF=-Wl,
-
-
-	      COMP=mfc --cc=ftn --ompss -I$(MPICH_DIR)/include -L$(MPICH_DIR)/lib -lfmpich -lmpich
-	      CCOMP=mcc --cc=CC --ompss -I$(MPICH_DIR)/include -L$(MPICH_DIR)/lib -lfmpich -lmpich
-          endif
-      else
           COMP=mpif90 -O2
           CCOMP=mpicc -O2 
 
@@ -184,7 +169,6 @@ CPPDEFINES=$(LBMODEL) $(PARALLEL)
 	    COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/mfc --ompss  -g3/') -O2  --instrumentation # -L/opt/mpi/openmpi/1.7.3-gnu-4.8.1/lib -lmpi -g3 -O0  -fPIC 
 	    CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/mcc --ompss -g3 /')  -O2 --instrumentation # -L/opt/mpi/openmpi/1.7.3-gnu-4.8.1/lib -lmpi -g3 -O0  -fPIC  
           endif
-      endif
 
       F90_CFLAGS_DEBUG+=$(SFDEF)-xf95-cpp-input -O0 -K -g3 -fcheck=all -fcheck=bounds -debug -Wall -fbacktrace $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file
       F90_LFLAGS_DEBUG+=-O0 -g3 -fbacktrace -K  -fcheck=all -Wall -fcheck=bounds -debug

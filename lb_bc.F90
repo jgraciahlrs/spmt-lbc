@@ -412,25 +412,7 @@ endif
 
          ! calculate current macroscopic variables
          do jj = 0,3
-#if defined D2Q9
-        rhoc(jj) = fIn(NDX(1,xc(jj),yc(jj),zc(jj)))  + fIn(NDX(2,xc(jj),yc(jj),zc(jj)))  + &
-                   fIn(NDX(3,xc(jj),yc(jj),zc(jj)))  + fIn(NDX(4,xc(jj),yc(jj),zc(jj)))  + &
-                   fIn(NDX(5,xc(jj),yc(jj),zc(jj)))  +                                         &
-                   fIn(NDX(6,xc(jj),yc(jj),zc(jj)))  + fIn(NDX(7,xc(jj),yc(jj),zc(jj)))  + &
-                   fIn(NDX(8,xc(jj),yc(jj),zc(jj)))  + fIn(NDX(9,xc(jj),yc(jj),zc(jj))) 
-
-       uc(1,jj) = (fIn(NDX(2,xc(jj),yc(jj),zc(jj)))  - fIn(NDX(4,xc(jj),yc(jj),zc(jj)))  + &
-                   fIn(NDX(6,xc(jj),yc(jj),zc(jj)))  - fIn(NDX(7,xc(jj),yc(jj),zc(jj)))  + &
-                   fIn(NDX(9,xc(jj),yc(jj),zc(jj)))  - fIn(NDX(8,xc(jj),yc(jj),zc(jj)))    & 
-                       )/rhoc(jj)    
-
-       uc(2,jj) = (fIn(NDX(3,xc(jj),yc(jj),zc(jj)))  - fIn(NDX(5,xc(jj),yc(jj),zc(jj)))  + &
-                   fIn(NDX(6,xc(jj),yc(jj),zc(jj)))  - fIn(NDX(9,xc(jj),yc(jj),zc(jj)))  - &
-                   fIn(NDX(7,xc(jj),yc(jj),zc(jj)))  + fIn(NDX(8,xc(jj),yc(jj),zc(jj)))    & 
-                      ) /rhoc(jj)  
-       uc(3,jj) = 0.0d0
-
-#elif defined D3Q19 /**/
+#if   defined D3Q19 /**/
         rhoc(jj) = fIn(NDX(1,xc(jj),yc(jj),zc(jj)))  + fIn(NDX(2,xc(jj),yc(jj),zc(jj)))  + &
                    fIn(NDX(3,xc(jj),yc(jj),zc(jj)))  + fIn(NDX(4,xc(jj),yc(jj),zc(jj)))  + &
                    fIn(NDX(5,xc(jj),yc(jj),zc(jj)))  +                                         &
@@ -912,29 +894,7 @@ endif
          rhoc(0)      = rho0 + damping*(cs2inv*0.5*(c4(0) + c5(0)))
          ! calculate  equilibrium distribution
          usq =  (uc(1,0)*uc(1,0) + uc(2,0)*uc(2,0) + uc(3,0)*uc(3,0))*t2cs2inv
-#if defined D2Q9
-             fIn(NDX(1,xc(0),yc(0),zc(0))) = t(1)*rhoc(0) *(1._R8B - usq)
-             fIn(NDX(2,xc(0),yc(0),zc(0))) = t(2)*rhoc(0) *(1._R8B + (uc(1,0))*cs2inv &
-            + (uc(1,0))**2*t2cs4inv   - usq)
-             fIn(NDX(3,xc(0),yc(0),zc(0))) = t(3)*rhoc(0)*(1._R8B - (-uc(2,0))*cs2inv &
-            + (uc(2,0))**2*t2cs4inv   - usq)
-             fIn(NDX(4,xc(0),yc(0),zc(0))) = t(4)*rhoc(0)*(1._R8B + (-uc(1,0))*cs2inv &
-           + (-uc(1,0))**2*t2cs4inv  - usq)
-             fIn(NDX(5,xc(0),yc(0),zc(0))) = t(5)*rhoc(0)*(1._R8B + (-uc(2,0))*cs2inv &
-           + (-uc(2,0))**2*t2cs4inv   - usq)
-             fIn(NDX(6,xc(0),yc(0),zc(0))) = t(6)*rhoc(0)*(1._R8B  &
-            + (uc(1,0) + uc(2,0))*cs2inv &
-            + (uc(1,0)+uc(2,0))**2*t2cs4inv  - usq)
-             fIn(NDX(7,xc(0),yc(0),zc(0))) = t(7)*rhoc(0)*(1._R8B  &
-           + (-uc(1,0) + uc(2,0))*cs2inv &
-           + (-uc(1,0)+uc(2,0))**2*t2cs4inv  - usq)
-             fIn(NDX(8,xc(0),yc(0),zc(0))) = t(8)*rhoc(0)*(1._R8B  &
-           + (-uc(1,0) -uc(2,0))*cs2inv &
-           + (-uc(1,0)-uc(2,0))**2*t2cs4inv    - usq)
-             fIn(NDX(9,xc(0),yc(0),zc(0))) = t(9)*rhoc(0)*(1._R8B  &
-            + (uc(1,0) -uc(2,0))*cs2inv &
-            + (uc(1,0)-uc(2,0))**2*t2cs4inv  - usq)
-#elif defined D3Q19
+#if   defined D3Q19
            fIn(NDX(1,xc(0),yc(0),zc(0))) = t(1)*rhoc(0)*(1  &
                 - usq) 
            fIn(NDX(2,xc(0),yc(0),zc(0))) = t(2)*rhoc(0)*(1._R8B + (uc(1,0))*cs2inv &
@@ -1129,9 +1089,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
    if(prc%crd(1) == prc%np(1)-1) then; x_end   = lx-1; else; x_end  =lx; end if
    if(prc%crd(2) == 0)          then; y_start = 2;    else; y_start=1;  end if
    if(prc%crd(2) == prc%np(2)-1) then; y_end   = ly-1; else; y_end  =ly; end if
-#ifdef D2Q9
-   z_start=1; z_end=1
-#endif
 #ifdef D3Q19
    if(prc%crd(3) == 0)          then; z_start = 2;    else; z_start=1;  end if
    if(prc%crd(3) == prc%np(3)-1) then; z_end   = lz-1; else; z_end  =lz; end if
@@ -1196,9 +1153,7 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
          do j=y_start,y_end
             i=1
             u(NDX(2,i,j,k)) = 0._R8B 
-#if defined D2Q9
-            u(NDX(1,i,j,k)) = s_par%umax*get_parabolic2d(real(j+incr_y,R8B),real(s_par%gx(2)+1,R8B))
-#elif defined D3Q19
+#if   defined D3Q19
 !FIXME errorous u calculation
             u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d(real(j+incr_y,R8B) &
             ,real(s_par%gx(2)+1,R8B),real(k+incr_z,R8B),real(s_par%gx(3)+1,R8B))
@@ -1212,9 +1167,7 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
          do j=y_start,y_end
             i=lx
             u(NDX(2,i,j,k)) = 0._R8B 
-#if defined D2Q9
-            u(NDX(1,i,j,k)) = s_par%umax*get_parabolic2d(real(j+incr_y,R8B),real(s_par%gx(2)+1,R8B))
-#elif defined D3Q19
+#if   defined D3Q19
             u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d(real(j+incr_y,R8B)        &
          ,real(s_par%gx(2)+1,R8B),real(k+incr_z,R8B),real(s_par%gx(3)+1,R8B))
             u(NDX(3,i,j,k)) = 0._R8B 
@@ -1237,9 +1190,7 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
          do j=y_start,y_end
             i=1
             u(NDX(2,i,j,k)) = 0._R8B 
-#if defined D2Q9
-            u(NDX(1,i,j,k)) = s_par%umax*get_parabolic2d(real(j+incr_y,R8B),real(s_par%gx(2)+1,R8B))
-#elif defined D3Q19
+#if   defined D3Q19
 !FIXME errorous u calculation
             u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d(real(j+incr_y,R8B) &
             ,real(s_par%gx(2)+1,R8B),real(k+incr_z,R8B),real(s_par%gx(3)+1,R8B))
@@ -1253,9 +1204,7 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
          do j=y_start,y_end
             i=lx
             u(NDX(2,i,j,k)) = 0._R8B 
-#if defined D2Q9
-            u(NDX(1,i,j,k)) = s_par%umax*get_parabolic2d(real(j+incr_y,R8B),real(s_par%gx(2)+1,R8B))
-#elif defined D3Q19
+#if   defined D3Q19
             u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d(real(j+incr_y,R8B)        &
          ,real(s_par%gx(2)+1,R8B),real(k+incr_z,R8B),real(s_par%gx(3)+1,R8B))
             u(NDX(3,i,j,k)) = 0._R8B 
@@ -1276,71 +1225,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
    !---------------------------
    ! Standard Zou / He boundary conditions (only working for 2d so far) 
 
-#ifdef D2Q9
-
-        ! ---- macroscopic boundary conditions
-         k=1
-!         Length             = real(s_par%gx(2))
-!         y_phys(:)     = y(:)
-         do j=y_start,y_end
-            if(prc%crd(1) == 0) then 
-               ! INLET: reset to poisseuille Profile
-               do i=1,1
-               u(NDX(1,i,j,k))   =  s_par%umax*get_parabolic2d(real(j+incr_y,R8B),real(s_par%gx(2)+1,R8B))!4._R8B*s_par%umax/real(s_par%gx(2)+1)**2*&
-               !      & ((real(j+incr_y))*real(s_par%gx(2)+1)-real(j+incr_y)*real(j+incr_y))
-               u(NDX(2,i,j,k))   = 0._R8B
-               rho(i,j,k)   = 1._R8B / (1-u(NDX(1,i,j,k)))*(fIn(NDX(1,i,j,k)) &
-            + fIn(NDX(3,i,j,k)) + fIn(NDX(5,i,j,k)) &
-            + 2*(fIn(NDX(4,i,j,k)) + fIn(NDX(7,i,j,k)) + fIn(NDX(8,i,j,k))))
- !              u(NDX(:,i-1,j,k)) = u(NDX(:,i,j,k))
- !              rho(i-1,j,k) = rho(i,j,k)
-!               write(*,*) i,j,k,"dichte",rho(i,j,k),"geschwindigkeit",u(NDX(:,i,j,k)) 
-               enddo
-            end if
-            ! OUTLET: reset to constant pressure
-            if(prc%crd(1)== prc%np(1) -1) then
-         do i=lx,lx
-               rho(i,j,k) = 1._R8B
-               u(NDX(1,i,j,k)) = -1 + 1._R8B/rho(i,j,k)*(fIn(NDX(1,i,j,k))&
-                  +fIn(NDX(3,i,j,k))+fIn(NDX(5,i,j,k)) &
-                  + 2*(fIn(NDX(2,i,j,k))+fIn(NDX(6,i,j,k))+fIn(NDX(9,i,j,k))))
-               u(NDX(2,i,j,k))   = 0._R8B
-!            u(NDX(:,i+1,j,k)) = u(NDX(:,i,j,k))
-!            rho(i+1,j,k) = rho(i,j,k)
-!            write(*,*) i,j,k,"dichte",rho(i,j,k),"geschwindigkeit",u(NDX(:,i,j,k)) 
-         end do
-            end if
-         end do
-         ! ---- microscopic boundary condition
-         do j=y_start,y_end
-            ! INLET: Zou/He BC
-            if(prc%crd(1) == 0) then 
-         do i=1,1
-            fIn(NDX(2,i,j,k)) = fIn(NDX(4,i,j,k)) + 2._R8B/3._R8B*rho(i,j,k)*u(NDX(1,i,j,k))
-            fIn(NDX(6,i,j,k)) = fIn(NDX(8,i,j,k)) + 1._R8B/2._R8B*(fIn(NDX(5,i,j,k))-fIn(NDX(3,i,j,k))) &
-                 &                  + 1._R8B/2._R8B*rho(i,j,k)*u(NDX(2,i,j,k) )&
-                 &                  + 1._R8B/6._R8B*rho(i,j,k)*u(NDX(1,i,j,k)) 
-            fIn(NDX(9,i,j,k)) = fIn(NDX(7,i,j,k)) + 1._R8B/2._R8B*(fIn(NDX(3,i,j,k))-fIn(NDX(5,i,j,k))) &
-                &                  - 1._R8B/2._R8B*rho(i,j,k)*u(NDX(2,i,j,k)) &
-                &                  + 1._R8B/6._R8B*rho(i,j,k)*u(NDX(1,i,j,k)) 
-!            fIn(NDX(:,i-1,:,:)) = fIn(NDX(:,i,:,:))
-         end do
-            end if
-           ! OUTLET:Zou/He BC
-            if(prc%crd(1)== prc%np(1) -1) then
-         do i=lx,lx
-           fIn(NDX(4,i,j,k)) = fIn(NDX(2,i,j,k) )- 2._R8B/3._R8B*rho(i,j,k)*u(NDX(1,i,j,k))
-           fIn(NDX(8,i,j,k)) = fIn(NDX(6,i,j,k)) + 1._R8B/2._R8B*(fIn(NDX(3,i,j,k))-fIn(NDX(5,i,j,k))) &
-                &                  - 1._R8B/2._R8B*rho(i,j,k)*u(NDX(2,i,j,k)) &
-                &                  - 1._R8B/6._R8B*rho(i,j,k)*u(NDX(1,i,j,k) )
-           fIn(NDX(7,i,j,k)) = fIn(NDX(9,i,j,k)) + 1._R8B/2._R8B*(fIn(NDX(5,i,j,k))-fIn(NDX(3,i,j,k))) &
-                &                  + 1._R8B/2._R8B*rho(i,j,k)*u(NDX(2,i,j,k)) &
-                &                  - 1._R8B/6._R8B*rho(i,j,k)*u(NDX(1,i,j,k)) 
-        end do
-            end if
-        end do
-#endif
-
 !----------------------------------------
 ! Flute 
 
@@ -1350,67 +1234,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
         call microphone(lb_dom,pos,fIn,s_par,prc,tstep,1)
 
 #ifdef OLD
-#ifdef D2Q9
-        ! ---- macroscopic boundary conditions
-         k=1
-!         Length             = real(s_par%gx(2))
-!         y_phys(:)     = y(:)
-         do j=y_start,y_end
-            do i=1,5
-            if(lb_dom%state(i,j,1)==inlet) then 
-               ! INLET: reset to poisseuille Profile
-!               u(NDX(1,i,j,k))   = 4._R8B*s_par%umax/real(lb_dom%num_in(2)+1)**2*&
-!                     & ((real(j))*real(lb_dom%num_in(2)+1)-real(j)*real(j))
-!FIXME this is my own poisseuille profile
-               u(NDX(1,i,j,k)) = s_par%umax*get_parabolic2d(real(j+1,R8B),real(2*s_par%obst_r+1,R8B))  
-               u(NDX(2,i,j,k))   = 0._R8B
-               rho(i,j,k)   = 1._R8B / (1-u(NDX(1,i,j,k)))*(fIn(NDX(1,i,j,k)) &
-               + fIn(NDX(3,i,j,k)) + fIn(NDX(5,i,j,k)) &
-               + 2*(fIn(NDX(4,i,j,k)) + fIn(NDX(7,i,j,k)) + fIn(NDX(8,i,j,k))))
-            end if
-            end do
-            ! OUTLET: reset to constant pressure
-            i=lx
-            if(lb_dom%state(i,j,1) == outlet) then
-               rho(i,j,k) = 1._R8B
-               u(NDX(1,i,j,k)) = 0.d0 !-1 + 1._R8B/rho(i,j,k)*(fIn(NDX(1,i,j,k))+fIn(NDX(3,i,j,k))+fIn(NDX(5,i,j,k)) &
-                                           !  & + 2*(fIn(NDX(2,i,j,k))+fIn(NDX(6,i,j,k))+fIn(NDX(9,i,j,k))))
-               u(NDX(2,i,j,k))   = 0._R8B
-                       
-            end if
-         end do
-
-         
-
-         ! ---- microscopic boundary condition
-         do j=y_start,y_end
-            ! INLET: Zou/He BC
-            i = 1
-            if(lb_dom%state(i,j,k) == inlet) then 
-            fIn(NDX(2,i,j,k)) = fIn(NDX(4,i,j,k)) + 2._R8B/3._R8B*rho(i,j,k)*u(NDX(1,i,j,k))
-            fIn(NDX(6,i,j,k)) = fIn(NDX(8,i,j,k)) + 1._R8B/2._R8B*(fIn(NDX(5,i,j,k))-fIn(NDX(3,i,j,k))) &
-                 &                  + 1._R8B/2._R8B*rho(i,j,k)*u(NDX(2,i,j,k) )&
-                 &                  + 1._R8B/6._R8B*rho(i,j,k)*u(NDX(1,i,j,k)) 
-            fIn(NDX(9,i,j,k)) = fIn(NDX(7,i,j,k)) + 1._R8B/2._R8B*(fIn(NDX(3,i,j,k))-fIn(NDX(5,i,j,k))) &
-                &                  - 1._R8B/2._R8B*rho(i,j,k)*u(NDX(2,i,j,k)) &
-                &                  + 1._R8B/6._R8B*rho(i,j,k)*u(NDX(1,i,j,k)) 
-            end if
-           ! OUTLET:Zou/He BC
-            if(prc%crd(1)== prc%np(1) -1) then
-           i = lx
-           fIn(NDX(4,i,j,k)) = fIn(NDX(2,i,j,k) )- 2._R8B/3._R8B*rho(i,j,k)*u(NDX(1,i,j,k))
-           fIn(NDX(8,i,j,k)) = fIn(NDX(6,i,j,k)) + 1._R8B/2._R8B*(fIn(NDX(3,i,j,k))-fIn(NDX(5,i,j,k))) &
-                &                  - 1._R8B/2._R8B*rho(i,j,k)*u(NDX(2,i,j,k)) &
-                &                  - 1._R8B/6._R8B*rho(i,j,k)*u(NDX(1,i,j,k) )
-           fIn(NDX(7,i,j,k)) = fIn(NDX(9,i,j,k)) + 1._R8B/2._R8B*(fIn(NDX(5,i,j,k))-fIn(NDX(3,i,j,k))) &
-                &                  + 1._R8B/2._R8B*rho(i,j,k)*u(NDX(2,i,j,k)) &
-                &                  - 1._R8B/6._R8B*rho(i,j,k)*u(NDX(1,i,j,k)) 
-            end if
-        end do
-      rho(:,lb_dom%lx(2),:) = 1.0d0
-      u(NDX(:,:,lb_dom%lx(2),:)) = 0.d0
-      call calc_feq(lb_dom,rho,u,lb_dom%fIn,0,0,lb_dom%lx(2),lb_dom%lx(2),0,0)
-#endif
 #endif
 
 
@@ -1438,20 +1261,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
             call calc_fEq(lb_dom,rho,u,fIn,x_start,x_end,ly,ly,z_start,z_end,s_par) !top lid
          end if
 #endif
-#ifdef D2Q9
-         k = 1
-         j = ly
-         if(prc%crd(2) == prc%np(2)-1) then
-            do i=x_start,x_end
-               ! top lid
-               rho(i,j,k)   = 1._R8B
-               u(NDX(1,i,j,k))   = s_par%umax
-               u(NDX(2,i,j,k))   = 0._R8B
-            end do
-        call calc_fEq(lb_dom,rho,u,fIn,x_start,x_end,ly,ly,0,0,s_par) ! top wall
-         end if
-
-#endif
 
 
 
@@ -1478,18 +1287,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
          end do
 
         call calc_fEq(lb_dom,rho,u,fIn,2      ,lx-1 ,ly,ly,2      ,lz-1,s_par ) !top lid
-#endif
-#ifdef D2Q9
-         k = 1
-         j = ly
-         do i=2, lx-1      
-               ! top lid
-               rho(i,j,k)   = 1._R8B
-               u(NDX(1,i,j,k))   = s_par%umax
-               u(NDX(2,i,j,k))   = 0._R8B
-         end do
-
-        call calc_fEq(lb_dom,rho,u,fIn,2      ,lx-1 ,ly,ly,0,0,s_par) ! top wall
 #endif
 
 

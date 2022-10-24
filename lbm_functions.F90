@@ -502,19 +502,6 @@ endif
          !--------------------------------------------
          ! Calculate macroscopic variables 
 
-#ifdef D2Q9
-              rholoc(INDEXVAR) =   ftmp1(INDEXVAR) + ftmp2(INDEXVAR) + & 
-                         ftmp3(INDEXVAR) + ftmp4(INDEXVAR) + &
-                         ftmp5(INDEXVAR) + ftmp6(INDEXVAR) + & 
-                         ftmp7(INDEXVAR) + ftmp8(INDEXVAR) + ftmp9(INDEXVAR)
-               u1(INDEXVAR) = 1/rholoc(INDEXVAR) * (ftmp2(INDEXVAR)  - ftmp4(INDEXVAR) + &
-                         ftmp6(INDEXVAR) - ftmp7(INDEXVAR) - & 
-                         ftmp8(INDEXVAR) + ftmp9(INDEXVAR))
-               u2(INDEXVAR) = 1/rholoc(INDEXVAR) * (ftmp3(INDEXVAR)  - ftmp5(INDEXVAR) + &
-                        ftmp6(INDEXVAR) + ftmp7(INDEXVAR) - & 
-                        ftmp8(INDEXVAR) - ftmp9(INDEXVAR))
-               u3(INDEXVAR) = 0.d0
-#endif
 #ifdef D3Q19
                rholoc(INDEXVAR)  = ftmp1(INDEXVAR)  + ftmp2(INDEXVAR)  + &
                          ftmp3(INDEXVAR)  + ftmp4(INDEXVAR)  + ftmp5(INDEXVAR) + &
@@ -552,51 +539,6 @@ endif
          ! Calculate equilibrium distribution
 
 
-#ifdef D2Q9
-                fEq1 = t(1)*rholoc(INDEXVAR) *(1._R8B - usq(INDEXVAR))
-                fEq2 = t(2)*rholoc(INDEXVAR) *(1._R8B + (u1(INDEXVAR))*cs2inv &
-                      + (u1(INDEXVAR))**2*t2cs4inv & 
-                      - usq(INDEXVAR))
-                fEq3 = t(3)*rholoc(INDEXVAR)*(1._R8B + (u2(INDEXVAR))*cs2inv &
-                      + (u2(INDEXVAR))**2*t2cs4inv  &
-                      - usq(INDEXVAR))
-                fEq4 = t(4)*rholoc(INDEXVAR)*(1._R8B + (-u1(INDEXVAR) )*cs2inv &
-                      + (-u1(INDEXVAR))**2*t2cs4inv  &
-                      - usq(INDEXVAR))
-                fEq5 = t(5)*rholoc(INDEXVAR)*(1._R8B + (-u2(INDEXVAR))*cs2inv &
-                      + (-u2(INDEXVAR))**2*t2cs4inv  &
-                      - usq(INDEXVAR))
-
-
-               fOut(NDX(1,i,j,k)) = ftmp1(INDEXVAR) - omega(INDEXVAR)*(ftmp1(INDEXVAR) - fEq1)
-               fOut(NDX(2,i,j,k)) = ftmp2(INDEXVAR) - omega(INDEXVAR)*(ftmp2(INDEXVAR) - fEq2)
-               fOut(NDX(3,i,j,k)) = ftmp3(INDEXVAR) - omega(INDEXVAR)*(ftmp3(INDEXVAR) - fEq3)
-               fOut(NDX(4,i,j,k)) = ftmp4(INDEXVAR) - omega(INDEXVAR)*(ftmp4(INDEXVAR) - fEq4)
-               fOut(NDX(5,i,j,k)) = ftmp5(INDEXVAR) - omega(INDEXVAR)*(ftmp5(INDEXVAR) - fEq5)
-
-#ifdef SPLITLOOPS
-            endif ! not wall 
-         enddo
-         do i=1,lb_dom%lx(1)
-               if(btest(lb_dom%state(i,j,k),wall) .eqv. .false.) then
-#endif
-                fEq6 = t(6)*rholoc(INDEXVAR)*(1._R8B + (u1(INDEXVAR) + u2(INDEXVAR))*cs2inv &
-                      + (u1(INDEXVAR)+u2(INDEXVAR))**2*t2cs4inv  &
-                      - usq(INDEXVAR))
-                fEq7 = t(7)*rholoc(INDEXVAR)*(1._R8B + (-u1(INDEXVAR) + u2(INDEXVAR))*cs2inv &
-                      + (-u1(INDEXVAR)+u2(INDEXVAR))**2*t2cs4inv  &
-                      - usq(INDEXVAR))
-                fEq8 = t(8)*rholoc(INDEXVAR)*(1._R8B + (-u1(INDEXVAR) -u2(INDEXVAR))*cs2inv &
-                      + (-u1(INDEXVAR)-u2(INDEXVAR))**2*t2cs4inv  &
-                      - usq(INDEXVAR))
-                fEq9 = t(9)*rholoc(INDEXVAR)*(1._R8B + (u1(INDEXVAR) -u2(INDEXVAR))*cs2inv &
-                      + (u1(INDEXVAR)-u2(INDEXVAR))**2*t2cs4inv  &
-                      - usq(INDEXVAR))
-               fOut(NDX(6,i,j,k)) = ftmp6(INDEXVAR) - omega(INDEXVAR)*(ftmp6(INDEXVAR) - fEq6)
-               fOut(NDX(7,i,j,k)) = ftmp7(INDEXVAR) - omega(INDEXVAR)*(ftmp7(INDEXVAR) - fEq7)
-               fOut(NDX(8,i,j,k)) = ftmp8(INDEXVAR) - omega(INDEXVAR)*(ftmp8(INDEXVAR) - fEq8)
-               fOut(NDX(9,i,j,k)) = ftmp9(INDEXVAR) - omega(INDEXVAR)*(ftmp9(INDEXVAR) - fEq9)
-#endif
 #ifdef D3Q19
                fEq1 = t(1)*rholoc(INDEXVAR)*(1._R8B  &
                       - usq(INDEXVAR)) 
@@ -701,26 +643,6 @@ else
 
          !--------------------------------------------
          ! Do Bounce Back 
-#ifdef D2Q9
-         fOut(NDX(opp(1),i,j,k)) = ftmp1(INDEXVAR)
-         fOut(NDX(opp(2),i,j,k)) = ftmp2(INDEXVAR)
-         fOut(NDX(opp(3),i,j,k)) = ftmp3(INDEXVAR)
-         fOut(NDX(opp(4),i,j,k)) = ftmp4(INDEXVAR)
-         fOut(NDX(opp(5),i,j,k)) = ftmp5(INDEXVAR)
-
-#ifdef SPLITLOOPS
-            endif
-         enddo
-         do i=1,lb_dom%lx(1)
-               if(btest(lb_dom%state(i,j,k),wall)) then
-#endif
-
-
-         fOut(NDX(opp(6),i,j,k)) = ftmp6(INDEXVAR)
-         fOut(NDX(opp(7),i,j,k)) = ftmp7(INDEXVAR)
-         fOut(NDX(opp(8),i,j,k)) = ftmp8(INDEXVAR)
-         fOut(NDX(opp(9),i,j,k)) = ftmp9(INDEXVAR)
-#endif
 
 #ifdef D3Q19
          fOut(NDX(opp(1),i,j,k)) = ftmp1(INDEXVAR)

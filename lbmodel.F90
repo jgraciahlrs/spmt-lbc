@@ -21,35 +21,6 @@ module LBMODEL
    !      8   5   9
     
 
-#ifdef D2Q9
-   integer, parameter                  :: nnod= 9
-
-   real(R8B), dimension(9),parameter    :: t   = (/ 4._R8B/9._R8B, &
-             1._R8B/9._R8B, 1._R8B/9._R8B, 1._R8B/9._R8B, 1._R8B/9._R8B, &
-             1._R8B/36._R8B,1._R8B/36._R8B,1._R8B/36._R8B,1._R8B/36._R8B/) 
-   integer, dimension(9,3) :: cx  
-   integer, dimension(9) :: opp 
-
-   data cx(:,1) / 0,1,0,-1,0,1,-1,-1,1/
-   data cx(:,2) / 0,0,1,0,-1,1,1,-1,-1/
-   data cx(:,3) / 0,0,0,0, 0,0,0, 0, 0/
-
-   integer, parameter :: I__0= 1,I__E= 2,I__N= 3,I__W= 4,I__S= 5
-   integer, parameter :: I_NE= 6,I_NW= 7,I_SW= 8,I_SE= 9
-
-   ! 1  0     6  NE  
-   ! 2  E     7  NW
-   ! 3  N     8  SW
-   ! 4  W     9  SE
-   ! 5  S               
-         
-
-#ifdef SLIP_BB
-   data opp /1,2,5,4,3,9,8,7,6 /
-#else /* SLIP BB*/
-   data opp /1,4,5,2,3,8,9,6,7 /
-#endif /* SLIP BB */
-#endif
 #ifdef D3Q19
    integer, parameter                  :: nnod= 19
    real(R8B), dimension(19),parameter    :: t   = (/ 1._R8B/3._R8B, &

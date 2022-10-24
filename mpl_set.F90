@@ -1586,14 +1586,6 @@ enddo
 
 
 
-#ifdef D2Q9
-      prc%pos_sends(:,3) = 1
-      prc%pos_send(:,3)  = 1
-      prc%pos_recvs(:,3) = 1
-      prc%pos_recv(:,3)  = 1
-#endif
-
-
 end subroutine mpl_set_nodes_to_send
 !------------------------------------------------------------------------
 

@@ -72,26 +72,6 @@
                    ftmp(17) - ftmp(18) + &
                    ftmp(19))
 #endif
-#ifdef D2Q9
-            ! local density
-            loc_dens =  ftmp(1)  + ftmp(2)  + &
-                        ftmp(3)  + ftmp(4)  + ftmp(5) + &
-                        ftmp(6)  + ftmp(7)  + &
-                        ftmp(8)  + ftmp(9)  
-
-            ! local x-velocity
-            u_x =  ftmp(2)  - ftmp(4)  + &
-                   ftmp(6)  - ftmp(7)  + &
-                   ftmp(9)  - ftmp(8)  
-
-            ! local y-velocity
-            u_y = ftmp(3)  - ftmp(5)  + &
-                  ftmp(6)  + ftmp(7)  - & 
-                  ftmp(8)  - ftmp(9) 
-
-            ! local z-velocity
-            u_z = 0.0d0 
-#endif
             ! inverse
             inv_loc_dens = 1.d0 / loc_dens
 
@@ -171,40 +151,6 @@
             sym  = omega_h*(ftmp(6) + ftmp(7)  - fac1*ui*ui - t1x2*feq_common)
             asym = asym_omega_h*( ftmp(6) - ftmp(7) - 3.d0*t1x2*ui )
             fOut(LB_NODE(6,i,j,k)) = ftmp(6) - sym - asym
-            fOut(LB_NODE(7,i,j,k)) = ftmp(7) - sym + asym
-#endif
-#ifdef D2Q9
-            t1x2 = t1x2_0 * loc_dens
-            fac1 = t1x2 * inv2csq2
-
-            ! y-direction densities
-            ui   = u_y
-            sym  = omega_h*(ftmp(3) + ftmp(5) - fac1*ui*ui - t1x2*feq_common)
-            asym = asym_omega_h*( ftmp(3) - ftmp(5) - 3.d0*t1x2*ui )
-            fOut(LB_NODE(3,i,j,k)) = ftmp(3) - sym - asym
-            fOut(LB_NODE(5,i,j,k)) = ftmp(5) - sym + asym
-
-            ! x-direction densities
-            ui   = u_x
-            sym  = omega_h*(ftmp(2) + ftmp(4) - fac1*ui*ui - t1x2*feq_common)
-            asym = asym_omega_h*( ftmp(2) - ftmp(4) - 3.d0*t1x2*ui )
-            fOut(LB_NODE(2,i,j,k)) = ftmp(2) - sym - asym
-            fOut(LB_NODE(4,i,j,k)) = ftmp(4) - sym + asym
-
-            ! xy-direction densities
-            t2x2 = t2x2_0 * loc_dens
-            fac2 = t2x2 * inv2csq2
-
-            ui   = u_x + u_y
-            sym  = omega_h*(ftmp(6) + ftmp(8) - fac2*ui*ui - t2x2*feq_common)
-            asym = asym_omega_h*( ftmp(6) - ftmp(8) - 3.d0*t2x2*ui )
-            fOut(LB_NODE(6,i,j,k))  = ftmp(6) - sym - asym
-            fOut(LB_NODE(8,i,j,k))  = ftmp(8) - sym + asym
-
-            ui   = u_x - u_y
-            sym  = omega_h*(ftmp(9) + ftmp(7) - fac2*ui*ui - t2x2*feq_common)
-            asym = asym_omega_h*( ftmp(9) - ftmp(7) - 3.d0*t2x2*ui )
-            fOut(LB_NODE(9,i,j,k)) = ftmp(9) - sym - asym
             fOut(LB_NODE(7,i,j,k)) = ftmp(7) - sym + asym
 #endif
          end do

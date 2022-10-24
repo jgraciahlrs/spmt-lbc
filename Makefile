@@ -85,9 +85,6 @@ PARALLEL += $(FDEF)-DUSE_OMPSS_MPI
 #-----------------------------------------------------
 # Model arguments 
 # Lattice Boltzmann Model: 
-# Choose ONE of the following
-# 2D:  use two-dimensional model with nine velocities
-#LBMODEL += $(FDEF)-DD2Q9
 # 3D:  use three-dimensional model with nineteen velocities
 LBMODEL += $(FDEF)-DD3Q19
 

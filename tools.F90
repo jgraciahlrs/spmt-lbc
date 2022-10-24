@@ -31,20 +31,6 @@ contains
      intent(in)      :: fpdf
      intent(out)     :: rho,u 
 
-#ifdef D2Q9
-               rho =  fpdf(I__0) + fpdf(I__E)  + &
-                      fpdf(I__W) + fpdf(I__N)  + &
-                      fpdf(I__S) + fpdf(I_NE)  + &
-                      fpdf(I_SW) + fpdf(I_SE)  + & 
-                      fpdf(I_NW) 
-               u(1) = fpdf(I__E) - fpdf(I__W)  + &
-                      fpdf(I_NE) - fpdf(I_SW)  + &
-                      fpdf(I_SE) - fpdf(I_NW)     
-               u(2) = fpdf(I__N) - fpdf(I__S)  + &
-                      fpdf(I_NE) - fpdf(I_SW)  + &
-                      fpdf(I_NW) - fpdf(I_SE)     
-               u(3) = 0.d0
-#endif
 #ifdef D3Q19
                rho =  fpdf(I__0) + &
                       fpdf(I__E) + fpdf(I__W) + &
@@ -128,47 +114,6 @@ contains
       t2cs4inv = 1._R8B/(2*cs**4)
       t2cs2inv = 1._R8B/(2*cs**2)
 
-#ifdef D2Q9    
-             rholoc = rho
-#ifdef INCOMPRESSIBLE
-             rho0 = s_par%rho0
-#else
-             rho0 = rholoc
-#endif 
-             usq =  (u(NDX(1,i,j,k))**2 + u(NDX(2,i,j,k))**2)*t2cs2inv
-             
-             fEq(NDX(1,i,j,k)) = t(1)*(rholoc - rho0*usq)
-
-             fEq(NDX(2,i,j,k)) = t(2)*(rholoc + rho0*((u(NDX(1,i,j,k)))*cs2inv &
-            + (u(NDX(1,i,j,k)))**2*t2cs4inv   - usq))
-
-             fEq(NDX(3,i,j,k)) = t(3)*(rholoc + rho0*((u(NDX(2,i,j,k)))*cs2inv &
-            + (u(NDX(2,i,j,k)))**2*t2cs4inv   - usq))
-
-             fEq(NDX(4,i,j,k)) = t(4)*(rholoc + rho0*((-u(NDX(1,i,j,k)))*cs2inv &
-           + (-u(NDX(1,i,j,k)))**2*t2cs4inv  - usq))
-
-             fEq(NDX(5,i,j,k)) = t(5)*(rholoc + rho0*((-u(NDX(2,i,j,k)))*cs2inv &
-           + (-u(NDX(2,i,j,k)))**2*t2cs4inv   - usq))
-
-             fEq(NDX(6,i,j,k)) = t(6)*(rholoc  &
-            + rho0*((u(NDX(1,i,j,k)) + u(NDX(2,i,j,k)))*cs2inv &
-            + (u(NDX(1,i,j,k))+u(NDX(2,i,j,k)))**2*t2cs4inv  - usq))
-
-             fEq(NDX(7,i,j,k)) = t(7)*(rholoc  &
-           + rho0*((-u(NDX(1,i,j,k)) + u(NDX(2,i,j,k)))*cs2inv &
-           + (-u(NDX(1,i,j,k))+u(NDX(2,i,j,k)))**2*t2cs4inv  - usq))
-
-             fEq(NDX(8,i,j,k)) = t(8)*(rholoc  &
-           + rho0*((-u(NDX(1,i,j,k)) -u(NDX(2,i,j,k)))*cs2inv &
-           + (-u(NDX(1,i,j,k))-u(NDX(2,i,j,k)))**2*t2cs4inv    - usq))
-
-             fEq(NDX(9,i,j,k)) = t(9)*(rholoc  &
-            + rho0*((u(NDX(1,i,j,k)) -u(NDX(2,i,j,k)))*cs2inv &
-            + (u(NDX(1,i,j,k))-u(NDX(2,i,j,k)))**2*t2cs4inv  - usq))
-
-
-#endif
 #ifdef D3Q19
 
           usq =  (u(NDX(1,i,j,k))**2 + u(NDX(2,i,j,k))**2 + u(NDX(3,i,j,k))**2)*t2cs2inv

@@ -255,9 +255,6 @@ module nrt_lib
 
 
 
-#ifdef D2Q9
-   integer(4), parameter                    :: NDIM= 2 
-#endif
 #ifdef D3Q19
    integer(4), parameter                    :: NDIM= 3 
 #endif

@@ -138,11 +138,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       do k=1,s_par%gx(3)
         do j=1,s_par%gx(2)
           do i=1,s_par%gx(1)
-#ifdef D2Q9
-               u(NDX(1,i,j,k)) = s_par%umax*get_parabolic2d(real(j,R8B),real(s_par%gx(2)+1,R8B))
-               if(state(i,j,k)==wall) u(NDX(1,i,j,k))=0._R8B
-               u(NDX(2,i,j,k))   = 0._R8B
-#endif
 #ifdef D3Q19
                u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d(real(j,R8B),real(s_par%gx(2)+1,R8B), &
                                        real(k,R8B),real(s_par%gx(3)+1,R8B))
@@ -811,13 +806,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       do k=1,lx(3)
         do j=1,lx(2)
           do i=1,lx(1)
-#ifdef D2Q9
-               lb_dom%u(NDX(1,i,j,k)) = s_par%umax*get_parabolic2d(real(   &
-                        j+lb_dom%lx(1)*prc%crd(1)  &
-                        ,R8B),real(s_par%gx(2)+1,R8B))
-               if(lb_dom%state(i,j,k)==wall) lb_dom%u(NDX(1,i,j,k))=0._R8B
-               lb_dom%u(NDX(2,i,j,k))   = 0._R8B
-#endif
 #ifdef D3Q19
                lb_dom%u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d( &
                   real(j+lb_dom%lx(2)*prc%crd(2),R8B),real(s_par%gx(2)+1,R8B), &
@@ -833,11 +821,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
        do k=1,s_par%gx(3)
         do j=1,s_par%gx(2)
           do i=1,s_par%gx(1)
-#ifdef D2Q9
-               lb_dom%u(NDX(1,i,j,k))   = 4._R8B*s_par%umax/real(s_par%gx(2)+1)**2*(real(j*s_par%gx(2)+1)-real(j)*real(j))
-               if(lb_dom%state(i,j,k)==wall) lb_dom%u(NDX(1,i,j,k))=0._R8B
-               lb_dom%u(NDX(2,i,j,k))   = 0._R8B
-#endif
 #ifdef D3Q19
                lb_dom%u(NDX(1,i,j,k))   = 4._R8B*s_par%umax/real(s_par%gx(2)+1)**2  &
          & *(real(j*s_par%gx(2)+1)-real(j)*real(j))*(real(k*s_par%gx(3)+1)-real(k)*real(k))
@@ -1145,12 +1128,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       lb_dom%nrwall_prev(i,5:4+NDIM  ) = lb_dom%u(NDX(1:NDIM,x1,y1,z1))
       lb_dom%nrwall_prev(i,8)          = lb_dom%rho(x2,y2,z2)
       lb_dom%nrwall_prev(i,9:8+NDIM  ) = lb_dom%u(NDX(1:NDIM,x2,y2,z2))
-#ifdef D2Q9
-      lb_dom%nrwall_0val(i,3)  = 0.d0
-      lb_dom%nrwall_prev(i,3)  = 0.d0
-      lb_dom%nrwall_prev(i,7)  = 0.d0
-      lb_dom%nrwall_prev(i,11) = 0.d0
-#endif
  
 #ifdef SPONGE_NRBC
    !----------------------------------------
@@ -1514,59 +1491,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       cs2inv  = 1._R8B/cs**2
       t2cs4inv = 1._R8B/(2._R8B*cs**4)
       t2cs2inv = 1._R8B/(2._R8B*cs**2)
-#ifdef D2Q9    
-! ersetze diese rho durch lokale berechnungen und schauen, was sich aendert
-      do k=1,s_par%gx(3)
-         do j=1,s_par%gx(2)
-            do i=1,s_par%gx(1)
-             rholoc = rho(i,j,k)
-#ifdef INCOMPRESSIBLE
-             rho0 = s_par%rho0
-#else
-             rho0 = rholoc
-#endif 
-             usq =  (u(NDX(1,i,j,k))**2 + u(NDX(2,i,j,k))**2)*t2cs2inv
-             
-             fEq(NDX(1,i,j,k)) = t(1)*(rholoc - rho0*usq)
-
-             fEq(NDX(2,i,j,k)) = t(2)*(rholoc + rho0*((u(NDX(1,i,j,k)))*cs2inv &
-            + (u(NDX(1,i,j,k)))**2*t2cs4inv   - usq))
-
-             fEq(NDX(3,i,j,k)) = t(3)*(rholoc + rho0*((u(NDX(2,i,j,k)))*cs2inv &
-            + (u(NDX(2,i,j,k)))**2*t2cs4inv   - usq))
-
-             fEq(NDX(4,i,j,k)) = t(4)*(rholoc + rho0*((-u(NDX(1,i,j,k)))*cs2inv &
-           + (-u(NDX(1,i,j,k)))**2*t2cs4inv  - usq))
-
-             fEq(NDX(5,i,j,k)) = t(5)*(rholoc + rho0*((-u(NDX(2,i,j,k)))*cs2inv &
-           + (-u(NDX(2,i,j,k)))**2*t2cs4inv   - usq))
-
-             fEq(NDX(6,i,j,k)) = t(6)*(rholoc  &
-            + rho0*((u(NDX(1,i,j,k)) + u(NDX(2,i,j,k)))*cs2inv &
-            + (u(NDX(1,i,j,k))+u(NDX(2,i,j,k)))**2*t2cs4inv  - usq))
-
-             fEq(NDX(7,i,j,k)) = t(7)*(rholoc  &
-           + rho0*((-u(NDX(1,i,j,k)) + u(NDX(2,i,j,k)))*cs2inv &
-           + (-u(NDX(1,i,j,k))+u(NDX(2,i,j,k)))**2*t2cs4inv  - usq))
-
-             fEq(NDX(8,i,j,k)) = t(8)*(rholoc  &
-           + rho0*((-u(NDX(1,i,j,k)) -u(NDX(2,i,j,k)))*cs2inv &
-           + (-u(NDX(1,i,j,k))-u(NDX(2,i,j,k)))**2*t2cs4inv    - usq))
-
-             fEq(NDX(9,i,j,k)) = t(9)*(rholoc  &
-            + rho0*((u(NDX(1,i,j,k)) -u(NDX(2,i,j,k)))*cs2inv &
-            + (u(NDX(1,i,j,k))-u(NDX(2,i,j,k)))**2*t2cs4inv  - usq))
-
-!do l =1,nnod
-!   if(abs(lb_feq(l,rholoc,(/u(NDX(1,i,j,k)),u(NDX(2,i,j,k)),0.d0/),rho0) - fEq(NDX(l,i,j,k))) .ge. 0.000001) then
-!      write(*,*) 'feq error at ',i,j,k, 'pos',l
-!      stop
-!   endif
-!enddo
-            end do
-         end do
-      end do
-#endif
 #ifdef D3Q19
       do k=1,s_par%gx(3)
          do j=1,s_par%gx(2)
@@ -1756,58 +1680,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       t2cs4inv = 1._R8B/(2*cs**4)
       t2cs2inv = 1._R8B/(2*cs**2)
 
-#ifdef D2Q9    
-   do k=z_l,z_u
-       do j=y_l,y_u
-          do i=x_l,x_u
-#ifdef DEBUG_FEQ
-            do l=1,nnod
-             fEq(NDX(l,i,j,k)) = lb_feq(l,rho(i,j,k),(/u(NDX(1,i,j,k)),u(NDX(2,i,j,k)),0.0d0/),rho0)
-            enddo
-#else
-             rholoc = rho(i,j,k)
-#ifdef INCOMPRESSIBLE
-             rho0 = s_par%rho0
-#else
-             rho0 = rholoc
-#endif 
-             usq =  (u(NDX(1,i,j,k))**2 + u(NDX(2,i,j,k))**2)*t2cs2inv
-             
-             fEq(NDX(1,i,j,k)) = t(1)*(rholoc - rho0*usq)
-
-             fEq(NDX(2,i,j,k)) = t(2)*(rholoc + rho0*((u(NDX(1,i,j,k)))*cs2inv &
-            + (u(NDX(1,i,j,k)))**2*t2cs4inv   - usq))
-
-             fEq(NDX(3,i,j,k)) = t(3)*(rholoc + rho0*((u(NDX(2,i,j,k)))*cs2inv &
-            + (u(NDX(2,i,j,k)))**2*t2cs4inv   - usq))
-
-             fEq(NDX(4,i,j,k)) = t(4)*(rholoc + rho0*((-u(NDX(1,i,j,k)))*cs2inv &
-           + (-u(NDX(1,i,j,k)))**2*t2cs4inv  - usq))
-
-             fEq(NDX(5,i,j,k)) = t(5)*(rholoc + rho0*((-u(NDX(2,i,j,k)))*cs2inv &
-           + (-u(NDX(2,i,j,k)))**2*t2cs4inv   - usq))
-
-             fEq(NDX(6,i,j,k)) = t(6)*(rholoc  &
-            + rho0*((u(NDX(1,i,j,k)) + u(NDX(2,i,j,k)))*cs2inv &
-            + (u(NDX(1,i,j,k))+u(NDX(2,i,j,k)))**2*t2cs4inv  - usq))
-
-             fEq(NDX(7,i,j,k)) = t(7)*(rholoc  &
-           + rho0*((-u(NDX(1,i,j,k)) + u(NDX(2,i,j,k)))*cs2inv &
-           + (-u(NDX(1,i,j,k))+u(NDX(2,i,j,k)))**2*t2cs4inv  - usq))
-
-             fEq(NDX(8,i,j,k)) = t(8)*(rholoc  &
-           + rho0*((-u(NDX(1,i,j,k)) -u(NDX(2,i,j,k)))*cs2inv &
-           + (-u(NDX(1,i,j,k))-u(NDX(2,i,j,k)))**2*t2cs4inv    - usq))
-
-             fEq(NDX(9,i,j,k)) = t(9)*(rholoc  &
-            + rho0*((u(NDX(1,i,j,k)) -u(NDX(2,i,j,k)))*cs2inv &
-            + (u(NDX(1,i,j,k))-u(NDX(2,i,j,k)))**2*t2cs4inv  - usq))
-
-#endif
-          end do
-       end do
-    end do
-#endif
 #ifdef D3Q19
     do k=z_l,z_u
        do j=y_l,y_u
@@ -1930,10 +1802,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
 #ifdef D3Q19
       if(prc%crd(3) == 0)          then; z_start = 2;    else; z_start=1;  end if
       if(prc%crd(3) == prc%np(3)-1) then; z_end   = lz-1; else; z_end  =lz; end if
-#endif
-#ifdef D2Q9
-      z_start = 1
-      z_end   = 1
 #endif
 
       do i=1,prc%bnd(prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1,1,2)-prc%bnd(prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1,1,1)+1
@@ -2105,14 +1973,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
    end select
 
 ! get number of inlet nodes in directions
-#ifdef D2Q9
-lb_dom%num_in(2) = 0
-do j=1,lb_dom%lx(2)
-   if(lb_dom%state(1,j,1) == inlet) then
-      lb_dom%num_in(2) = lb_dom%num_in(2) + 1
-   endif
-end do
-#endif
    end subroutine get_geo_each
    !------------------------------------------------------------------------
 
@@ -2646,20 +2506,6 @@ ibset(lb_dom%gstate(1:s_par%gx(1)/2,s_par%gx(2)/2-1:s_par%gx(2)/2+1,:),wall)
            do i=1,lb_dom%lx(1)
 !               if(btest(lb_dom%state(i,j,k),wall) .eqv. .false.) then
 !if(lb_dom%state(i,j,k) /= wall) then
-#ifdef D2Q9
-               rho(i,j,k) = fIn(NDX(I__0,i,j,k)) + fIn(NDX(I__E,i,j,k))  + &
-                            fIn(NDX(I__W,i,j,k)) + fIn(NDX(I__N,i,j,k))  + &
-                            fIn(NDX(I__S,i,j,k)) + fIn(NDX(I_NE,i,j,k))  + &
-                            fIn(NDX(I_SW,i,j,k)) + fIn(NDX(I_SE,i,j,k))  + &
-                            fIn(NDX(I_NW,i,j,k))                 
-                                                           
-         u(NDX(1,i,j,k)) =  fIn(NDX(I__E,i,j,k)) - fIn(NDX(I__W,i,j,k))  + &
-                            fIn(NDX(I_NE,i,j,k)) - fIn(NDX(I_SW,i,j,k))  + &
-                            fIn(NDX(I_SE,i,j,k)) - fIn(NDX(I_NW,i,j,k))    
-         u(NDX(2,i,j,k)) =  fIn(NDX(I__N,i,j,k)) - fIn(NDX(I__S,i,j,k))  + &
-                            fIn(NDX(I_NE,i,j,k)) - fIn(NDX(I_SW,i,j,k))  + &  
-                            fIn(NDX(I_NW,i,j,k)) - fIn(NDX(I_SE,i,j,k))       
-#endif
 #ifdef D3Q19
        rho(i,j,k)  =  fIn(NDX(I__0,i,j,k)) + &
                       fIn(NDX(I__E,i,j,k)) + fIn(NDX(I__W,i,j,k)) + &

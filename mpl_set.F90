@@ -673,28 +673,9 @@ do ii=istart,iend
    enddo
    prc%ndir_pdf(ind) = counter
 
-#ifdef DEBUG_MPI
-   write(66+prc%rk,*) "Index",      ind,"  dir",cx(ii,:)
-   write(66+prc%rk,*) prc%pos_sends(ind,:) 
-   write(66+prc%rk,*) prc%pos_send( ind,:) 
-   write(66+prc%rk,*) prc%pos_recvs(ind,:) 
-   write(66+prc%rk,*) prc%pos_recv( ind,:) 
-   write(66+prc%rk,*) 
-   write(66+prc%rk,*) "densities",counter
-   write(66+prc%rk,*) "send",prc%dsend_pdf(ind,:) 
-   write(66+prc%rk,*) 
-   write(66+prc%rk,*) "recv",prc%drecv_pdf(ind,:) 
-   write(66+prc%rk,*) 
-   write(66+prc%rk,*) 
-#endif /* DEBUG_MPI */
-
 
 
 enddo
-
-#ifdef DEBUG_MPI
-   write(*,*) prc%rk,"neighbors",prc%nghb
-#endif
 
 
 
@@ -742,10 +723,6 @@ subroutine mpl_finish(prc)
    do i = 1,prc%nnghb
       deallocate(mpl_buffer(i)%send,stat=ierr)
       deallocate(mpl_buffer(i)%recv,stat=ierr)
-#if defined MPI_NOT_ALL_DENS
-      deallocate(mpl_buffer(i)%idx,stat=ierr)
-      deallocate(mpl_buffer(i)%idx_recv,stat=ierr)
-#endif
    end do
 
 
@@ -849,12 +826,6 @@ end subroutine mpl_finish
 
 
 
-#ifdef DEBUG_MPI
-   call mpi_barrier(mpi_comm_world,prc%ierr)
-stop
-#endif
-
-
   end subroutine mpl_exchange
 !------------------------------------------------------------------------
 
@@ -875,14 +846,6 @@ stop
       real(R8B) :: fIn(NDX(nnod,0:lb_dom%lx(1)+1,0:lb_dom%lx(2)+1,0:lb_dom%lx(3)+1))
 
 #ifndef MPI_SUBARRAY
-#ifdef DEBUG_MPI
-      write(50+prc%rk,*) "Neighbor index is",neighbor
-      write(50+prc%rk,*) "sending to",prc%nghb(neighbor)
-      write(50+prc%rk,*) "Limits are" 
-      write(50+prc%rk,*) prc%pos_sends(neighbor,1),prc%pos_send(neighbor,1)
-      write(50+prc%rk,*) prc%pos_sends(neighbor,2),prc%pos_send(neighbor,2)
-      write(50+prc%rk,*) prc%pos_sends(neighbor,3),prc%pos_send(neighbor,3)
-#endif
 
 
       call cpu_time_measure(copy_start)
@@ -892,17 +855,9 @@ stop
                do l = 1,prc%ndir_pdf(neighbor)
                   mpl_buffer(neighbor)%send(l,ii,jj,kk) =    & 
 
-#ifndef DEBUG_MPI
-
 fIn(NDX(prc%dsend_pdf(neighbor,l),ii+prc%pos_sends(neighbor,1)-1, jj+prc%pos_sends(neighbor,2)-1, kk+prc%pos_sends(neighbor,3)-1))
 
 
-#else
-      (prc%rk+1)*100000+prc%dsend_pdf(neighbor,l)+10000*(ii+prc%pos_sends(neighbor,1)-1)+&
-      1000*(jj+prc%pos_sends(neighbor,2)-1)+100*(kk+prc%pos_sends(neighbor,3)-1)
-      write(50+prc%rk,*) prc%dsend_pdf(neighbor,l),ii+prc%pos_sends(neighbor,1)-1,&
-       jj+prc%pos_sends(neighbor,2)-1, kk+prc%pos_sends(neighbor,3)-1,mpl_buffer(neighbor)%send(l,ii,jj,kk)
-#endif
                enddo
             enddo
          enddo
@@ -932,14 +887,6 @@ fIn(NDX(prc%dsend_pdf(neighbor,l),ii+prc%pos_sends(neighbor,1)-1, jj+prc%pos_sen
       real(R8B) :: fIn(NDX(nnod,0:lb_dom%lx(1)+1,0:lb_dom%lx(2)+1,0:lb_dom%lx(3)+1))
 #ifndef MPI_SUBARRAY
 
-#ifdef DEBUG_MPI
-      write(41+prc%rk,*) "recving from",prc%nghb(neighbor)
-      write(41+prc%rk,*) "Limits are" 
-      write(41+prc%rk,*) prc%pos_recvs(neighbor,1),prc%pos_recv(neighbor,1)
-      write(41+prc%rk,*) prc%pos_recvs(neighbor,2),prc%pos_recv(neighbor,2)
-      write(41+prc%rk,*) prc%pos_recvs(neighbor,3),prc%pos_recv(neighbor,3)
-#endif /* DEBUG_MPI */
-
 
       call cpu_time_measure(copy_start)
 
@@ -951,10 +898,6 @@ fIn(NDX(prc%dsend_pdf(neighbor,l),ii+prc%pos_sends(neighbor,1)-1, jj+prc%pos_sen
 fIn(NDX(prc%drecv_pdf(neighbor,l),ii+prc%pos_recvs(neighbor,1)-1,jj+prc%pos_recvs(neighbor,2)-1, kk+prc%pos_recvs(neighbor,3)-1)) & 
             =  mpl_buffer(neighbor)%recv(l,ii,jj,kk)  
 
-#ifdef DEBUG_MPI
-      write(41+prc%rk,*) prc%drecv_pdf(neighbor,l),ii+prc%pos_recvs(neighbor,1)-1,&
-      jj+prc%pos_recvs(neighbor,2)-1, kk+prc%pos_recvs(neighbor,3)-1,mpl_buffer(neighbor)%recv(l,ii,jj,kk)
-#endif
                enddo
             enddo
          enddo
@@ -1133,351 +1076,6 @@ write(*,*) prc%rk,"waiting"
 
 
 
-
-
-#ifdef USE_OLD_MPI
-
-subroutine mpl_set_nodes_to_send(lb_dom,prc)
-!------------------------------------------------------------------------
-!
-! OLD ROUTINE!! 
-!
-!#!define USE_NEW
-   type(mpl_var)                    :: prc
-   type(lb_block)                   :: lb_dom
-   integer                     :: lx,ly,lz,cnt,ind,l,ll
-   integer                     :: xs(3),ys(3),zs(3) 
-   integer                     :: xr(3),yr(3),zr(3) 
-   integer                     :: zeropos,start_it,end_it,relative,ind_rel,ghostn
-#ifdef USE_NEW 
-   integer                     :: sig(3),dimi  
-#endif
-      ! fill up the sending/receiving buffer sizes (from pos_sends to pos_send, same for recv)
-      ! set all to zero first (there are more buffer entries than needed for reduced comm)
-
-      lx =  lb_dom%lx(1)
-      ly =  lb_dom%lx(2)
-      lz =  lb_dom%lx(3)
-
-      ! First count, how many densities have to be exchanged in one direction. Choose x-direction
-      ! This could only be a problem, if the stencil is not symmetric!! this should always be the case.
-#ifdef COMM_REDUCED
-      prc%ndir_pdf = 0
-      do l = 1,nnod
-         if(cx(l,1) == 1) prc%ndir_pdf=prc%ndir_pdf+1  
-      enddo
-#else
-      prc%ndir_pdf = nnod
-#endif
-
-      allocate(prc%dsend_pdf(prc%nnghb,prc%ndir_pdf))
-      allocate(prc%drecv_pdf(prc%nnghb,prc%ndir_pdf))
-
-
-      ! reduced mpi communication
-      ! set all pdf directions to zero
-      prc%drecv_pdf = 0
-      prc%dsend_pdf = 0
-
-      prc%pos_sends = 0
-      prc%pos_recvs = 0 
-      prc%pos_send  = 0
-      prc%pos_recv  = 0
-
-!#ifdef BUFFER_EACH
-   ! fill up the sending/receiving buffer sizes (from pos_sends to pos_send, same for recv)
-! Identify zero
-zeropos=-1
-relative=0
-do ind=1,nnod
-   if(cx(ind,1)==0 .and. cx(ind,2) == 0 .and. cx(ind,3)==0) zeropos=ind
-enddo
-
-if(zeropos==1) then
-start_it=2
-relative=-1
-end_it=prc%nnghb+1
-elseif(zeropos==nnod) then
-start_it=1
-end_it=prc%nnghb
-endif
-
-
-
-do ind=start_it,end_it
-   ind_rel = ind + relative
-#ifdef BUFFER_EACH
-   ! when each buffer is exchanged separately, ghost nodes dont have to be communicated
-   ghostn = 0
-#else /* ORTHOGONAL DIRECTIONS */
-   ! orthogonal direction exchange needs ghost node values for writing to corners 
-   ghostn = 1
-#endif
-   ! treat x direction
-   if(cx(ind,1) ==0) then
-      xs(1) = 1  - ghostn
-      xs(2) = lx + ghostn
-      xr(1) = 1  - ghostn
-      xr(2) = lx + ghostn
-   elseif(cx(ind,1)==1) then
-      xs(1:2) = lx
-      xr(1:2) = lx+1
-   else ! -1
-      xs(1:2) = 1
-      xr(1:2) = 0
-   endif
-
-   ! treat y direction
-   if(cx(ind,2) ==0) then
-      ys(1) = 1  - ghostn
-      ys(2) = ly + ghostn
-      yr(1) = 1  - ghostn
-      yr(2) = ly + ghostn
-   elseif(cx(ind,2)==1) then
-      ys(1:2) = ly
-      yr(1:2) = ly+1
-   else ! -1
-      ys(1:2) = 1
-      yr(1:2) = 0
-   endif
-
-   ! treat z direction
-   if(cx(ind,3) ==0) then
-      zs(1) = 1  - ghostn
-      zs(2) = lz + ghostn
-      zr(1) = 1  - ghostn
-      zr(2) = lz + ghostn
-   elseif(cx(ind,3)==1) then
-      zs(1:2) = lz
-      zr(1:2) = lz+1
-   else ! -1
-      zs(1:2) = 1
-      zr(1:2) = 0
-   endif
-
-
-
-
-   prc%pos_sends(ind_rel,1:3) = (/xs(1),  ys(1), zs(1)/)
-   prc%pos_send (ind_rel,1:3) = (/xs(2),  ys(2), zs(2)/)
-   prc%pos_recvs(ind_rel,1:3) = (/xr(1),  yr(1), zr(1)/)
-   prc%pos_recv (ind_rel,1:3) = (/xr(2),  yr(2), zr(2)/)
-
-   do ll=1,nnod
-   prc%dsend_pdf(ind_rel,l)   = ll
-   prc%drecv_pdf(ind_rel,l)   = ll
-   enddo
-
-#ifdef DEBUG_MPI
-   write(66+prc%rk,*) "Index",ind_rel,"  dir",cx(ind,:)
-   write(66+prc%rk,*) prc%pos_sends(ind_rel,:) 
-   write(66+prc%rk,*) prc%pos_send(ind_rel,:) 
-   write(66+prc%rk,*) prc%pos_recvs(ind_rel,:) 
-   write(66+prc%rk,*) prc%pos_recv(ind_rel,:) 
-#endif DEBUG_MPI
-enddo
-
-
-
-
-
-
-
-!#else /* BUFFER_EACH */
-#ifdef USE_NEW /* NOT WORKING YET!!!*/ 
-      ! this will fill up the density locations 1 to 6
-      do ind  = 1,5,2
-
-      if(ind == 1) then  ! index 1 and to
-      ! first direction : x-
-      prc%pos_sends(ind,1:3) = (/1,    0,    0    /) 
-      prc%pos_send (ind,1:3) = (/1,    ly+1, lz+1 /) 
-      prc%pos_recvs(ind,1:3) = (/0,    0,    0    /) 
-      prc%pos_recv (ind,1:3) = (/0,    ly+1, lz+1 /) 
-      ! first direction : x+
-      prc%pos_sends(ind+1,1:3) = (/lx, 0,    0    /) 
-      prc%pos_send (ind+1,1:3) = (/lx, ly+1, lz+1 /) 
-      prc%pos_recvs(ind+1,1:3) = (/lx+1, 0,    0    /) 
-      prc%pos_recv (ind+1,1:3) = (/lx+1, ly+1, lz+1 /) 
-      dimi = 1 
-      sig  = (/-1,0,0 /)
-
-      elseif( ind==3) then
-      ! first direction : y-
-      prc%pos_sends(ind,1:3) = (/0,    1,    0    /) 
-      prc%pos_send (ind,1:3) = (/lx+1, 1,    lz+1 /) 
-      prc%pos_recvs(ind,1:3) = (/0,    0,    0    /) 
-      prc%pos_recv (ind,1:3) = (/lx+1, 0,    lz+1 /) 
-
-      prc%pos_sends(ind+1,1:3) = (/0,    ly,       0    /) 
-      prc%pos_send (ind+1,1:3) = (/lx+1, ly,       lz+1 /) 
-      prc%pos_recvs(ind+1,1:3) = (/0,    ly+1, 0    /) 
-      prc%pos_recv (ind+1,1:3) = (/lx+1, ly+1, lz+1 /) 
-      dimi = 2 
-      sig  = (/0,-1,0 /)
-
-      elseif( ind==5) then
-      ! first direction : z-
-      prc%pos_sends(ind,1:3) = (/0,    0,    1    /) 
-      prc%pos_send (ind,1:3) = (/lx+1, ly+1, 1    /) 
-      prc%pos_recvs(ind,1:3) = (/0,    0,    0    /) 
-      prc%pos_recv (ind,1:3) = (/lx+1, ly+1, 0    /) 
-      prc%pos_sends(ind+1,1:3) = (/0,    0,    lz       /)
-      prc%pos_send (ind+1,1:3) = (/lx+1, ly+1, lz       /)
-      prc%pos_recvs(ind+1,1:3) = (/0,    0,    lz+1 /) 
-      prc%pos_recv (ind+1,1:3) = (/lx+1, ly+1, lz+1 /) 
-      dimi = 3 
-      sig  = (/0,0,-1 /)
-      endif
-
-      cnt = 0
-      do l = 1,nnod
-#ifdef COMM_REDUCED
-         if(cx(l,dimi) == -1) then
-         cnt = cnt+1
-         prc%dsend_pdf(ind,cnt)   = l 
-         prc%drecv_pdf(ind+1,cnt) = l 
-         do ll=1,nnod
-            if(cx(ll,1) == sig(1)*cx(l,1) .and. &
-               cx(ll,2) == sig(2)*cx(l,2) .and. &
-               cx(ll,3) == sig(3)*cx(l,3)) then
-               prc%drecv_pdf(ind,cnt)   = ll
-               prc%dsend_pdf(ind+1,cnt) = ll
-            endif
-         enddo
-         endif 
-#else
-         ! if all densities should be communicated, simply fill up array
-         prc%dsend_pdf(ind,l)   = l
-         prc%drecv_pdf(ind,l)   = l
-         prc%dsend_pdf(ind+1,l) = l
-         prc%drecv_pdf(ind+1,l) = l
-#endif
-      enddo
-      enddo
-
-#else /* USE OLD ?*/
-
-#ifdef ORIGINAL
-
-!-------------------------
-! old implementation
-
-      ind = 1
-      ! first direction : x-
-      prc%pos_sends(ind,1:3) = (/1,    0,    0    /) 
-      prc%pos_send (ind,1:3) = (/1,    ly+1, lz+1 /) 
-      prc%pos_recvs(ind,1:3) = (/0,    0,    0    /) 
-      prc%pos_recv (ind,1:3) = (/0,    ly+1, lz+1 /) 
-      ! first direction : x+
-      prc%pos_sends(ind+1,1:3) = (/lx,       0,    0    /) 
-      prc%pos_send (ind+1,1:3) = (/lx,       ly+1, lz+1 /) 
-      prc%pos_recvs(ind+1,1:3) = (/lx+1, 0,    0    /) 
-      prc%pos_recv (ind+1,1:3) = (/lx+1, ly+1, lz+1 /) 
-
-      cnt = 0
-      do l = 1,nnod
-#ifdef COMM_REDUCED
-         if(cx(l,1) == -1) then
-         cnt = cnt+1
-         prc%dsend_pdf(ind,cnt) = l 
-         prc%drecv_pdf(ind+1,cnt) = l 
-         do ll=1,nnod
-            if(cx(ll,1) == -cx(l,1) .and. cx(ll,2) == cx(l,2) .and. cx(ll,3) == cx(l,3)) then
-               prc%drecv_pdf(ind,cnt)   = ll
-               prc%dsend_pdf(ind+1,cnt) = ll
-            endif
-         enddo
-         endif 
-#else
-         prc%dsend_pdf(ind,l) = l
-         prc%drecv_pdf(ind,l) = l
-         prc%dsend_pdf(ind+1,l) = l
-         prc%drecv_pdf(ind+1,l) = l
-#endif
-      enddo
-
-
-      ind = 3
-      ! first direction : y-
-      prc%pos_sends(ind,1:3) = (/0,    1,    0    /) 
-      prc%pos_send (ind,1:3) = (/lx+1, 1,    lz+1 /) 
-      prc%pos_recvs(ind,1:3) = (/0,    0,    0    /) 
-      prc%pos_recv (ind,1:3) = (/lx+1, 0,    lz+1 /) 
-
-      prc%pos_sends(ind+1,1:3) = (/0,    ly,       0    /) 
-      prc%pos_send (ind+1,1:3) = (/lx+1, ly,       lz+1 /) 
-      prc%pos_recvs(ind+1,1:3) = (/0,    ly+1, 0    /) 
-      prc%pos_recv (ind+1,1:3) = (/lx+1, ly+1, lz+1 /) 
-
-      cnt = 0
-      do l = 1,nnod
-#ifdef COMM_REDUCED
-         if(cx(l,2) == -1) then
-         cnt = cnt+1
-         prc%dsend_pdf(ind,cnt) = l 
-         prc%drecv_pdf(ind+1,cnt) = l 
-         do ll=1,nnod
-            if(cx(ll,1) == cx(l,1) .and. cx(ll,2) == -cx(l,2) .and. cx(ll,3) == cx(l,3)) then
-               prc%drecv_pdf(ind,cnt) = ll
-               prc%dsend_pdf(ind+1,cnt) = ll
-            endif
-         enddo
-         endif 
-#else
-         prc%dsend_pdf(ind,l) = l
-         prc%drecv_pdf(ind,l) = l
-         prc%dsend_pdf(ind+1,l) = l
-         prc%drecv_pdf(ind+1,l) = l
-#endif
-      enddo
-
-
-
-      ind = 5
-      ! first direction : z-
-      prc%pos_sends(ind,1:3) = (/0,    0,    1    /) 
-      prc%pos_send (ind,1:3) = (/lx+1, ly+1, 1    /) 
-      prc%pos_recvs(ind,1:3) = (/0,    0,    0    /) 
-      prc%pos_recv (ind,1:3) = (/lx+1, ly+1, 0    /) 
-      prc%pos_sends(ind+1,1:3) = (/0,    0,    lz       /)
-      prc%pos_send (ind+1,1:3) = (/lx+1, ly+1, lz       /)
-      prc%pos_recvs(ind+1,1:3) = (/0,    0,    lz+1 /) 
-      prc%pos_recv (ind+1,1:3) = (/lx+1, ly+1, lz+1 /) 
-      cnt = 0
-      do l = 1,nnod
-#ifdef COMM_REDUCED
-         if(cx(l,3) == -1) then
-         cnt = cnt+1
-         prc%dsend_pdf(ind,cnt) = l 
-         prc%drecv_pdf(ind+1,cnt) = l 
-         do ll=1,nnod
-            if(cx(ll,1) == cx(l,1) .and. cx(ll,2) == cx(l,2) .and. cx(ll,3) == -cx(l,3)) then
-            prc%drecv_pdf(ind,cnt) = ll
-            prc%dsend_pdf(ind+1,cnt) = ll
-            endif
-         enddo
-         endif 
-#else
-         prc%dsend_pdf(ind,l) = l
-         prc%drecv_pdf(ind,l) = l
-         prc%dsend_pdf(ind+1,l) = l
-         prc%drecv_pdf(ind+1,l) = l
-#endif
-      enddo
-
-#endif /* ORIGINAL */
-
-#endif /* OLD */
-!#endif /* BUFFER_EACH */ 
-
-
-
-
-end subroutine mpl_set_nodes_to_send
-!------------------------------------------------------------------------
-
-#endif /* USE_OLD_MPI */
 
 
 end module mpl_set

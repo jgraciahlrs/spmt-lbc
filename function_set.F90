@@ -551,47 +551,6 @@ end subroutine dealloc_mem
 
 
 
-#ifdef WRITE_TSTATUS
-   subroutine write_tStat(tStep,duration,total,lb_dom,s_par,prc)
-
-
-      implicit none
-      type(mpl_var)   :: prc
-      type(lb_block)   :: lb_dom
-      type(sim_parameter),intent(inout) :: s_par
-      real(R8B) :: duration,total 
-      integer  :: tStep
-      character(len=8)   :: datechar
-      character(len=10)  :: timechar
-      character(len=100) :: filename
-
-   call mpl_barrier()
-
-   if(prc%rk == 0) then
-      if(tStep==WRITE_TSTATUS) then
-         call date_and_time(datechar, timechar)
-   write(unit=filename,fmt='(4a)') "tstep_",trim(s_par%comm_method),"_",timechar
-         open(42,file=trim(filename),position='append')
-         write(42,*) "#"
-         write(42,*) "# LBC run lx",lb_dom%lx
-         write(42,*) "# Date ccyymmdd   ",datechar,"   at Time hhmmss  ",timechar 
-         write(42,*) "# Comm.-Method   ",s_par%comm_method
-         write(42,*) "# "
-         write(42,*) "# tStep        Duration ts        Duration total"
-      endif
-      write(42,'(i12,2f16.6)') tStep,duration,total
-   end if
-
-   call mpl_barrier()
-
-   end subroutine write_tStat 
-
-#endif /* WRITE_TSTATUS */
-
-
-
-
-
    subroutine write_status(meas,result_state,cur_tstep,s_par,prc)
 
       implicit none

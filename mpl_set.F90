@@ -748,10 +748,6 @@ subroutine mpl_finish(prc)
 #endif
    end do
 
-#ifdef WRITE_TSTATUS
-   close(42)
-#endif
-
 
 if(prc%rk==0) then
 write(*,*) 

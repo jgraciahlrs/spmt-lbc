@@ -233,12 +233,6 @@ endif
 
       endif
 
-#ifdef WRITE_TSTATUS
-      if(MOD(tStep,WRITE_TSTATUS)==0) then
-         ! Output duration of current timestep
-         call write_tStat(tStep,meas%tEnd-meas%tStart,meas%duration,lb_dom,s_par,prc)
-      endif
-#endif
    end do
 
 #ifdef USE_SMPSS

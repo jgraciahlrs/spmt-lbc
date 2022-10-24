@@ -143,12 +143,6 @@ LBMODEL += $(FDEF)-DLAYOUT_LIJK
 CPPDEFINES=$(LBMODEL) $(PARALLEL)
 
 #-----------------------------------------------------
-# Use Paramesh AMR library?
-USE_PARAMESH = 0
-ifeq ($(USE_PARAMESH),1)
-   LBMODEL += -DAMR
-endif
-
 
 #----------------------------------------------------------------
 # Machine specific 
@@ -524,19 +518,11 @@ export F90CFLAGS
 
 BASELIB_DIR = ./lib
 INCLUDE_DIR = ./include
-PARAMESH_INC = amr_headers
 
 LINK_BASELIB=-L$(BASELIB_DIR) 
 
 
 LIBS= $(LINK_BASELIB)
-ifeq ($(USE_PARAMESH),1)
-   INCLUDES += -I./$(PARAMESH_INC)
-   LIBS+= -lmpi_paramesh
-   LIBS+= -lparamesh
-   LIBS+= -lmodules
-   export PARAMESH_INC
-endif
 ifeq ($(findstring TEC_OUT,$(LBMODEL)),TEC_OUT)
    LIBS+= -lstdc++
    TEC_LIB=./lib/tecio.a
@@ -548,7 +534,6 @@ ifeq ($(findstring USE_OMPSS_MPI,$(PARALLEL)),USE_OMPSS_MPI)
    LIBS+=-L$(OMPSS_MPI_HOME) -lompssmpi
 endif
 
-# paramesh
 # Shell:
 # ------
 SHELL=/bin/bash
@@ -556,9 +541,6 @@ SHELL=/bin/bash
 sources := nrt_lib.F90 timing.F90 lbmodel.F90 tools.F90 mpl_set.F90
 sources += function_set.F90 lb_geo.F90 lb_init.F90 lb_bc.F90 lbm_functions.F90 
 sources += lbm_step.F90 lbm_step_tiled.F90
-ifeq ($(USE_PARAMESH),1)
-   sources += amr_1blk_bcset.F90 amr_initial_soln.F90 amr_test_refinement.F90 advance_soln.F90 amr_timestep.F90  
-endif
 
 # Object-Files:
 # -------------
@@ -597,11 +579,7 @@ CPP=cpp -C -traditional-cpp
 # --------
 #echo:
 #	@echo $(OBJS)
-ifeq ($(USE_PARAMESH),1)
-all: amr_headers amr_source amr_mpi_source $(CMD) 
-else
 all: $(CMD) 
-endif
 
 
 $(CMD): $(OBJS) $(mainobject)
@@ -622,28 +600,6 @@ $(CMD): $(OBJS) $(mainobject)
 	@echo '==============================================================='
 
 .PHONY: $(LIBS)
-
-.PHONY: amr_headers
-amr_headers:
-	$(MAKE) -C ./$@ -f Makefile.gnu
-	cp -f ./$@/libmodules.a $(BASELIB_DIR)
-	@echo '==============================================================='
-	@echo '=  A M R   headers compiled                                   ='
-	@echo '==============================================================='
-
-amr_mpi_source: amr_headers
-	$(MAKE) -C ./$@ -f Makefile.gnu
-	cp -f ./$@/libmpi_paramesh.a $(BASELIB_DIR)
-	@echo '==============================================================='
-	@echo '=  A M R   mpi_source compiled                                ='
-	@echo '==============================================================='
-
-amr_source: amr_headers
-	$(MAKE) -C ./$@ -f Makefile.gnu
-	cp -f ./$@/libparamesh.a $(BASELIB_DIR)
-	@echo '==============================================================='
-	@echo '=  A M R   source compiled                                    ='
-	@echo '==============================================================='
 
 clean:
 	- rm -f *.o *.mod *.i lbc *.mf95ss smpss_*.{f,F}90 *-adapters.c *-registration.c 
@@ -689,4 +645,3 @@ touch:
 (lb_bc.o): (nrt_lib.o) (timing.o) (lbmodel.o) (mpl_set.o) (lb_geo.o)
 (lbm_functions.o): (nrt_lib.o) (timing.o) (lbmodel.o) (mpl_set.o) (lb_geo.o) (lb_bc.o)
 (lbc.o): (nrt_lib.o) (timing.o) (lbmodel.o) (mpl_set.o) (lbm_functions.o) (function_set.o) (lbm_step.o) (lbm_step_tiled.o)
-#(amr_initial_soln.o) (amr_1blk_bcset.o)

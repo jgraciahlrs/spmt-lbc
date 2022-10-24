@@ -160,7 +160,7 @@ subroutine gather_output(lb_dom,countOut,tStep,s_par,prc)
                        s_par%g_x(prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2)) =  lb_dom%x(1:lx)
                        s_par%g_y(prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2)) =  lb_dom%y(1:ly)
                        s_par%g_z(prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2)) =  lb_dom%z(1:lz)
-                else ! if master thread's loop is at another crd than 0,0,0 -> recv from other threads 
+                else ! if master threads loop is at another crd than 0,0,0 -> recv from other threads 
 #ifdef USE_MPI
                 call MPI_CART_RANK(prc%cart_comm,(/(i-1),(j-1),(k-1)/),target_rank,prc%ierr)
                 call MPI_RECV(lb_dom%gu(NDX(1:NDIM,b_l(1):b_u(1),b_l(2):b_u(2),b_l(3):b_u(3))),&

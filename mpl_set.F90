@@ -609,7 +609,7 @@ subroutine mpl_assign_neighbors(lb_dom,prc)
       prc%pos_send  = 0
       prc%pos_recv  = 0
 #ifdef BUFFER_EACH
-   ! when each buffer is exchanged separately, ghost nodes don't have to be communicated
+   ! when each buffer is exchanged separately, ghost nodes dont have to be communicated
    ghostn = 0
 #else /* ORTHOGONAL DIRECTIONS */
    ! orthogonal direction exchange needs ghost node values for writing to corners 
@@ -643,7 +643,7 @@ do ii=istart,iend
     lc(2) = prc%crd(2)+cx(ii,2)
     lc(3) = prc%crd(3)+cx(ii,3)
 
-   ! if it's a valid coordinate, get rank information
+   ! if it is a valid coordinate, get rank information
    if(lc(1) .ge. 0 .and. lc(1) .lt. prc%np(1)) then
    if(lc(2) .ge. 0 .and. lc(2) .lt. prc%np(2)) then
    if(lc(3) .ge. 0 .and. lc(3) .lt. prc%np(3)) then
@@ -2050,7 +2050,7 @@ endif
 do ind=start_it,end_it
    ind_rel = ind + relative
 #ifdef BUFFER_EACH
-   ! when each buffer is exchanged separately, ghost nodes don't have to be communicated
+   ! when each buffer is exchanged separately, ghost nodes dont have to be communicated
    ghostn = 0
 #else /* ORTHOGONAL DIRECTIONS */
    ! orthogonal direction exchange needs ghost node values for writing to corners 

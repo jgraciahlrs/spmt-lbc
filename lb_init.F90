@@ -86,7 +86,7 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
          rho(ii,jj,kk) = 1.0d0 + s_par%umax*sin(2.d0*pi*real(ii-1)/real(s_par%gx(1)-2)) !*cs2inv
          u(NDX(1,ii,jj,kk)) = (rho(ii,jj,kk)-1.d0)*cs 
          u(NDX(2:NDIM,ii,jj,kk)) = 0.d0 
-   ! it's a standing wave, if you set u(NDX(1))=0.
+   ! it is a standing wave, if you set u(NDX(1))=0.
       enddo
       enddo
       enddo

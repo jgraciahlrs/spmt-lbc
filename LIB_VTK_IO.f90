@@ -49,7 +49,7 @@
 !!the images processing and for 3D rendering. It is widely used in the world and so it has a very large comunity of users;
 !!besides the Kitware\footnote{The Kitware homepage can be found here: \href{http://public.kitware.com}{http://public.kitware.com}.}
 !!company provides professional support. The toolkit is written in C++ and a lot of porting/wrappers for Tcl/Tk,
-!!Java and Python are provided; unlucky there aren't wrappers for Fortran.
+!!Java and Python are provided; unlucky there arent wrappers for Fortran.
 !!
 !!Because of its good features the VTK toolkit has been used to develop a large set of open source programs. For my work
 !!the most important family of programs is the scientific visualization programs. A lot of high-quality scientific visualization
@@ -164,7 +164,7 @@
 !!\MaiuscolettoBS{convert} and \MaiuscolettoBS{recordtype} are instead necessary to write binary file but can be replaced by other
 !!specifiers/instructions. In particular an alternative is opening the file with the specifier
 !!\MaiuscolettoBS{form = BINARY}\footnote{Remember that also the value \MaiuscolettoBS{BINARY} for form specifier is non standard
-!!for Fortran 95.} and using a compiler's option\footnote{Each compilers adopt differents option to achieve conversion of bytes
+!!for Fortran 95.} and using a compilers option\footnote{Each compilers adopt differents option to achieve conversion of bytes
 !!order (if it allows conversion). See the user guide of your compiler. Intel Fortran allows the conversion both by open specifier
 !!and by compiling option.} to ensure the \MaiuscolettoBS{BIG\_ENDIAN} encoding. \MaiuscolettoBS{BIG\_ENDIAN} encoding is strictly
 !!necessary only for legacy binary file; for XML binary file one can choice also the \MaiuscolettoBS{LITTLE\_ENDIAN} and so the
@@ -1881,7 +1881,7 @@ contains
   function VTK_END() result(E_IO)
   !--------------------------------------------------------------------------------------------------------------------------------
   !!This function is used to finalize the file opened and it has not inputs. The \LIBVTKIO manages the file unit without the
-  !!user's action.
+  !!users action.
   !--------------------------------------------------------------------------------------------------------------------------------
 
   implicit none
@@ -3454,7 +3454,7 @@ contains
 
   function VTK_END_XML() result(E_IO)
   !--------------------------------------------------------------------------------------------------------------------------------
-  !!This function is used to finalize the file opened. The \LIBVTKIO manages the file unit without the user's action.
+  !!This function is used to finalize the file opened. The \LIBVTKIO manages the file unit without the users action.
   !--------------------------------------------------------------------------------------------------------------------------------
 
   implicit none
@@ -4088,16 +4088,16 @@ endmodule LIB_VTK_IO
 !!(1) assert copyright on the software, and (2) offer you this License
 !!giving you legal permission to copy, distribute and/or modify it.
 !!
-!!For the developers' and authors' protection, the GPL clearly explains
-!!that there is no warranty for this free software.  For both users' and
-!!authors' sake, the GPL requires that modified versions be marked as
+!!For the developers and authors protection, the GPL clearly explains
+!!that there is no warranty for this free software.  For both users and
+!!authors sake, the GPL requires that modified versions be marked as
 !!changed, so that their problems will not be attributed erroneously to
 !!authors of previous versions.
 !!
 !!Some devices are designed to deny users access to install or run
 !!modified versions of the software inside them, although the manufacturer
 !!can do so.  This is fundamentally incompatible with the aim of
-!!protecting users' freedom to change the software.  The systematic
+!!protecting users freedom to change the software.  The systematic
 !!pattern of such abuse occurs in the area of products for individuals to
 !!use, which is precisely where it is most unacceptable.  Therefore, we
 !!have designed this version of the GPL to prohibit the practice for those
@@ -4188,7 +4188,7 @@ endmodule LIB_VTK_IO
 !!The ``Corresponding Source'' for a work in object code form means all
 !!the source code needed to generate, install, and (for an executable
 !!work) run the object code and to modify the work, including scripts to
-!!control those activities.  However, it does not include the work's
+!!control those activities.  However, it does not include the works
 !!System Libraries, or general-purpose tools or generally available free
 !!programs which are used unmodified in performing those activities but
 !!which are not part of the work.  For example, Corresponding Source
@@ -4230,7 +4230,7 @@ endmodule LIB_VTK_IO
 !!the conditions stated below.  Sublicensing is not allowed; section 10
 !!makes it unnecessary.
 !!
-!!\item Protecting Users' Legal Rights From Anti-Circumvention Law.
+!!\item Protecting Users Legal Rights From Anti-Circumvention Law.
 !!
 !!No covered work shall be deemed part of an effective technological
 !!measure under any applicable law fulfilling obligations under article
@@ -4242,13 +4242,13 @@ endmodule LIB_VTK_IO
 !!circumvention of technological measures to the extent such circumvention
 !!is effected by exercising rights under this License with respect to
 !!the covered work, and you disclaim any intention to limit operation or
-!!modification of the work as a means of enforcing, against the work's
-!!users, your or third parties' legal rights to forbid circumvention of
+!!modification of the work as a means of enforcing, against the works
+!!users, your or third parties legal rights to forbid circumvention of
 !!technological measures.
 !!
 !!\item Conveying Verbatim Copies.
 !!
-!!You may convey verbatim copies of the Program's source code as you
+!!You may convey verbatim copies of the Programs source code as you
 !!receive it, in any medium, provided that you conspicuously and
 !!appropriately publish on each copy an appropriate copyright notice;
 !!keep intact all notices stating that this License and any
@@ -4291,7 +4291,7 @@ endmodule LIB_VTK_IO
 !!and which are not combined with it such as to form a larger program,
 !!in or on a volume of a storage or distribution medium, is called an
 !!``aggregate'' if the compilation and its resulting copyright are not
-!!used to limit the access or legal rights of the compilation's users
+!!used to limit the access or legal rights of the compilations users
 !!beyond what the individual works permit.  Inclusion of a covered work
 !!in an aggregate does not cause this License to apply to the other
 !!parts of the aggregate.
@@ -4511,7 +4511,7 @@ endmodule LIB_VTK_IO
 !!organization, or merging organizations.  If propagation of a covered
 !!work results from an entity transaction, each party to that
 !!transaction who receives a copy of the work also receives whatever
-!!licenses to the work the party's predecessor in interest had or could
+!!licenses to the work the partys predecessor in interest had or could
 !!give under the previous paragraph, plus a right to possession of the
 !!Corresponding Source of the work from the predecessor in interest, if
 !!the predecessor has it or can get it with reasonable efforts.
@@ -4528,9 +4528,9 @@ endmodule LIB_VTK_IO
 !!
 !!A ``contributor'' is a copyright holder who authorizes use under this
 !!License of the Program or a work on which the Program is based.  The
-!!work thus licensed is called the contributor's ``contributor version''.
+!!work thus licensed is called the contributors ``contributor version''.
 !!
-!!A contributor's ``essential patent claims'' are all patent claims
+!!A contributors ``essential patent claims'' are all patent claims
 !!owned or controlled by the contributor, whether already acquired or
 !!hereafter acquired, that would be infringed by some manner, permitted
 !!by this License, of making, using, or selling its contributor version,
@@ -4541,7 +4541,7 @@ endmodule LIB_VTK_IO
 !!this License.
 !!
 !!Each contributor grants you a non-exclusive, worldwide, royalty-free
-!!patent license under the contributor's essential patent claims, to
+!!patent license under the contributors essential patent claims, to
 !!make, use, sell, offer for sale, import and otherwise run, modify and
 !!propagate the contents of its contributor version.
 !!
@@ -4562,7 +4562,7 @@ endmodule LIB_VTK_IO
 !!consistent with the requirements of this License, to extend the patent
 !!license to downstream recipients.  ``Knowingly relying'' means you have
 !!actual knowledge that, but for the patent license, your conveying the
-!!covered work in a country, or your recipient's use of the covered work
+!!covered work in a country, or your recipients use of the covered work
 !!in a country, would infringe one or more identifiable patents in that
 !!country that you have reason to believe are valid.
 !!
@@ -4593,7 +4593,7 @@ endmodule LIB_VTK_IO
 !!any implied license or other defenses to infringement that may
 !!otherwise be available to you under applicable patent law.
 !!
-!!\item No Surrender of Others' Freedom.
+!!\item No Surrender of Others Freedom.
 !!
 !!If conditions are imposed on you (whether by court order, agreement or
 !!otherwise) that contradict the conditions of this License, they do not
@@ -4633,7 +4633,7 @@ endmodule LIB_VTK_IO
 !!by the Free Software Foundation.
 !!
 !!If the Program specifies that a proxy can decide which future
-!!versions of the GNU General Public License can be used, that proxy's
+!!versions of the GNU General Public License can be used, that proxys
 !!public statement of acceptance of a version permanently authorizes you
 !!to choose that version for the Program.
 !!
@@ -4696,7 +4696,7 @@ endmodule LIB_VTK_IO
 !!
 !!{\footnotesize
 !!\begin{verbatim}
-!!<one line to give the program's name and a brief idea of what it does.>
+!!<one line to give the programs name and a brief idea of what it does.>
 !!
 !!Copyright (C) <textyear>  <name of author>
 !!
@@ -4724,15 +4724,15 @@ endmodule LIB_VTK_IO
 !!\begin{verbatim}
 !!<program>  Copyright (C) <year>  <name of author>
 !!
-!!This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
+!!This program comes with ABSOLUTELY NO WARRANTY; for details type `show w`.
 !!This is free software, and you are welcome to redistribute it
-!!under certain conditions; type `show c' for details.
+!!under certain conditions; type `show c` for details.
 !!\end{verbatim}
 !!}
 !!
 !!The hypothetical commands {\tt show w} and {\tt show c} should show
 !!the appropriate
-!!parts of the General Public License.  Of course, your program's commands
+!!parts of the General Public License.  Of course, your programs commands
 !!might be different; for a GUI interface, you would use an ``about box''.
 !!
 !!You should also get your employer (if you work as a programmer) or

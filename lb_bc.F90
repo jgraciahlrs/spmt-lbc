@@ -329,7 +329,7 @@ endif
    !
    ! Non-reflecting boundary implementation
    ! Based on work by Giles 
-   ! set boundaries as in Andreas Babucke's diss
+   ! set boundaries as in Andreas Babuckes diss
    ! inlet: set entropic, vortictiy and incoming wave characteristics to 0
    ! outlet: set incoming wave characteristic to 0
 ! Literatur:   "Non-Reflecting Boundary Conditions for the Euler Equations", Michael Giles,  !
@@ -343,7 +343,7 @@ endif
 !  c4 Schall Stoerung stromauf                     !
 !  c5 Scahll Stoerung stromab                      !
    ! 
-   ! this routine should be rechecked. I'm not sure, why there is a problem with 
+   ! this routine should be rechecked. I am not sure, why there is a problem with 
    ! non-0 velocites imposed on the boundaries
    !
    !

@@ -609,11 +609,7 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
 !s_par%crvp_period=2.d0*Pi*distance/&
 !u(NDX(2,s_par%gx(1)/2+distance,s_par%gx(2)/2+1,s_par%gx(3)/2+1))
 !print*,'  Revolution time      :',s_par%crvp_period 
-#ifdef CRVP
-!print*,'  Start averaging after 3 periods for 2 periods...'
-#else
 !print*,'  -------------- Averaging is deactivated. -----------------' 
-#endif
 ! Done initializing velocities. Pressure has to be found via the initial relaxation with fixed velocities
 
 
@@ -1253,10 +1249,6 @@ subroutine init_field(fIn,u,rho,state,s_par,lb_dom,prc)
       integer      :: sum_nnr,sum_nper
       integer      :: counter,counter_sponge,counter_reset,counter_nrwall,counter_perwall
 
-#ifdef CRVP
-      ! Communicate crvp_period
-   call MPI_BCAST(s_par%crvp_period,1,MPI_INTEGER,prc%root_th,prc%cart_comm,prc%ierr)
-#endif
       lb_dom%nobs = 0
 !      lb_dom%ninlet= 0
 !      lb_dom%noutlet= 0

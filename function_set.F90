@@ -124,12 +124,6 @@ subroutine gather_output(lb_dom,countOut,tStep,s_par,prc)
                NDX(:,ab(i,j,k,1):ae(i,j,k,1),ab(i,j,k,2):ae(i,j,k,2),ab(i,j,k,3):ae(i,j,k,3))) &
                        = lb_dom%u(NDX(:,1:lx,1:ly,1:lz))
 
-#ifdef CRVP  
-                 lb_dom%grho_inc(prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2), & 
-                     &        prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2), &
-                     &        prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2)) &
-                     & =  lb_dom%rho_inc(1:lx,1:ly,1:lz)
-#endif /* CRVP   */
                  lb_dom%gstate(prc%bnd(i,j,k,1,1):prc%bnd(i,j,k,1,2), & 
                      &        prc%bnd(i,j,k,2,1):prc%bnd(i,j,k,2,2), &
                      &        prc%bnd(i,j,k,3,1):prc%bnd(i,j,k,3,2)) &
@@ -148,10 +142,6 @@ subroutine gather_output(lb_dom,countOut,tStep,s_par,prc)
                                     target_rank,tagrho,prc%cart_comm,prc%stat,prc%ierr)
                 call MPI_RECV(lb_dom%gstate(b_l(1):b_u(1),b_l(2):b_u(2),b_l(3):b_u(3)),length,MPI_INTEGER,&
                                     target_rank,tagstate,prc%cart_comm,prc%stat,prc%ierr)
-#ifdef CRVP
-                call MPI_RECV(lb_dom%grho_inc(b_l(1):b_u(1),b_l(2):b_u(2),b_l(3):b_u(3)),length,mpi_double_precision,&
-                                    target_rank,tagrho_inc,prc%cart_comm,prc%stat,prc%ierr)
-#endif /* CRVP */
 #endif /* USE_MPI */
                 end if
             end do  
@@ -168,10 +158,6 @@ subroutine gather_output(lb_dom,countOut,tStep,s_par,prc)
                      MPI_DOUBLE_PRECISION,prc%root_th,tagrho,prc%cart_comm,prc%ierr)
       call MPI_SEND(lb_dom%state(1:lx,1:ly,1:lz),length,MPI_INTEGER,                &
                      prc%root_th,tagstate,prc%cart_comm,prc%ierr)
-#ifdef CRVP
-      call MPI_SEND(lb_dom%rho_inc(1:lx,1:ly,1:lz),length,mpi_double_precision,       &
-                     prc%root_th,tagrho_inc,prc%cart_comm,prc%ierr)
-#endif /* CRVP */
 #endif /* USE_MPI */
    end if
 #else /* INIT_WITH_ROOT */
@@ -523,10 +509,6 @@ subroutine  dealloc_mem(lb_dom,s_par)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%gu"
    deallocate(lb_dom%grho,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%grho"
-#ifdef CRVP
-   deallocate(lb_dom%grho_inc,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%grho_inc"
-#endif /* CRVP */
    deallocate(lb_dom%gstate,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%g_state"
    deallocate( s_par%g_x,stat=alloc_stat)
@@ -559,10 +541,6 @@ if(s_par%tInitial > 0) then
 endif
    deallocate(lb_dom%rho,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%rho"
-#ifdef CRVP
-   deallocate(lb_dom%rho_inc,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%rho_inc"
-#endif /* CRVP */
    deallocate(lb_dom%state,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%state"
    deallocate(lb_dom%x,stat=alloc_stat)
@@ -807,10 +785,6 @@ subroutine alloc_mem(lb_dom,s_par,prc)
       if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%gfIn"
       allocate(lb_dom%grho(s_par%gx(1),s_par%gx(2),s_par%gx(3)),stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%grho"
-#ifdef CRVP
-      allocate(lb_dom%grho_inc(s_par%gx(1),s_par%gx(2),s_par%gx(3)),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%grho_inc"
-#endif /* CRVP */
       allocate(lb_dom%gstate(s_par%gx(1),s_par%gx(2),s_par%gx(3)),stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%g_state"
       allocate(s_par%g_x(s_par%gx(1)),stat=alloc_stat)
@@ -826,10 +800,6 @@ subroutine alloc_mem(lb_dom,s_par,prc)
       if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%gfIn"
       allocate(lb_dom%grho(1,1,1),stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%grho"
-#ifdef CRVP
-      allocate(lb_dom%grho_inc(1,1,1),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%grho_inc"
-#endif /* CRVP */
       allocate(lb_dom%gstate(1,1,1),stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%g_state"
       allocate( s_par%g_x(s_par%gx(1)),stat=alloc_stat)
@@ -856,10 +826,6 @@ endif
 !   if(allocated(lb_dom%u)) write(*,*) "u OK"
    allocate(lb_dom%rho(0:(lx+1),0:(ly+1),0:(lz+1)),stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%rho"
-#ifdef CRVP
-   allocate(lb_dom%rho_inc(0:(lx+1),0:(ly+1),0:(lz+1)),stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%grho_inc"
-#endif /* CRVP */
    allocate(lb_dom%state(lx,ly,lz),stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) prc%rk,"Error allocating lb_dom%state"
    allocate(lb_dom%x(lx),stat=alloc_stat)

@@ -1177,35 +1177,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
 
       case(corotating_vortex)
 
-#ifdef CRVP
-        ! check if pressure averaging should be active
-        if(gtstep_cur == 0) then 
-        ! reset density sum field
-           lb_dom%rho_inc = 0.d0 
-        endif
-
-        if(s_par%calc_rho_inc .eqv. .true. ) then
-           ! Copy the density field to current density sum field
-           if(gtstep_cur == 5*s_par%crvp_period + s_par%tInitial) then 
-        ! this should be the last iteration of averaging
-         write(*,*) gtstep_cur,'last averaging iteration!!'
-         write(*,*) '         averaged over',gtstep_cur-s_par%crvp_av_start-1,'time steps'
-            ! how long was being averaged? gtstep_cur-s_par%crvp_av_start 
-             lb_dom%rho_inc = lb_dom%rho_inc/(gtstep_cur-s_par%crvp_av_start-1)
-            else
-              lb_dom%rho_inc = lb_dom%rho_inc + lb_dom%rho
-
-           endif
-        endif
-        if(gtstep_cur > 3*s_par%crvp_period + s_par%tInitial .and. &
-           gtstep_cur < 5*s_par%crvp_period + s_par%tInitial ) then 
-           if(s_par%calc_rho_inc .eqv. .false. ) s_par%crvp_av_start = gtstep_cur 
-            s_par%calc_rho_inc = .true. 
-        else
-            s_par%calc_rho_inc = .false.
-        endif
-#endif /* CRVP */
-
         ! read out pressure at stationary microphone
         pos = (/ int(5.d0/8.d0*real(s_par%gx(1))), s_par%gx(2)/2, s_par%gx(3)/2+1    /)
         call microphone(lb_dom,pos,fIn,s_par,prc,tstep,1)

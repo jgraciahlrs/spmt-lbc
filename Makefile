@@ -97,9 +97,6 @@ LBMODEL += $(FDEF)-DD3Q19
 # Use the incompressible model for higher stability
 #LBMODEL += $(FDEF)-DINCOMPRESSIBLE
 
-#Special options for co-rotating vortex pair (averaging)
-#LBMODEL += $(FDEF)-DCRVP
-
 # Performance issues (optional)
 # Combine stream and collide routine, split relaxation 
 LBMODEL += $(FDEF)-DCOMBINE_STREAM_COLLIDE

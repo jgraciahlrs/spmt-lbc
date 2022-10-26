@@ -258,11 +258,9 @@ CMD := lbc
 #	$(CCOMP) $(CFLAGS) $(CPPDEFINES) $(INCLUDES) -c $<	
 # sparate preprocessor:
 # ---------------------
-CPP=cpp -C -traditional-cpp
-%.f90: %.F90
-	$(CPP) $(CPPDEFINES)  $< $(INCLUDES) | grep -v "^#" | grep -v "^$$" > $@  # note $$ is an  escaped $
-
 %.o: %.f90
+	$(COMP) $(CPPDEFINES) $(F90CFLAGS) -c $< $(INCLUDES) 
+%.o: %.F90
 	$(COMP) $(CPPDEFINES) $(F90CFLAGS) -c $< $(INCLUDES) 
 
 # dummy rule to override implicit rule in GNU make; sigh!

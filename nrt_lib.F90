@@ -10,8 +10,8 @@
 
 
 module nrt_lib
+   use mpi
    implicit none
-   include 'mpif.h'
 
 #ifdef USE_MPI
 #endif

@@ -14,6 +14,7 @@
 # Define Machine Name here:
 
 HPC_TYPE=nehalem
+#HPC_TYPE=cray     # uses Cray compiler wrappers
 
 #---------------------
 # Compiler:
@@ -101,13 +102,18 @@ CPPDEFINES=$(LBMODEL) $(PARALLEL)
  
 
 #--------------------------------
-# no vector machine
+# Cray machine
+ifeq ($(findstring cray,$(HPC_TYPE)),cray)
+   COMP=ftn
+   CCOMP=cc
+endif
+
 
 #--------------------------------
 # INTEL 
 ifeq ($(findstring intel,$(COMPILER)),intel)
-   COMP=mpif90
-   CCOMP=mpicc
+   COMP?=mpif90
+   CCOMP?=mpicc
 
    F90_CFLAGS_DEBUG=$(SFDEF)-fpp -O0 -g $(SFDEF)-check all $(SFDEF)-r8 $(SFDEF)-i4 $(SFDEF)-traceback $(SFDEF)-implicitnone $(SFDEF)-warn $(SFDEF)all $(SFDEF)-keep
    F90_LFLAGS_DEBUG=-g -O0 $(SLDEF)-r8 $(SLDEF)-i4  -L$(MPI_LIB_DIR) -lmpi_f90  
@@ -129,8 +135,8 @@ endif
 # GNU
 
 ifeq ($(findstring gnu,$(COMPILER)),gnu)
-   COMP=mpif90 -O2
-   CCOMP=mpicc -O2 
+   COMP?=mpif90 -O2
+   CCOMP?=mpicc -O2 
 
    F90_CFLAGS_DEBUG+=$(SFDEF)-xf95-cpp-input -O0 -K -g3 -fcheck=all -fcheck=bounds -debug -Wall -fbacktrace $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file
    F90_LFLAGS_DEBUG+=-O0 -g3 -fbacktrace -K  -fcheck=all -Wall -fcheck=bounds -debug

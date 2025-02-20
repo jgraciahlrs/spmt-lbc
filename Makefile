@@ -61,7 +61,7 @@ PARALLEL += -DUSE_SMPSS -DUSE_TILES -DTILESIZE=32
 PARALLEL += -DUSE_OMPSS_FORK_JOIN
 
 # Compiles your application with ompss MPI
-PARALLEL += -DUSE_OMPSS_MPI
+#PARALLEL += -DUSE_OMPSS_MPI
 
 #-----------------------------------------------------
 # Model arguments 

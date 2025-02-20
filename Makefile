@@ -35,33 +35,33 @@ COMPILER=gnu_openmp#_profile#_openmp#_debug#
 # arg                             # description
 
 # For parallel either use USE_MPI with suboptions
-PARALLEL += $(FDEF)-DUSE_MPI    # Activate MPI:              
-#PARALLEL += $(FDEF)-DDEBUG_MPI 
-PARALLEL += $(FDEF)-DVERBOSE   # Output detailed information about parallel execution 
+PARALLEL += -DUSE_MPI    # Activate MPI:              
+#PARALLEL += -DDEBUG_MPI 
+PARALLEL += -DVERBOSE   # Output detailed information about parallel execution 
 # MPI Method
-#PARALLEL += $(FDEF)-DPERSISTENT   # Persistent MPI Communication. Must be used together with BUFFER_EACH 
-#PARALLEL += $(FDEF)-DPERSISTENT2   # Persistent MPI Communication. Must be used together with BUFFER_EACH 
-#PARALLEL += $(FDEF)-DISEND_IRECV       # use MPI_IRECV and MPI_ISEND
-PARALLEL += $(FDEF)-DSENDRECV          # use MPI_SENDRECV
+#PARALLEL += -DPERSISTENT   # Persistent MPI Communication. Must be used together with BUFFER_EACH 
+#PARALLEL += -DPERSISTENT2   # Persistent MPI Communication. Must be used together with BUFFER_EACH 
+#PARALLEL += -DISEND_IRECV       # use MPI_IRECV and MPI_ISEND
+PARALLEL += -DSENDRECV          # use MPI_SENDRECV
 
 # MPI options
-#PARALLEL += $(FDEF)-DMPI_SUBARRAY      # use a mpi derived type subarray for the exchange
-#PARALLEL += $(FDEF)-DBUFFER_EACH       # Use separate buffers for each direction 
-PARALLEL += $(FDEF)-DCOMM_REDUCED      # Only Exchange necessary densities
-#PARALLEL += $(FDEF)-DSYNCHRONIZE_COMM  # mpl_barrier before communication       
+#PARALLEL += -DMPI_SUBARRAY      # use a mpi derived type subarray for the exchange
+#PARALLEL += -DBUFFER_EACH       # Use separate buffers for each direction 
+PARALLEL += -DCOMM_REDUCED      # Only Exchange necessary densities
+#PARALLEL += -DSYNCHRONIZE_COMM  # mpl_barrier before communication       
 
 # StarSs options
-PARALLEL += $(FDEF)-DUSE_SMPSS $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32
+PARALLEL += -DUSE_SMPSS -DUSE_TILES -DTILESIZE=32
 
 # OpenMP options; choose either one
-#PARALLEL += $(FDEF)-DUSE_OMP_FINE	# fine-grained loop level OpenMP version
-#PARALLEL += $(FDEF)-DUSE_OMP_COARSE $(FDEF)-DUSE_TILES $(FDEF)-DTILESIZE=32 # coarse-grained tile level OpenMP version, shares code with StarSs version
+#PARALLEL += -DUSE_OMP_FINE	# fine-grained loop level OpenMP version
+#PARALLEL += -DUSE_OMP_COARSE -DUSE_TILES -DTILESIZE=32 # coarse-grained tile level OpenMP version, shares code with StarSs version
  
 # OmpSs parallelisation strategy, if no strategy is set the default(comm_hiding strategy) is used
-PARALLEL += $(FDEF)-DUSE_OMPSS_FORK_JOIN
+PARALLEL += -DUSE_OMPSS_FORK_JOIN
 
 # Compiles your application with ompss MPI
-PARALLEL += $(FDEF)-DUSE_OMPSS_MPI
+PARALLEL += -DUSE_OMPSS_MPI
 
 #-----------------------------------------------------
 # Model arguments 
@@ -73,23 +73,23 @@ PARALLEL += $(FDEF)-DUSE_OMPSS_MPI
 # Standard is BGK
 
 # Use the incompressible model for higher stability
-#LBMODEL += $(FDEF)-DINCOMPRESSIBLE
+#LBMODEL += -DINCOMPRESSIBLE
 
 # Performance issues (optional)
 # Combine stream and collide routine, split relaxation 
-LBMODEL += $(FDEF)-DCOMBINE_STREAM_COLLIDE
-#LBMODEL += $(FDEF)-DSPLITLOOPS
+LBMODEL += -DCOMBINE_STREAM_COLLIDE
+#LBMODEL += -DSPLITLOOPS
 
 # Memory layout:
 # Choose ONE of the following
 # save array in memory as x-,y-,z- component and l as density (1...9 / 1...19)
-#LBMODEL += $(FDEF)-DLAYOUT_IJKL
+#LBMODEL += -DLAYOUT_IJKL
 #  save array in memory as l as density (1...9 / 1...19) and x-,y-,z- component 
-LBMODEL += $(FDEF)-DLAYOUT_LIJK
+LBMODEL += -DLAYOUT_LIJK
 
 # Use Fortran 2003 statements
-#LBMODEL += $(FDEF)-DF2003_ALLOC_DERIVED_TYPE # use allocatables in derived type
-#LBMODEL += $(FDEF)-DVERBOSE # write out extra information 
+#LBMODEL += -DF2003_ALLOC_DERIVED_TYPE # use allocatables in derived type
+#LBMODEL += -DVERBOSE # write out extra information 
 
 
 CPPDEFINES=$(LBMODEL) $(PARALLEL)
@@ -115,19 +115,19 @@ ifeq ($(findstring intel,$(COMPILER)),intel)
    COMP?=mpif90
    CCOMP?=mpicc
 
-   F90_CFLAGS_DEBUG=$(SFDEF)-fpp -O0 -g $(SFDEF)-check all $(SFDEF)-r8 $(SFDEF)-i4 $(SFDEF)-traceback $(SFDEF)-implicitnone $(SFDEF)-warn $(SFDEF)all $(SFDEF)-keep
-   F90_LFLAGS_DEBUG=-g -O0 $(SLDEF)-r8 $(SLDEF)-i4  -L$(MPI_LIB_DIR) -lmpi_f90  
+   F90_CFLAGS_DEBUG=-fpp -O0 -g -check all -r8 -i4 -traceback -implicitnone -warn all -keep
+   F90_LFLAGS_DEBUG=-g -O0 -r8 -i4  -L$(MPI_LIB_DIR) -lmpi_f90  
    #F90_CFLAGS_DEBUG+=-warn alignments,declarations,errors,general,ignore_loc,interfaces,truncated_source,uncalled,nounused,usage
 
-   F90_CFLAGS_OPT=$(SFDEF)-fpp $(SFDEF)-r8 $(SFDEF)-i4 -O3 $(SFDEF)-i-dynamic 
-   F90_LFLAGS_OPT=$(SLDEF)-r8 $(SLDEF)-i4 -O3 $(SLDEF)-i-dynamic   -L$(MPI_LIB_DIR) -lmpi_f90
+   F90_CFLAGS_OPT=-fpp -r8 -i4 -O3 -i-dynamic 
+   F90_LFLAGS_OPT=-r8 -i4 -O3 -i-dynamic   -L$(MPI_LIB_DIR) -lmpi_f90
    #--------------------------------
    # PROFILING 
    ifeq ($(findstring profile,$(COMPILER)),profile)
-      F90_CFLAGS_DEBUG+=$(SFDEF)-p -g
-      F90_LFLAGS_DEBUG+=$(SLDEF)-p
-      F90_CFLAGS_OPT+=$(SFDEF)-p -g
-      F90_LFLAGS_OPT+=$(SLDEF)-p
+      F90_CFLAGS_DEBUG+=-p -g
+      F90_LFLAGS_DEBUG+=-p
+      F90_CFLAGS_OPT+=-p -g
+      F90_LFLAGS_OPT+=-p
    endif
 endif
 
@@ -138,10 +138,10 @@ ifeq ($(findstring gnu,$(COMPILER)),gnu)
    COMP?=mpif90 -O2
    CCOMP?=mpicc -O2 
 
-   F90_CFLAGS_DEBUG+=$(SFDEF)-xf95-cpp-input -O0 -K -g3 -fcheck=all -fcheck=bounds -debug -Wall -fbacktrace $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file
+   F90_CFLAGS_DEBUG+=-xf95-cpp-input -O0 -K -g3 -fcheck=all -fcheck=bounds -debug -Wall -fbacktrace -fbounds-check -Wall -pedantic -fcray-pointer -fwhole-file
    F90_LFLAGS_DEBUG+=-O0 -g3 -fbacktrace -K  -fcheck=all -Wall -fcheck=bounds -debug
 
-   #F90_CFLAGS_OPT=$(SFDEF)-xf95-cpp-input -O3 $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file 
+   #F90_CFLAGS_OPT=-xf95-cpp-input -O3 -fcray-pointer -fwhole-file 
    #-std=f2003
    F90_CFLAGS_OPT+=-O3
    F90_LFLAGS_OPT+=
@@ -155,10 +155,10 @@ ifeq ($(findstring gnu,$(COMPILER)),gnu)
    endif 	
    # PROFILING 
    ifeq ($(findstring profile,$(COMPILER)),profile)
-      F90_CFLAGS_DEBUG+=$(SFDEF)-pg
-      F90_LFLAGS_DEBUG+=$(SLDEF)-pg
-      F90_CFLAGS_OPT+=$(SFDEF)-pg
-      F90_LFLAGS_OPT+=$(SLDEF)-pg
+      F90_CFLAGS_DEBUG+=-pg
+      F90_LFLAGS_DEBUG+=-pg
+      F90_CFLAGS_OPT+=-pg
+      F90_LFLAGS_OPT+=-pg
    endif
 endif
 

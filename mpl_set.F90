@@ -693,7 +693,7 @@ end subroutine mpl_assign_neighbors
 subroutine mpl_finish(prc) 
 !------------------------------------------------------------------------
 ! finish up parallel communication
-! - ADCL and MPI finishing routines are called, 
+! - MPI finishing routines are called, 
 ! - files are closed and 
 ! - buffer arrays are deallocated
 

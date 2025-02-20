@@ -18,9 +18,8 @@ HPC_TYPE=nehalem
 #---------------------
 # Compiler:
 
-COMPILER=gnu#_profile#_ompss#_openmp#_debug#_vampir
-#COMPILER=vampir
-#COMPILER=intel#_profile#_debug#_vampir
+COMPILER=gnu_openmp#_profile#_ompss#_openmp#_debug#
+#COMPILER=intel#_profile#_debug#
 #COMPILER=intel
 
 
@@ -124,10 +123,6 @@ ifeq ($(findstring intel,$(COMPILER)),intel)
       F90_CFLAGS_OPT+=$(SFDEF)-p -g
       F90_LFLAGS_OPT+=$(SLDEF)-p
    endif
-   ifeq ($(findstring vamp,$(COMPILER)),vampir)
-   COMP=vtf90 -vt:f90 mpif90
-   CCOMP=vtcc -vt:cc mpicc
-   endif
 endif
 
 #--------------------------------
@@ -169,29 +164,6 @@ ifeq ($(findstring gnu,$(COMPILER)),gnu)
    endif
 endif
 
-#--------------------------------
-# Vampir
-
-ifeq ($(findstring vampir,$(COMPILER)),vampir)
-   COMP=vtf90 -vt:f90 mpif90
-   CCOMP=vtcc -vt:cc mpicc
-
-   F90_CFLAGS_DEBUG=-xf95-cpp-input -O0 -g -fbounds-check -Wall -pedantic -fcray-pointer 
-   F90_LFLAGS_DEBUG=-O0 -g -fbounds-check -Wall -pedantic 
-
-#      F90_CFLAGS_OPT=-xf95-cpp-input -std=f2003 -O3 -fcray-pointer 
-#      F90_LFLAGS_OPT=-std=f2003 -O3
-
-   F90_CFLAGS_OPT=-warn all -fpp -r8 -i4 -O3 -i-dynamic 
-   F90_LFLAGS_OPT=-warn all -r8 -i4 -O3 -i-dynamic 
-
-   ifeq ($(findstring profile,$(COMPILER)),profile)
-      F90_CFLAGS_DEBUG+=-pg
-      F90_LFLAGS_DEBUG+=-pg
-      F90_CFLAGS_OPT+=-pg
-      F90_LFLAGS_OPT+=-pg
-   endif
-endif
 
 
 

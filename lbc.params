@@ -2,9 +2,9 @@
 1.8        ! Collision frequency: choose around 1.8 (getting unstable -> 2)
 10,10,-1,1,1   ! tmax, tOutput, tRamp, tBeginOutput, tInitial 
 2                    ! problem: 1=cylinder, 2=cavity, 3= , 4=gaussian
-64,64,64             !  domain size: lx,ly,lz
+512,1024,1024             !  domain size: lx,ly,lz
 f,f,f                ! periodic in x,y,z 
-1,1,1               ! number of processes in cartesian direction npx,npy,npz
+1,2,2               ! number of processes in cartesian direction npx,npy,npz
 t                    ! write binary tecplot file in tOutput intervals
 04.0                  ! Size parameter for Corotating Vortex Pair Test case
 f                      ! Read in lbc.obs obstacle file

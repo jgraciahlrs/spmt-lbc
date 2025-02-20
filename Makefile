@@ -51,14 +51,14 @@ PARALLEL += -DCOMM_REDUCED      # Only Exchange necessary densities
 #PARALLEL += -DSYNCHRONIZE_COMM  # mpl_barrier before communication       
 
 # StarSs options
-PARALLEL += -DUSE_SMPSS -DUSE_TILES -DTILESIZE=32
+#PARALLEL += -DUSE_SMPSS -DUSE_TILES -DTILESIZE=32
 
 # OpenMP options; choose either one
-#PARALLEL += -DUSE_OMP_FINE	# fine-grained loop level OpenMP version
+PARALLEL += -DUSE_OMP_FINE	# fine-grained loop level OpenMP version
 #PARALLEL += -DUSE_OMP_COARSE -DUSE_TILES -DTILESIZE=32 # coarse-grained tile level OpenMP version, shares code with StarSs version
  
 # OmpSs parallelisation strategy, if no strategy is set the default(comm_hiding strategy) is used
-PARALLEL += -DUSE_OMPSS_FORK_JOIN
+#PARALLEL += -DUSE_OMPSS_FORK_JOIN
 
 # Compiles your application with ompss MPI
 #PARALLEL += -DUSE_OMPSS_MPI

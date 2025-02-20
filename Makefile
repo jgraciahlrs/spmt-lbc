@@ -18,7 +18,7 @@ HPC_TYPE=nehalem
 #---------------------
 # Compiler:
 
-COMPILER=gnu_openmp#_profile#_ompss#_openmp#_debug#
+COMPILER=gnu_openmp#_profile#_openmp#_debug#
 #COMPILER=intel#_profile#_debug#
 #COMPILER=intel
 
@@ -131,14 +131,6 @@ endif
 ifeq ($(findstring gnu,$(COMPILER)),gnu)
    COMP=mpif90 -O2
    CCOMP=mpicc -O2 
-   ifeq ($(findstring ompss,$(COMPILER)),ompss)
-      # find parameters with mpif90/cc -showme	
-      #SFDEF=-Wf,
-      #SCDEF=-Wc,
-      #SLDEF=-Wl,
-      COMP=$(shell mpif90 -showme | sed 's: \(-[^ILlWDOg]\): $(SFDEF)\1:g' | sed 's/gfortran/mfc --ompss  -g3/') -O2  --instrumentation # -L/opt/mpi/openmpi/1.7.3-gnu-4.8.1/lib -lmpi -g3 -O0  -fPIC 
-      CCOMP=$(shell mpicc -showme | sed 's: \(-[^ILlWDOg]\): $(SCDEF)\1:g' | sed 's/gcc/mcc --ompss -g3 /')  -O2 --instrumentation # -L/opt/mpi/openmpi/1.7.3-gnu-4.8.1/lib -lmpi -g3 -O0  -fPIC  
-   endif
 
    F90_CFLAGS_DEBUG+=$(SFDEF)-xf95-cpp-input -O0 -K -g3 -fcheck=all -fcheck=bounds -debug -Wall -fbacktrace $(SFDEF)-fbounds-check $(SFDEF)-Wall $(SFDEF)-pedantic $(SFDEF)-fcray-pointer $(SFDEF)-fwhole-file
    F90_LFLAGS_DEBUG+=-O0 -g3 -fbacktrace -K  -fcheck=all -Wall -fcheck=bounds -debug

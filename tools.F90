@@ -256,9 +256,10 @@ contains
       gy = s_par%gx(2)
       gz = s_par%gx(3)
       meas%mem_master = 0.d0
-      meas%mem_thread = real(R8B*(int(lb_dom%lx(1)+2)*int(lb_dom%lx(2)+2)*int(2+lb_dom%lx(3))*int(1+NDIM+nnod) + & 
-            & int(lb_dom%lx(1)+2) + int(lb_dom%lx(2)+2) + int(lb_dom%lx(3)+2)) + &
-            & int(I4B)*(int(2+gx)*int(2+gy)*int(2+gz)),R8B)/10**6
+      meas%mem_thread = (R8B*(real(lb_dom%lx(1)+2,R8B)*real(lb_dom%lx(2)+2,R8B)* &
+            & real(2+lb_dom%lx(3),R8B)*real(1+NDIM+nnod,R8B) + & 
+            & real(lb_dom%lx(1)+2,R8B) + real(lb_dom%lx(2)+2,R8B) + real(lb_dom%lx(3)+2,R8B)) + &
+            & real(I4B,R8B)*(real(2+gx,R8B)*real(2+gy,R8B)*real(2+gz,R8B)))/10**6
       write(*,'(a35,f28.3)') "Memory allocated per thread  [MB]",meas%mem_thread
       write(*,'(a35,f28.3)') "Additional Memory for master [MB]",meas%mem_master
       write(*,'(a35,f28.3)') "Total Memory needed          [MB]",meas%mem_thread*real(prc%size)+meas%mem_master

@@ -19,7 +19,7 @@ HPC_TYPE=nehalem
 #---------------------
 # Compiler:
 
-COMPILER=gnu_openmp#_profile#_openmp#_debug#
+COMPILER=gnu_openmp#_profile#_openmp#_debug#_scorep#
 #COMPILER=intel#_profile#_debug#
 #COMPILER=intel
 
@@ -137,6 +137,11 @@ endif
 ifeq ($(findstring gnu,$(COMPILER)),gnu)
    COMP?=mpif90 -O2
    CCOMP?=mpicc -O2 
+
+   ifeq ($(findstring scorep,$(COMPILER)),scorep)
+      COMP:=scorep-$(COMP)
+      CCOMP:=scorep-$(CCOMP)
+   endif
 
    F90_CFLAGS_DEBUG+=-xf95-cpp-input -O0 -K -g3 -fcheck=all -fcheck=bounds -debug -Wall -fbacktrace -fbounds-check -Wall -pedantic -fcray-pointer -fwhole-file
    F90_LFLAGS_DEBUG+=-O0 -g3 -fbacktrace -K  -fcheck=all -Wall -fcheck=bounds -debug

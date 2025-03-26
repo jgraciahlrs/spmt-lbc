@@ -20,6 +20,7 @@ HPC_TYPE=nehalem
 # Compiler:
 
 COMPILER=gnu_openmp#_profile#_openmp#_debug#_scorep#
+#COMPILER=cray_openmp#_openmp#_debug#_scorep
 #COMPILER=intel#_profile#_debug#
 #COMPILER=intel
 
@@ -160,6 +161,23 @@ ifeq ($(findstring gnu,$(COMPILER)),gnu)
       F90_LFLAGS_DEBUG+=-pg
       F90_CFLAGS_OPT+=-pg
       F90_LFLAGS_OPT+=-pg
+   endif
+endif
+
+#--------------------------------
+# Cray Compiler
+ifeq ($(findstring cray,$(COMPILER)),cray)
+   F90_CFLAGS_DEBUG+= -debug
+   F90_LFLAGS_DEBUG+= -debug 
+   F90_CFLAGS_OPT+=-O3 -hfp2 
+   F90_LFLAGS_OPT+=
+
+   # OpenMP
+   ifeq ($(findstring openmp,$(COMPILER)),openmp)
+      F90_CFLAGS_DEBUG += -homp
+      F90_LFLAGS_DEBUG += -homp
+      F90_CFLAGS_OPT   += -homp
+      F90_LFLAGS_OPT   += -homp
    endif
 endif
 

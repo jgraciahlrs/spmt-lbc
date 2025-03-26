@@ -13,14 +13,14 @@
 #---------------------
 # Define Machine Name here:
 
-HPC_TYPE=nehalem
-#HPC_TYPE=cray     # uses Cray compiler wrappers
+#HPC_TYPE=nehalem
+HPC_TYPE=cray     # uses Cray compiler wrappers
 
 #---------------------
 # Compiler:
 
-COMPILER=gnu_openmp#_profile#_openmp#_debug#_scorep#
-#COMPILER=cray_openmp#_openmp#_debug#_scorep
+#COMPILER=gnu_openmp#_profile#_openmp#_debug#_scorep#
+COMPILER=cray_openmp#_openmp#_debug#_scorep
 #COMPILER=intel#_profile#_debug#
 #COMPILER=intel
 

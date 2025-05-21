@@ -169,9 +169,8 @@ endif
 ifeq ($(findstring cray,$(COMPILER)),cray)
    F90_CFLAGS_DEBUG+= -debug
    F90_LFLAGS_DEBUG+= -debug 
-   F90_CFLAGS_OPT+=-O3 -hfp2 
+   F90_CFLAGS_OPT+=-O3 -hfp2 -M 878,1391,855 -g
    F90_LFLAGS_OPT+=
-
    # OpenMP
    ifeq ($(findstring openmp,$(COMPILER)),openmp)
       F90_CFLAGS_DEBUG += -homp

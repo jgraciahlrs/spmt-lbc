@@ -2,7 +2,7 @@
 1.8        ! Collision frequency: choose around 1.8 (getting unstable -> 2)
 10,10,-1,1,1   ! tmax, tOutput, tRamp, tBeginOutput, tInitial 
 2                    ! problem: 1=cylinder, 2=cavity, 3= , 4=gaussian
-512,1024,1024             !  domain size: lx,ly,lz
+480,960,960             !  domain size: lx,ly,lz
 f,f,f                ! periodic in x,y,z 
 1,2,2               ! number of processes in cartesian direction npx,npy,npz
 t                    ! write binary tecplot file in tOutput intervals

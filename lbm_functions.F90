@@ -46,9 +46,9 @@ contains
       count_err=0
 
 #ifdef USE_OMP_FINE
-      !$omp parallel default(none) private(ftmp,i,j,k) &
+      !$omp  parallel do collapse(2) &
+      !$omp& default(none) private(ftmp,i,j,k) &
       !$omp& shared(fIn,fOut,opp,lb_dom,state,cx)
-      !$omp do collapse(2)
 #endif /* USE_OMP_FINE */
       do k=1,lb_dom%lx(3)
          do j=1,lb_dom%lx(2)
@@ -98,8 +98,7 @@ endif
          enddo
       enddo
 #ifdef USE_OMP_FINE
-      !$omp end do
-      !$omp end parallel
+      !$omp end parallel do
 #endif /* USE_OMP_FINE */
 
       call cpu_time_measure(meas%tEnd_comm)
@@ -163,11 +162,10 @@ endif
 
     ! Single Relaxation time Collision routine
 #ifdef USE_OMP_FINE
-      !$omp parallel default(none) private(rholoc,fEq,u,usq,i,j,k) &
+      !$omp  parallel do collapse(2) &
+      !$omp& default(none) private(rholoc,fEq,u,usq,i,j,k) &
       !$omp& shared(fIn,fOut,t2cs2inv,t2cs4inv,s_par,lb_dom,cx,opp) &	
       !$omp& firstprivate( omega,rho0 )
-      
-      !$omp do collapse(2)
 #endif /* USE_OMP_FINE */
       do k=1,lb_dom%lx(3)
          do j=1,lb_dom%lx(2)
@@ -334,8 +332,7 @@ endif
          end do
       end do
 #ifdef USE_OMP_FINE
-      !$omp end do
-      !$omp end parallel
+      !$omp end parallel do
 #endif /* USE_OMP_FINE */
       
       call cpu_time_measure(meas%tEnd_comm)
@@ -392,13 +389,12 @@ endif
       ! Single Relaxation time Collision routine
 
 #ifdef USE_OMP_FINE
-      !$omp parallel default(none) private(ftmp1,ftmp2,ftmp3,ftmp4,ftmp5,ftmp6,ftmp7,ftmp8,ftmp9,ftmp10,ftmp11, &
+      !$omp  parallel do collapse(2) &
+      !$omp& default(none) private(ftmp1,ftmp2,ftmp3,ftmp4,ftmp5,ftmp6,ftmp7,ftmp8,ftmp9,ftmp10,ftmp11, &
       !$omp& ftmp12,ftmp13,ftmp14,ftmp15,ftmp16,ftmp17,ftmp18,ftmp19, &
       !$omp& fEq1,fEq2,fEq3,fEq4,fEq5,fEq6,fEq7,fEq8,fEq9,fEq10,fEq11,fEq12,fEq13,fEq14,	&
       !$omp& fEq15,fEq16,fEq17,fEq18,fEq19,rholoc,u1,u2,u3,usq,i,j,k) &
       !$omp& shared(fIn,fOut,t2cs2inv,t2cs4inv,lb_dom,cx,opp) firstprivate( omega )
-
-      !$omp do collapse(2)
 #endif /* USE_OMP_FINE */
       do k=1,lb_dom%lx(3)
          do j=1,lb_dom%lx(2)
@@ -607,8 +603,7 @@ else
          end do
       end do
 #ifdef USE_OMP_FINE
-      !$omp end do
-      !$omp end parallel
+      !$omp end parallel do
 #endif /* USE_OMP_FINE */
       
       call cpu_time_measure(meas%tEnd_comm)

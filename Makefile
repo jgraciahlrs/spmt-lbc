@@ -21,6 +21,7 @@ HPC_TYPE=cray     # uses Cray compiler wrappers
 
 #COMPILER=gnu_openmp#_profile#_openmp#_debug#_scorep#
 COMPILER=cray_openmp#_openmp#_debug#_scorep
+#COMPILER=amd_openmp#_openmp#_debug#_scorep
 #COMPILER=intel#_profile#_debug#
 #COMPILER=intel
 
@@ -169,15 +170,31 @@ endif
 ifeq ($(findstring cray,$(COMPILER)),cray)
    F90_CFLAGS_DEBUG+= -debug
    F90_LFLAGS_DEBUG+= -debug 
-   F90_CFLAGS_OPT+=-O3 -hfp2 
+   F90_CFLAGS_OPT+=-O3 -hfp2 -M 878,1391,855 -g
    F90_LFLAGS_OPT+=
-
    # OpenMP
    ifeq ($(findstring openmp,$(COMPILER)),openmp)
       F90_CFLAGS_DEBUG += -homp
       F90_LFLAGS_DEBUG += -homp
       F90_CFLAGS_OPT   += -homp
       F90_LFLAGS_OPT   += -homp
+   endif
+endif
+
+#--------------------------------
+# AMD Compiler
+ifeq ($(findstring amd,$(COMPILER)),amd)
+   F90_CFLAGS_DEBUG+= -debug
+   F90_LFLAGS_DEBUG+= -debug 
+   F90_CFLAGS_OPT+=-O3
+   F90_LFLAGS_OPT+=
+
+   # OpenMP
+   ifeq ($(findstring openmp,$(COMPILER)),openmp)
+      F90_CFLAGS_DEBUG += -fopenmp
+      F90_LFLAGS_DEBUG += -fopenmp
+      F90_CFLAGS_OPT   += -fopenmp
+      F90_LFLAGS_OPT   += -fopenmp
    endif
 endif
 

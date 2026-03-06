@@ -129,18 +129,13 @@ endif
      write(*,*) "  Starting main time loop"; write(*,*)
    endif
 
-#ifdef USE_SMPSS
    ! time main loop
    call cpu_time_measure(meas%tStart)
-#endif /* USE_SMPSS */
 
    tstep_cnt = 0
    lb_dom%pnt_nxt => lb_dom%fIn; lb_dom%pnt_cur => lb_dom%fOut    ! init work arrays
    do tStep = 1,s_par%tMax
 
-#ifndef USE_SMPSS
-      call cpu_time_measure(meas%tStart)
-#endif /* Not USE_SMPSS */
       !---------------------------
       ! Set Boundaries on fIn
       call treat_initial(lb_dom,s_par,tstep,prc)
@@ -173,20 +168,16 @@ endif
       ! do a single Lattice Boltzmann step
       call lb_step(lb_dom, lb_dom%pnt_nxt, lb_dom%pnt_cur, s_par, prc, meas, tStep)
 
-#ifndef USE_SMPSS
-      call cpu_time_measure(meas%tEnd)
-      meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
-#endif /* Not USE_SMPSS */
 
       !---------------------------
       ! Output and error check
       if(MOD(tStep,s_par%tOut)==0 .and. tStep >= s_par%tOutBeg) then
 #ifdef USE_SMPSS
          !$OMP TASKWAIT !!ON(lb_dom)
+#endif /* USE_SMPSS */
          ! time main loop at barrier, excluding output
          call cpu_time_measure(meas%tEnd)
          meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
-#endif /* USE_SMPSS */
          ! calc macroscopic values (is also done in do_kinetic)
          call calc_macr_vals(lb_dom,lb_dom%u,lb_dom%rho,lb_dom%pnt_nxt,meas)
          countOut=countOut+1
@@ -214,9 +205,7 @@ endif
             write(*,*) "Stop has been requested by stopfile 'Stop'"
             exit
          endif
-#ifdef USE_SMPSS
          call cpu_time_measure(meas%tStart)
-#endif /* USE_SMPSS */
 
       endif
 
@@ -224,10 +213,10 @@ endif
 
 #ifdef USE_SMPSS
 !$OMP TASKWAIT
+#endif /* USE_SMPSS */
 ! finish timing main loop
 call cpu_time_measure(meas%tEnd)
 meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)
-#endif /* USE_SMPSS */
 
 !------------------------------------------------------------------------
 ! Done with Main loop

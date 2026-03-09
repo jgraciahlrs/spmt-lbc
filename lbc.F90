@@ -154,16 +154,17 @@ endif
       call swap_lb_dom_pnts_task(lb_dom)
       !$OMP END TASK
 #else
+      !$omp taskwait
       swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
 #endif /* USE_SMPSS */
 
       !---------------------------
       ! Exchange between domains
       if(prc%size > 1) then
-#ifdef USE_SMPSS
-        !$OMP TASK INOUT(lb_dom) label(mpl_exchange) PRIORITY(50)  no_copy_deps
+#ifdef USE_OMP_TASK
+        !$omp task depend(inout: lb_dom) priority(50)
         call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
-        !$OMP END TASK
+        !$omp end task
 #else
         call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
 #endif
@@ -171,15 +172,18 @@ endif
 
 
       ! do a single Lattice Boltzmann step
+#ifdef USE_OMP_TASK
+      !$omp task depend(inout: lb_dom)
       call lb_step(lb_dom, lb_dom%pnt_nxt, lb_dom%pnt_cur, s_par, prc, meas, tStep)
-
+      !$omp end task
+#endif /* USE_OMP_TASK */
 
       !---------------------------
       ! Output and error check
       if(MOD(tStep,s_par%tOut)==0 .and. tStep >= s_par%tOutBeg) then
-#ifdef USE_SMPSS
-         !$OMP TASKWAIT !!ON(lb_dom)
-#endif /* USE_SMPSS */
+#ifdef USE_OMP_TASK
+         !$omp taskwait depend(inout: lb_dom)
+#endif /* USE_OMP_TASK */
          ! time main loop at barrier, excluding output
          call cpu_time_measure(meas%tEnd)
          meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)

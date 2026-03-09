@@ -126,7 +126,7 @@ contains
       call MPI_INIT_THREAD(MPI_THREAD_SERIALIZED, mpi_thread_level, prc%ierr)
       if (MPI_THREAD_SERIALIZED /= mpi_thread_level) then
          ! did not get suffifient guarantees on MPI thread safety
-#ifdef USE_SMPSS
+#ifdef USE_OMP_TASK
          write (*,*) "This MPI version is running with low thread safety levels"
          write (*,*) "Exiting ..."
          call abort()

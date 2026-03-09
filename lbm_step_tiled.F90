@@ -414,17 +414,6 @@ call set_bnds_task(lb_dom, s_par,prc,meas, tStep)
 
   end subroutine localize_tile
 
-  subroutine swap_lb_dom_pnts_task(lb_dom)
-    use nrt_lib
-    implicit none
-    type(lb_block),intent(inout)       :: lb_dom
-
-    real(R8B),pointer,dimension(:,:,:,:)                :: swapper
-
-    swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
-
-  end subroutine swap_lb_dom_pnts_task
-
 end module lbm_step_tiled
 
 #endif /* USE_TILES (all the file) */

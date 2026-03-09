@@ -85,7 +85,7 @@ endif
 
 #ifdef USE_TILES
    call init_tile(lb_dom, s_par, prc)
-!$OMP TASKWAIT ON(lb_dom)
+!$omp taskwait
 #endif /* USE_TILES */
 
 #ifdef USE_OMP_FINE
@@ -149,14 +149,8 @@ endif
 
       call ramp_u(s_par,tstep)
       ! swap work array pointers
-#ifdef USE_SMPSS
-      !$OMP TASK INOUT(lb_dom) label(swap_lb_dom_pnts_smpss) PRIORITY(50) no_copy_deps
-      call swap_lb_dom_pnts_task(lb_dom)
-      !$OMP END TASK
-#else
       !$omp taskwait
       swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
-#endif /* USE_SMPSS */
 
       !---------------------------
       ! Exchange between domains
@@ -224,9 +218,6 @@ endif
 !$OMP end parallel 
 #endif /* USE_OMP_TASK */
 
-#ifdef USE_SMPSS
-!$OMP TASKWAIT
-#endif /* USE_SMPSS */
 ! finish timing main loop
 call cpu_time_measure(meas%tEnd)
 meas%duration = meas%duration + real(meas%tEnd,8) - real(meas%tStart,8)

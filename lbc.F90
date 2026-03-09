@@ -134,6 +134,11 @@ endif
 
    tstep_cnt = 0
    lb_dom%pnt_nxt => lb_dom%fIn; lb_dom%pnt_cur => lb_dom%fOut    ! init work arrays
+
+#ifdef USE_OMP_TASK
+!$OMP parallel
+!$OMP single
+#endif USE_OMP_TASK
    do tStep = 1,s_par%tMax
 
       !---------------------------
@@ -210,6 +215,10 @@ endif
       endif
 
    end do
+#ifdef USE_OMP_TASK
+!$OMP end single
+!$OMP end parallel 
+#endif /* USE_OMP_TASK */
 
 #ifdef USE_SMPSS
 !$OMP TASKWAIT

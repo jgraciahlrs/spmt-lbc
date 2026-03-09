@@ -57,8 +57,9 @@ PARALLEL += -DCOMM_REDUCED      # Only Exchange necessary densities
 
 # OpenMP options; choose either one
 #PARALLEL += -DUSE_OMP_FINE	# fine-grained loop level OpenMP version
-PARALLEL += -DUSE_OMP_TARGET_FINE # additionally with OpenMP target offloading 
+#PARALLEL += -DUSE_OMP_TARGET_FINE # additionally with OpenMP target offloading 
 #PARALLEL += -DUSE_OMP_COARSE -DUSE_TILES -DTILESIZE=32 # coarse-grained tile level OpenMP version, shares code with StarSs version
+PARALLEL += -DUSE_OMP_TASK 
  
 # OmpSs parallelisation strategy, if no strategy is set the default(comm_hiding strategy) is used
 #PARALLEL += -DUSE_OMPSS_FORK_JOIN

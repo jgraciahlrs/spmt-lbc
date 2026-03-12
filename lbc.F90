@@ -149,14 +149,14 @@ endif
 
       call ramp_u(s_par,tstep)
       ! swap work array pointers
-      !$omp taskwait
       swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
 
       !---------------------------
       ! Exchange between domains
       if(prc%size > 1) then
 #ifdef USE_OMP_TASK
-        !$omp task depend(inout: lb_dom) priority(50)
+        !$omp task depend(inout: lb_dom) priority(50) &
+        !$omp&     firstprivate(lb_dom)  
         call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
         !$omp end task
 #else
@@ -167,7 +167,8 @@ endif
 
       ! do a single Lattice Boltzmann step
 #ifdef USE_OMP_TASK
-      !$omp task depend(inout: lb_dom)
+      !$omp task depend(inout: lb_dom) &
+      !$omp&     firstprivate(lb_dom)  
       call lb_step(lb_dom, lb_dom%pnt_nxt, lb_dom%pnt_cur, s_par, prc, meas, tStep)
       !$omp end task
 #endif /* USE_OMP_TASK */

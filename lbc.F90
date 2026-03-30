@@ -166,10 +166,12 @@ endif
 
 
       ! do a single Lattice Boltzmann step
-#ifdef USE_OMP_TASK
+#if defined(USE_OMP_TASK) && !defined(USE_TILES)
       !$omp task depend(inout: lb_dom) &
       !$omp&     firstprivate(lb_dom)  
+#endif /* USE_OMP_TASK */
       call lb_step(lb_dom, lb_dom%pnt_nxt, lb_dom%pnt_cur, s_par, prc, meas, tStep)
+#if defined(USE_OMP_TASK) && !defined(USE_TILES)
       !$omp end task
 #endif /* USE_OMP_TASK */
 

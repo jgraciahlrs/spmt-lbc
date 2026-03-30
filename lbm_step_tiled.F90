@@ -66,22 +66,26 @@ contains
 
     ! force "all tiles" and "outer tiles" into the same timestep
     ! a WAIT ON would be ok, too, but drops deps in temanejo
-    !$OMP TASK INOUT(lb_dom, sentinel_inner, sentinel_outer) label(dummy_task) no_copy_deps
+    !$omp taskwait
     call dummy_task()
-    !$OMP END TASK
 
 
 #ifdef USE_OMP_COARSE
 !$omp parallel
 !$omp do schedule(runtime)
 #endif /* USE_OMP_COARSE */
+#ifdef USE_OMP_TASK
+    !$omp task &
+    !$omp&     depend(inoutset: lb_dom) depend(inout: sentinel_outer)
+#endif /* USE_OMP_TASK */
     do iTile = 1, prc%nOuterTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
-       !$OMP TASK INOUT(lb_dom_tiles(iTile)) CONCURRENT(sentinel_outer) PRIORITY(50) label(lb_step_tile_outer) no_copy_deps
        call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
-       !$OMP END TASK
     end do
+#ifdef USE_OMP_TASK
+    !$omp end task
+#endif /* USE_OMP_TASK */ 
 #ifdef USE_OMP_COARSE
 !$omp end do
 #endif /* USE_OMP_COARSE */
@@ -92,13 +96,18 @@ contains
 #ifdef USE_OMP_COARSE
 !$omp do schedule(runtime)
 #endif /* USE_OMP_COARSE */
+#ifdef USE_OMP_TASK
+    !$omp task &
+    !$omp&     depend(inoutset: lb_dom) depend(inout: sentinel_inner)
+#endif /* USE_OMP_TASK */
     do iTile = prc%nOuterTiles+1, nTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
-       !$OMP TASK INOUT(lb_dom_tiles(iTile)) CONCURRENT(sentinel_inner) label(lb_step_tile_inner) no_copy_deps
        call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
-       !$OMP END TASK
     end do
+#ifdef USE_OMP_TASK
+    !$omp end task
+#endif /* USE_OMP_TASK */ 
 #ifdef USE_OMP_COARSE
 !$omp end do
 !$omp end parallel
@@ -108,10 +117,16 @@ contains
 #ifdef USE_OMPSS_FORK_JOIN
 !$OMP TASK INOUT(lb_dom, sentinel_inner, sentinel_outer) PRIORITY(50)  label(set_bnds) no_copy_deps
 #else
-!$OMP TASK INOUT(lb_dom, sentinel_outer) PRIORITY(50)  label(set_bnds) no_copy_deps
+   ! pass
 #endif /* USE_OMPSS_FORK_JOIN */
-call set_bnds_task(lb_dom, s_par,prc,meas, tStep)
-!$OMP END TASK
+#ifdef USE_OMP_TASK
+!$omp task &
+!$omp&     depend(inoutset: lb_dom) depend(inout: sentinel_outer)
+#endif /* USE_OMP_TASK */ 
+    call set_bnds_task(lb_dom, s_par,prc,meas, tStep)
+#ifdef USE_OMP_TASK
+!$omp end task
+#endif /* USE_OMP_TASK */
 
   end subroutine lb_step
 
@@ -155,9 +170,7 @@ call set_bnds_task(lb_dom, s_par,prc,meas, tStep)
     !$omp do schedule(runtime)
 #endif /* USE_OMP_COARSE */
     do iTile = 1, prc%nTiles
-       !$OMP TASK INOUT(prc%lb_dom_tiles(iTile))  CONCURRENT(lb_dom) label(localize_tile) no_copy_deps
        call localize_tile(lb_dom, prc%bounds_tile(:,iTile), prc)
-       !$OMP END TASK
        !write (*,"(Z20 Z20)") loc(lb_dom), loc(prc%bounds_tile(:,iTile))
     end do
 #ifdef USE_OMP_COARSE
@@ -168,9 +181,7 @@ call set_bnds_task(lb_dom, s_par,prc,meas, tStep)
     ! CSS: do not merge these two loops (above and below) or will serialize
     ! allocate data fields of all tile lb_blocks
     do iTile = 1, prc%nTiles
-       !$OMP TASK INOUT(prc%lb_dom_tiles(iTile)) CONCURRENT(lb_dom) label(allocate_tile) no_copy_deps
        call allocate_tile(lb_dom, prc%lb_dom_tiles(iTile), prc%bounds_tile(:,iTile), prc)
-       !$OMP END TASK
     end do
   end subroutine init_tile
 

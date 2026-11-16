@@ -84,15 +84,12 @@ contains
     end do
 #ifdef USE_OMP_COARSE
 !$omp end do
-!$omp single
 #endif /* USE_OMP_COARSE */
 
-
-
-
+    ! the !$omp do above ends with an implicit barrier, so all outer tiles
+    ! are complete before the inner tiles start; no extra single region needed
 
 #ifdef USE_OMP_COARSE
-!$omp end single
 !$omp do schedule(runtime)
 #endif /* USE_OMP_COARSE */
     do iTile = prc%nOuterTiles+1, nTiles

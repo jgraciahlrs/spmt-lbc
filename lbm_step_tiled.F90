@@ -82,7 +82,7 @@ contains
        ! do a single tiled Lattice Boltzmann step
 #ifdef USE_OMP_TASK
        !$omp task &
-       !$omp&     depend(inoutset: lb_dom) depend(inout: sentinel_outer)
+       !$omp&     depend(inoutset: lb_dom) depend(inoutset: sentinel_outer)
 #endif /* USE_OMP_TASK */
        call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
 #ifdef USE_OMP_TASK
@@ -104,7 +104,7 @@ contains
        ! do a single tiled Lattice Boltzmann step
 #ifdef USE_OMP_TASK
        !$omp task &
-       !$omp&     depend(inoutset: lb_dom) depend(inout: sentinel_inner)
+       !$omp&     depend(inoutset: lb_dom) depend(inoutset: sentinel_inner)
 #endif /* USE_OMP_TASK */
        call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
 #ifdef USE_OMP_TASK

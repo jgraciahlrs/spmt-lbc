@@ -77,18 +77,18 @@ contains
 !$omp parallel
 !$omp do schedule(runtime)
 #endif /* USE_OMP_COARSE */
-#ifdef USE_OMP_TASK
-    !$omp task &
-    !$omp&     depend(inoutset: lb_dom) depend(inout: sentinel_outer)
-#endif /* USE_OMP_TASK */
     do iTile = 1, prc%nOuterTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
-       call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
-    end do
 #ifdef USE_OMP_TASK
-    !$omp end task
-#endif /* USE_OMP_TASK */ 
+       !$omp task &
+       !$omp&     depend(inoutset: lb_dom) depend(inout: sentinel_outer)
+#endif /* USE_OMP_TASK */
+       call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
+#ifdef USE_OMP_TASK
+       !$omp end task
+#endif /* USE_OMP_TASK */
+    end do
 #ifdef USE_OMP_COARSE
 !$omp end do
 #endif /* USE_OMP_COARSE */
@@ -99,18 +99,18 @@ contains
 #ifdef USE_OMP_COARSE
 !$omp do schedule(runtime)
 #endif /* USE_OMP_COARSE */
-#ifdef USE_OMP_TASK
-    !$omp task &
-    !$omp&     depend(inoutset: lb_dom) depend(inout: sentinel_inner)
-#endif /* USE_OMP_TASK */
     do iTile = prc%nOuterTiles+1, nTiles
        ! select a tile and
        ! do a single tiled Lattice Boltzmann step
-       call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
-    end do
 #ifdef USE_OMP_TASK
-    !$omp end task
-#endif /* USE_OMP_TASK */ 
+       !$omp task &
+       !$omp&     depend(inoutset: lb_dom) depend(inout: sentinel_inner)
+#endif /* USE_OMP_TASK */
+       call lb_step_tile_task(lb_dom_tiles(iTile), s_par, prc, meas, tStep)
+#ifdef USE_OMP_TASK
+       !$omp end task
+#endif /* USE_OMP_TASK */
+    end do
 #ifdef USE_OMP_COARSE
 !$omp end do
 !$omp end parallel

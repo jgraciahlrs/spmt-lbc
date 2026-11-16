@@ -9,6 +9,9 @@
 !!
 
 #ifdef USE_TILES    /* all the file */
+#if defined(USE_OMP_COARSE) && defined(USE_OMP_TASK)
+#error "USE_OMP_COARSE and USE_OMP_TASK are mutually exclusive - pick one tile strategy"
+#endif
 module lbm_step_tiled
   use lbm_functions
 

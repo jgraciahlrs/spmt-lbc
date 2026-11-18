@@ -138,7 +138,7 @@ endif
 #ifdef USE_OMP_TASK
 !$OMP parallel
 !$OMP single
-#endif USE_OMP_TASK
+#endif /* USE_OMP_TASK */
    do tStep = 1,s_par%tMax
 #ifdef USE_OMP_TASK
       ! Wait for all tasks from the previous timestep (exchange, tiles,

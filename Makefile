@@ -171,9 +171,15 @@ endif
 # Cray Compiler
 ifeq ($(findstring cray,$(COMPILER)),cray)
    F90_CFLAGS_DEBUG+= -debug
-   F90_LFLAGS_DEBUG+= -debug 
+   F90_LFLAGS_DEBUG+= -debug
    F90_CFLAGS_OPT+=-O3 -hfp2 -M 878,1391,855 -g
    F90_LFLAGS_OPT+=
+   # Cray places array temporaries on the stack by default (gfortran/flang use
+   # the heap). The whole-array copy in treat_initial (lb_dom%u0 = lb_dom%u)
+   # generates a ~512 MiB stack temporary that overflows OpenMP slave-thread
+   # stacks (bounded by OMP_STACKSIZE). Force temporaries onto the heap.
+   F90_CFLAGS_DEBUG += -hheap_allocate
+   F90_CFLAGS_OPT   += -hheap_allocate
    # OpenMP
    ifeq ($(findstring openmp,$(COMPILER)),openmp)
       F90_CFLAGS_DEBUG += -homp

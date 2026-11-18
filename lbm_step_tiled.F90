@@ -67,18 +67,6 @@ contains
     sentinel_outer => bounds_tile(:,prc%nOuterTiles)   ! set sentinel to "outer tiles"
     sentinel_inner => bounds_tile(:,0)   ! set sentinel to "inner tiles"
 
-#ifdef USE_OMP_TASK
-    ! force "all tiles" and "outer tiles" into the same timestep
-    ! a WAIT ON would be ok, too, but drops deps in temanejo
-    ! (necessary: the cross-timestep lb_dom ordering is not reliable --
-    !  single rank: no mpl_exchange task to bridge timesteps;
-    !  multi rank: the exchange task's firstprivate(lb_dom) breaks its
-    !  depend(inout: lb_dom) edge to the tile tasks)
-    !$omp taskwait
-    call dummy_task()
-#endif /* USE_OMP_TASK */
-
-
 #ifdef USE_OMP_COARSE
 !$omp parallel
 !$omp do schedule(runtime)
@@ -341,10 +329,6 @@ contains
 
     call stream_collide_bgk( lb_dom,pnt_nxt,pnt_cur,s_par,meas)
   end subroutine lb_step_tile
-
-
-  subroutine dummy_task()
-  end subroutine dummy_task
 
 
   subroutine lb_step_tile_task(lb_dom, s_par, prc, meas, tStep)

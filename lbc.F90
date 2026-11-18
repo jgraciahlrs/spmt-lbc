@@ -140,6 +140,13 @@ endif
 !$OMP single
 #endif USE_OMP_TASK
    do tStep = 1,s_par%tMax
+#ifdef USE_OMP_TASK
+      ! Wait for all tasks from the previous timestep (exchange, tiles,
+      ! set_bnds) to finish before the pnt_cur/pnt_nxt pointers are swapped
+      ! below. This eliminates the parent-pointer race and makes
+      ! firstprivate(lb_dom) unnecessary on the tasks.
+      !$omp taskwait
+#endif /* USE_OMP_TASK */
 
       !---------------------------
       ! Set Boundaries on fIn
@@ -155,8 +162,7 @@ endif
       ! Exchange between domains
       if(prc%size > 1) then
 #ifdef USE_OMP_TASK
-        !$omp task depend(inout: lb_dom) priority(50) &
-        !$omp&     firstprivate(lb_dom)  
+        !$omp task depend(inout: lb_dom) priority(50)
         call mpl_exchange(lb_dom,lb_dom%pnt_cur,prc,meas)
         !$omp end task
 #else
@@ -167,8 +173,7 @@ endif
 
       ! do a single Lattice Boltzmann step
 #if defined(USE_OMP_TASK) && !defined(USE_TILES)
-      !$omp task depend(inout: lb_dom) &
-      !$omp&     firstprivate(lb_dom)  
+      !$omp task depend(inout: lb_dom)
 #endif /* USE_OMP_TASK */
       call lb_step(lb_dom, lb_dom%pnt_nxt, lb_dom%pnt_cur, s_par, prc, meas, tStep)
 #if defined(USE_OMP_TASK) && !defined(USE_TILES)

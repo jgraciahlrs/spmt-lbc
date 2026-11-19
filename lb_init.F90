@@ -357,7 +357,6 @@ contains
       type(mpl_var)                 :: prc
       integer                 :: i,j,k,l
       integer                 :: lx(3),offset(3)
-      real(R8B)               :: radius           
 
       lx(:) = lb_dom%lx(:)
       offset(:) = lb_dom%lx(:)*prc%crd(:) 
@@ -392,27 +391,6 @@ contains
       
       
       call init_vortex_macr(lb_dom%u,s_par,prc,lb_dom,offset)
-
-
-!----------------------------------------
-! Gaussian Pulse 
- 
-    case(gaussian)
-       radius=  real(s_par%obst_r)
-       do k=1,lb_dom%lx(3)
-          do j=1,lb_dom%lx(2)
-             do i=1,lb_dom%lx(1)
-        lb_dom%rho(i,j,k)   = s_par%umax      &
-*exp(-log(2.)*real(i-lb_dom%lx(1)/2)*real(i-lb_dom%lx(1)/2)/radius/radius)  &
-*exp(-log(2.)*real(j-lb_dom%lx(2)/2)*real(j-lb_dom%lx(2)/2)/radius/radius)  &
-!                                 *exp(-log(2.)*real(k-s_par%gx(3)/2)*real(k-s_par%gx(3)/2)/radius/radius)  &
-                                + lb_dom%rho(i,j,k)
-!               u(NDX(1,i,j,k)) = s_par%umax
-!               u(NDX(2,i,j,k)) = s_par%umax
-             enddo
-         enddo
-      enddo
-
 
 
 !----------------------------------------
@@ -1357,19 +1335,6 @@ contains
             if(prc%crd(3) == prc%np(3)-1) lb_dom%state(:,:,lz) = ibset(lb_dom%state(:,:,lz),posbc )        
          end if
 
-
-   case(gaussian)
-         ! left wall (at y- border)
-         if(prc%crd(1) == 0)              lb_dom%state(1,:,:)     = ibset(lb_dom%state(1,:,:), nr_wall)
-         if(prc%crd(1) == prc%np(1)-1)    lb_dom%state(lx,:,:)    = ibset(lb_dom%state(lx,:,:),nr_wall)
-         ! bottom wall
-         if(prc%crd(2) == 0)              lb_dom%state(:,1,:)     = ibset(lb_dom%state(:,1,:), nr_wall)
-         if(prc%crd(2) == prc%np(2)-1)    lb_dom%state(:,ly,:)    = ibset(lb_dom%state(:,ly,:),nr_wall)
-         if(NDIM==3) then
-           ! set also front and back wall to wall condition
-            if(prc%crd(3) == 0)           lb_dom%state(:,:,1)     = ibset(lb_dom%state(:,:,1), nr_wall)
-            if(prc%crd(3) == prc%np(3)-1) lb_dom%state(:,:,lz)    = ibset(lb_dom%state(:,:,lz),nr_wall)        
-         end if
    end select
 
 ! get number of inlet nodes in directions

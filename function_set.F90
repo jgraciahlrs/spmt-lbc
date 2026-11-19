@@ -196,7 +196,7 @@ end subroutine gather_output
          read(1,*) s_par%omega                              ! Reynolds number Re<5000?
          read(1,*) s_par%tMax,s_par%tOut,tRamp,s_par%tOutBeg,s_par%tInitial   ! max timesteps, output interval, tRamp (must be -1), tOutBegin, tInitial
          read(1,*) s_par%problem                            
-! problem: 1 cylinder in channel, 2 cavity, gaussian=4
+! problem: 1 cylinder in channel, 2 cavity
          read(1,*) s_par%gx(1),s_par%gx(2),s_par%gx(3)      ! global domain size x, y, z
          read(1,*) s_par%periodic(1),s_par%periodic(2),s_par%periodic(3) ! periodic settings
          read(1,*) prc%np(1),prc%np(2),prc%np(3)            ! # processes in each direction
@@ -236,12 +236,6 @@ end subroutine gather_output
          s_par%obst_z=0
          elseif(s_par%problem==corotating_vortex) then
          s_par%obst_r = s_par%gx(1)/100*s_par%obst_l+1
-         elseif(s_par%problem==gaussian) then
-            if(s_par%obst_l < 1.0) then
-               s_par%obst_r = s_par%gx(1)/100 +1
-            else 
-               s_par%obst_r = int(s_par%obst_l) 
-            endif
          endif    
 
      ! Set sponge layer thickness
@@ -266,8 +260,6 @@ end subroutine gather_output
          s_par%problem_name = "cylinder"
       elseif(s_par%problem == cavity) then
          s_par%problem_name = "cavity"
-      elseif(s_par%problem == gaussian) then
-         s_par%problem_name = "gaussian"
       elseif(s_par%problem == flute ) then
          s_par%problem_name = "flute"
       elseif(s_par%problem == corotating_vortex ) then

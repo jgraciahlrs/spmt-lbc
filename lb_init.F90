@@ -543,9 +543,6 @@ contains
           end do
        end do
       
-    else if(s_par%problem==shock) then
-         write(*,*) "not implemented yet"
-
    end if
 !----------------------------------------
 ! Corotating Vortex 
@@ -1424,9 +1421,6 @@ contains
          end if
 
 
-   case(shock)
-         write(*,*) "not implemented yet"
-         stop
    case(gaussian)
          ! left wall (at y- border)
          if(prc%crd(1) == 0)              lb_dom%state(1,:,:)     = ibset(lb_dom%state(1,:,:), nr_wall)

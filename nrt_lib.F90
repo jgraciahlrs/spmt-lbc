@@ -25,7 +25,7 @@ module nrt_lib
     integer, parameter :: R8B = selected_real_kind(8)
 
    ! set in params File which problem to solve
-   integer, parameter                  :: cylinder=1,cavity=2,shock=3
+   integer, parameter                  :: cylinder=1,cavity=2
    integer, parameter                  :: gaussian=4,flute=6
    integer, parameter                  :: corotating_vortex=7
    integer, parameter                  :: plate_trail=10,taylor_vortex=11

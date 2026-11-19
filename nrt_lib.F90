@@ -26,7 +26,7 @@ module nrt_lib
 
    ! set in params File which problem to solve
    integer, parameter                  :: cylinder=1,cavity=2,shock=3
-   integer, parameter                  :: gaussian=4,cavity_same=5,flute=6
+   integer, parameter                  :: gaussian=4,flute=6
    integer, parameter                  :: corotating_vortex=7,cylinder_impulse=8
    integer, parameter                  :: caa_cavity=9,plate_trail=10,taylor_vortex=11
    integer, parameter                  :: gauss_convect=12,planar_standing_wave=13

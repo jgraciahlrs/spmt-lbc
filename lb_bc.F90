@@ -1228,31 +1228,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
 
 
 
-
-
-!----------------------------------------
-! Lid-driven cavity on all processes the same calculation
-! this was used for testing different execution times on Nehalem 
-! for the same amount of work
-
-     case(cavity_same)
-        ! Reset boundary 
-        ! macroscopic Variables
-        j = ly
-         do k=2,lz-1
-            do i=2,lx-1       
-              ! top lid
-               rho(i,j,k)   = 1._R8B
-               u(NDX(1,i,j,k))   = sqrt(s_par%umax)
-               u(NDX(2,i,j,k))   = 0._R8B
-               u(NDX(3,i,j,k))   = sqrt(s_par%umax)
-            end do
-         end do
-
-        call calc_fEq(lb_dom,rho,u,fIn,2      ,lx-1 ,ly,ly,2      ,lz-1,s_par ) !top lid
-
-
-
 !----------------------------------------
 ! Default case 
 

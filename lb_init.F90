@@ -543,19 +543,6 @@ contains
           end do
        end do
       
-    else if(s_par%problem==cavity_same) then
-       ! Driven Cavity
-       do k=1,lb_dom%lx(3)
-          do j=1,lb_dom%lx(2)
-             do i=1,lb_dom%lx(1)
-               ! In Benchmark of of Hou, Chen and Doolen (1995) rho = 2.7
-               lb_dom%rho(i,j,k)        = 1.0_R8B 
-               lb_dom%u(NDX(1,i,j,k))   = 0._R8B
-               lb_dom%u(NDX(2,i,j,k))   = 0._R8B
-               lb_dom%u(NDX(3,i,j,k))   = 0._R8B
-             end do
-          end do
-       end do
     else if(s_par%problem==shock) then
          write(*,*) "not implemented yet"
 
@@ -1435,21 +1422,6 @@ contains
             if(prc%crd(3) == 0)        lb_dom%state(:,:,1)     = ibset(lb_dom%state(:,:,1),posbc)
             if(prc%crd(3) == prc%np(3)-1) lb_dom%state(:,:,lz) = ibset(lb_dom%state(:,:,lz),posbc )        
          end if
-
-
-!----------------------------------------
-! Same Lid-driven cavity on all partitions
-
-      case(cavity_same)
-         lb_dom%state(2:(lx-1),ly,:)  = ibset(lb_dom%state(2:(lx-1),ly,:),lid)
-         lb_dom%state(1:lx,1,:)       = ibset(lb_dom%state(1:lx,1,:),wall)
-         lb_dom%state(1,1:ly,:)       = ibset(lb_dom%state(1,1:ly,:),wall)
-         lb_dom%state(lx,1:ly,:)      = ibset(lb_dom%state(lx,1:ly,:),wall)
-         if(NDIM==3) then
-            ! set also front and back wall to wall condition
-            lb_dom%state(:,:,1)       = ibset(lb_dom%state(:,:,1),wall)
-            lb_dom%state(:,:,lz)      = ibset(lb_dom%state(:,:,lz),wall)
-        end if
 
 
    case(shock)

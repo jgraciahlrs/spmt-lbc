@@ -196,7 +196,7 @@ end subroutine gather_output
          read(1,*) s_par%omega                              ! Reynolds number Re<5000?
          read(1,*) s_par%tMax,s_par%tOut,tRamp,s_par%tOutBeg,s_par%tInitial   ! max timesteps, output interval, tRamp (must be -1), tOutBegin, tInitial
          read(1,*) s_par%problem                            
-! problem: 1 cylinder in channel, 2 cavity, 3 shock,gaussian=4, cavity_same=5 
+! problem: 1 cylinder in channel, 2 cavity, 3 shock,gaussian=4
          read(1,*) s_par%gx(1),s_par%gx(2),s_par%gx(3)      ! global domain size x, y, z
          read(1,*) s_par%periodic(1),s_par%periodic(2),s_par%periodic(3) ! periodic settings
          read(1,*) prc%np(1),prc%np(2),prc%np(3)            ! # processes in each direction
@@ -272,8 +272,6 @@ end subroutine gather_output
          s_par%problem_name = "gaussian"
       elseif(s_par%problem == gauss_convect) then
          s_par%problem_name = "gauss_conv"
-      elseif(s_par%problem == cavity_same) then
-         s_par%problem_name = "cavity_same"
       elseif(s_par%problem == flute ) then
          s_par%problem_name = "flute"
       elseif(s_par%problem == corotating_vortex ) then

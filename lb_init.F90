@@ -1228,40 +1228,6 @@ contains
 
 
 !----------------------------------------
-! Cylinder in channel
-
-       case(cylinder)
-         ! wall for z=0 and z=lz has to be implemented
-         do j=y_start,y_end
-
-            if(prc%crd(1)==0) then
-            ! inlet left  
-!            lb_dom%state(1,j,:)    = nr_wall ! inlet  !
-            lb_dom%state(1,j,:)    = ibset(lb_dom%state(1,j,:),nr_wall)
-!            do kk=1,size(lb_dom%state,3)
-!            lb_dom%state(1,j,:)    = ibset(lb_dom%state(1,j,:),nr_wall)
-!            enddo
-            endif
-            if(prc%crd(1)==prc%np(1)-1) then
-            ! outlet right  
-!            lb_dom%state(lx,j,:)   = nr_wall ! outlet !
-            lb_dom%state(lx,j,:)   = ibset(lb_dom%state(lx,j,:),nr_wall) 
-            endif
-         end do
-         ! wall boundaries
-         if(prc%crd(2)==0)           &
-            lb_dom%state(x_start:x_end,1,:)  = ibset(lb_dom%state(x_start:x_end,1,:), wall)
-         if(prc%crd(2)==prc%np(1)-1) &
-            lb_dom%state(x_start:x_end,ly,:) = ibset(lb_dom%state(x_start:x_end,ly,:),wall)
-
-         ! wall boundaries
-         if(prc%crd(3) ==0)            lb_dom%state(:,:,1)  = ibset(lb_dom%state(:,:,1), wall)
-         if(prc%crd(3) ==prc%np(3)-1)  lb_dom%state(:,:,lz) = ibset(lb_dom%state(:,:,lz),wall)
-         ! cylinder
-         write(*,*) "todo: implement cylinder"
-
-
-!----------------------------------------
 ! Lid driven Cavity 
 
       case(cavity)

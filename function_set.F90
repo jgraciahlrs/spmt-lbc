@@ -112,7 +112,7 @@ end subroutine gather_output
    ! umax         the max velocity, here: of the lid
    ! Re           Reynolds number 
    ! tMax         max. timesteps), tOut (interval for writing out results
-   ! problem      1=cylinder, 2=cavity
+   ! problem      2=cavity
    ! s_par%gx(1),s_par%gx(2),s_par%gx(3)  global domain size
    ! s_par%setObstacles set small obstacles in equal distance in the whole domain
    ! prc%np(1:3)   number of processes/threads in each direction (cartesian topolos_par%gx(2))
@@ -196,7 +196,7 @@ end subroutine gather_output
          read(1,*) s_par%omega                              ! Reynolds number Re<5000?
          read(1,*) s_par%tMax,s_par%tOut,tRamp,s_par%tOutBeg,s_par%tInitial   ! max timesteps, output interval, tRamp (must be -1), tOutBegin, tInitial
          read(1,*) s_par%problem                            
-! problem: 1 cylinder in channel, 2 cavity
+! problem: 2 cavity
          read(1,*) s_par%gx(1),s_par%gx(2),s_par%gx(3)      ! global domain size x, y, z
          read(1,*) s_par%periodic(1),s_par%periodic(2),s_par%periodic(3) ! periodic settings
          read(1,*) prc%np(1),prc%np(2),prc%np(3)            ! # processes in each direction
@@ -220,16 +220,11 @@ end subroutine gather_output
          endif
 
       !------------------------------------
-      ! set characteristic lengths and problem lengths (cylinder radius etc.) 
+      ! set characteristic lengths and problem lengths
 
          if(NDIM==2) s_par%gx(3) = 1
-     ! Set position for obstacle (only problem cylinder)
-         if(s_par%problem==cylinder) then
-         s_par%obst_x=s_par%gx(1)/5+1
-         s_par%obst_y=int(real(s_par%gx(2))*(7.d0/12.d0))
-         s_par%obst_z=int(real(s_par%gx(3))*(1.d0/2.d0))
-         s_par%obst_r=int(real(s_par%gx(2))*(1.d0/15.d0))+1
-         elseif(s_par%problem==corotating_vortex) then
+     ! Set position for obstacle (only problem corotating_vortex)
+         if(s_par%problem==corotating_vortex) then
          s_par%obst_r = s_par%gx(1)/100*s_par%obst_l+1
          endif    
 
@@ -237,23 +232,17 @@ end subroutine gather_output
          s_par%sponge_size = 20
  
      ! set characteristic length lchar
-         if(s_par%problem==cylinder) then
-            s_par%lchar = real(s_par%obst_r)*2.
-         else
          if(NDIM==2) then
             s_par%lchar = real(MAX(s_par%gx(1),s_par%gx(2)))
          else
             s_par%lchar = real(MAX(s_par%gx(1),s_par%gx(2),s_par%gx(3)))
          endif
-      endif
 
 
       !------------------------------------
       ! set problem names for output 
 
-      if(s_par%problem == cylinder) then
-         s_par%problem_name = "cylinder"
-      elseif(s_par%problem == cavity) then
+      if(s_par%problem == cavity) then
          s_par%problem_name = "cavity"
       elseif(s_par%problem == corotating_vortex ) then
          s_par%problem_name = "crvp"

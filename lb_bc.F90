@@ -1112,39 +1112,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
 
 
 !----------------------------------------
-! Cylinder in channel test with eq boundaries 
-
-      case(cylinder)
-! unstable boundary condition!! better use zou
-         do k=z_start,z_end
-         if(prc%crd(1)== 0) then
-         do j=y_start,y_end
-            i=1
-            u(NDX(2,i,j,k)) = 0._R8B 
-!FIXME errorous u calculation
-            u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d(real(j+incr_y,R8B) &
-            ,real(s_par%gx(2)+1,R8B),real(k+incr_z,R8B),real(s_par%gx(3)+1,R8B))
-            u(NDX(3,i,j,k)) = 0._R8B 
-            rho(i,j,k) = 1._R8B 
-            call calc_fEq(lb_dom,rho,u,fIn,i,i,j,j,k,k,s_par)
-         end do
-         end if
-            if(prc%crd(1)== prc%np(1) -1) then
-         do j=y_start,y_end
-            i=lx
-            u(NDX(2,i,j,k)) = 0._R8B 
-            u(NDX(1,i,j,k)) = s_par%umax*get_parabolic3d(real(j+incr_y,R8B)        &
-         ,real(s_par%gx(2)+1,R8B),real(k+incr_z,R8B),real(s_par%gx(3)+1,R8B))
-            u(NDX(3,i,j,k)) = 0._R8B 
-            rho(i,j,k) = 1._R8B 
-            call calc_fEq(lb_dom,rho,u,fIn,i,i,j,j,k,k,s_par)
-         end do
-         end if
-         enddo          
-
-
-
-!----------------------------------------
 ! Cylinder in channel
 
       case(100)

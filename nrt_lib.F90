@@ -28,7 +28,7 @@ module nrt_lib
    integer, parameter                  :: cylinder=1,cavity=2,shock=3
    integer, parameter                  :: gaussian=4,flute=6
    integer, parameter                  :: corotating_vortex=7,cylinder_impulse=8
-   integer, parameter                  :: caa_cavity=9,plate_trail=10,taylor_vortex=11
+   integer, parameter                  :: plate_trail=10,taylor_vortex=11
    integer, parameter                  :: gauss_convect=12,planar_standing_wave=13
    integer, parameter                  :: channel=14,gauss1d=15
    integer, parameter                  :: fluid=0,wall=4,inlet=1,outlet=2

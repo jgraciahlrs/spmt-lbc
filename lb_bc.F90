@@ -1224,18 +1224,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
             call calc_fEq(lb_dom,rho,u,fIn,x_start,x_end,ly,ly,z_start,z_end,s_par) !top lid
          end if
 
-
-
-!----------------------------------------
-! Default case 
-
-     
-   case (planar_standing_wave)
-!        pos = (/ int(1.d0/4.d0*real(s_par%gx(1))), s_par%gx(2)/2, s_par%gx(3)/2+1    /)
-!        pos = (/ int(0.25*real(s_par%gx(1))+1.), s_par%gx(2)/2, s_par%gx(3)/2+1    /)
-        pos = (/ 1+(s_par%gx(1)-2)/4, s_par%gx(2)/2, s_par%gx(3)/2+1    /)
-        call microphone(lb_dom,pos,fIn,s_par,prc,tstep,1)
-
    end select
 
 

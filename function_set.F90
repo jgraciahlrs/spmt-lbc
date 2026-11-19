@@ -276,8 +276,6 @@ end subroutine gather_output
          s_par%problem_name = "crvp"
       elseif(s_par%problem == taylor_vortex) then
          s_par%problem_name = "taylor_vortex"
-      elseif(s_par%problem == planar_standing_wave) then
-         s_par%problem_name = "plane_wave"
       else
          s_par%problem_name = ""
       endif

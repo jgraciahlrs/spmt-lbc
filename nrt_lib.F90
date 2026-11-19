@@ -29,7 +29,7 @@ module nrt_lib
    integer, parameter                  :: gaussian=4,flute=6
    integer, parameter                  :: corotating_vortex=7
    integer, parameter                  :: taylor_vortex=11
-   integer, parameter                  :: gauss_convect=12,planar_standing_wave=13
+   integer, parameter                  :: gauss_convect=12
    integer, parameter                  :: channel=14
    integer, parameter                  :: fluid=0,wall=4,inlet=1,outlet=2
    ! special bcs including lid, non reflecting bc

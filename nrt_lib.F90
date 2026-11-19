@@ -30,7 +30,7 @@ module nrt_lib
    integer, parameter                  :: corotating_vortex=7,cylinder_impulse=8
    integer, parameter                  :: plate_trail=10,taylor_vortex=11
    integer, parameter                  :: gauss_convect=12,planar_standing_wave=13
-   integer, parameter                  :: channel=14,gauss1d=15
+   integer, parameter                  :: channel=14
    integer, parameter                  :: fluid=0,wall=4,inlet=1,outlet=2
    ! special bcs including lid, non reflecting bc
    integer, parameter                  :: lid=3,sponge_wall=5,reset_wall=6,nr_wall=7

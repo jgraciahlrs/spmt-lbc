@@ -205,6 +205,20 @@ end subroutine gather_output
          close(1)
 
       !------------------------------------
+      ! Enforced invariants: this codebase only supports the lid-driven cavity
+      ! (problem=2) without a velocity ramp (tRamp=-1). All other problem
+      ! cases and the ramp mechanism have been removed.
+
+         if(s_par%problem /= cavity .or. s_par%tRamp /= -1) then
+            write(*,*) "Error: unsupported configuration in '",filename,"'."
+            write(*,*) "  This build only supports the lid-driven cavity:"
+            write(*,*) "    problem = 2 (cavity), tRamp = -1 (no ramp)"
+            write(*,*) "  Got: problem = ",s_par%problem,", tRamp = ",s_par%tRamp
+            write(*,*) "Exiting ... "
+            stop
+         endif
+
+      !------------------------------------
       ! set characteristic lengths and problem lengths (cylinder radius etc.) 
 
          if(NDIM==2) s_par%gx(3) = 1

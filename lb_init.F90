@@ -24,69 +24,6 @@ contains
 
 
 
-  subroutine init_taylor_vortex(u,s_par)
-   !-----------------------------------------------------------------------
-   ! Initialization routine for Taylor Vortex
-   ! x0=50
-   ! y0=50
-   ! adius=10.
-   ! a=radius*sqrt(2.)
-   ! phi0=0.0005
-   ! set xrange[-100:100]
-   ! set yrange[-100:100]
-   ! splot 2*(x-x0)/a/a*phi0*exp(-((x-x0)*(x-x0)+(y-y0)*(y-y0))/a/a), \
-   ! -2*(y-y0)/a/a*phi0*exp(-((x-x0)*(x-x0)+(y-y0)*(y-y0))/a/a)
-   ! pause -1
-
-      implicit none
-      type(sim_parameter)           :: s_par
-      real(R8B) :: u(NDX(NDIM,s_par%gx(1),s_par%gx(2),s_par%gx(3)))
-      integer   :: i,j,k,l
-      integer   :: x0,y0,z0 
-
-      ! corotating vortex
-      real(R8B) :: vor_rc, vor_pos1(3),vor_pos2(3),vor_r
-      real(R8B) :: delta_x,delta_y,delta_z
-      real(R8B) :: cutoff_radius 
-      real(R8B) :: phi0,vor_phi,pos_r
-
-      double precision MachRot, MachCore
-      double precision p0, rho0, c0, gamma
-      double precision u_0, u_c, omega
-      
-      double precision Vortex_Gamma, r_0, r_c, alpha_Vortex
-      double precision Vortex_Strength, rholoc, norm_factor
-         
- 
-      phi0 = 20*s_par%umax
-
-      x0    = real(s_par%gx(1))/2.0d0+0.5
-      y0    = real(s_par%gx(2))/2.0d0+0.5
-      z0    = real(s_par%gx(3))/2.0d0+0.5
-      vor_r = real(s_par%gx(1))/20.0d0*sqrt(2.0)
-      cutoff_radius = real(s_par%gx(1))/2.0d0-1.0d0
-
-      do k=1,s_par%gx(3)
-         do j=1,s_par%gx(2)
-            do i=1,s_par%gx(1)
-
-
-               vor_phi = phi0*exp(-(dble(i-x0)*dble(i-x0) + dble(j-y0)*dble(j-y0))/(vor_r*vor_r))
-               pos_r    = sqrt((dble(i)-x0 )**2 + (dble(j)-y0)**2 +(dble(k)-z0)**2)
-               if(pos_r  < cutoff_radius) then
-                  u(NDX(1,i,j,k)) = (-2.d0*dble(j-y0)/vor_r/vor_r*vor_phi)
-                  u(NDX(2,i,j,k)) = ( 2.d0*dble(i-x0)/vor_r/vor_r*vor_phi)
-               endif
-            enddo
-         enddo
-      enddo
-
-
-  end subroutine init_taylor_vortex
-  !------------------------------------------------------------------------
-
-
-
   subroutine init_vortex_macr(u,s_par,prc,lb_dom,offset)
    !-----------------------------------------------------------------------
    ! Initialization routine for Corotating Vortex Pair. See Dissertation Roller 2003 or Schwartzkopf 2006, 

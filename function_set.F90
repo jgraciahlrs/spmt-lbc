@@ -274,8 +274,6 @@ end subroutine gather_output
          s_par%problem_name = "flute"
       elseif(s_par%problem == corotating_vortex ) then
          s_par%problem_name = "crvp"
-      elseif(s_par%problem == taylor_vortex) then
-         s_par%problem_name = "taylor_vortex"
       else
          s_par%problem_name = ""
       endif

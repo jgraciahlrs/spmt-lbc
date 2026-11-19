@@ -113,8 +113,6 @@ endif
    ! Initialize the obstacle and boundary vectors
    call init_vector(lb_dom,s_par,prc)
 
-   call ramp_u(s_par,0)
-
    call set_bnd(lb_dom,lb_dom%state,lb_dom%fIn,lb_dom%rho,lb_dom%u,s_par,prc,meas,0)
 
 ! for timing
@@ -147,7 +145,6 @@ endif
 
       tstep_cnt = tstep_cnt+1
 
-      call ramp_u(s_par,tstep)
       ! swap work array pointers
 #ifdef USE_SMPSS
       !$OMP TASK INOUT(lb_dom) label(swap_lb_dom_pnts_smpss) PRIORITY(50) no_copy_deps

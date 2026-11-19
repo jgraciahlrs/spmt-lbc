@@ -123,6 +123,7 @@ end subroutine gather_output
       character(10), intent(in)           :: filename
       character(10)           :: temp_name 
       logical :: file_exists     
+      integer :: tRamp           ! read from params, must be -1 (no ramp)
 
       !------------------------------------
       ! Reset some variables and set Name variables for output
@@ -193,7 +194,7 @@ end subroutine gather_output
          open(1,file=filename)
          read(1,*) s_par%umax                               ! boundary condition, lid speed (0.01<u<0.1)
          read(1,*) s_par%omega                              ! Reynolds number Re<5000?
-         read(1,*) s_par%tMax,s_par%tOut,s_par%tRamp,s_par%tOutBeg,s_par%tInitial   ! max timesteps, output interval,ramp tmax, tOutBegin, tInitial
+         read(1,*) s_par%tMax,s_par%tOut,tRamp,s_par%tOutBeg,s_par%tInitial   ! max timesteps, output interval, tRamp (must be -1), tOutBegin, tInitial
          read(1,*) s_par%problem                            
 ! problem: 1 cylinder in channel, 2 cavity, 3 shock,gaussian=4, cavity_same=5 
          read(1,*) s_par%gx(1),s_par%gx(2),s_par%gx(3)      ! global domain size x, y, z
@@ -209,11 +210,11 @@ end subroutine gather_output
       ! (problem=2) without a velocity ramp (tRamp=-1). All other problem
       ! cases and the ramp mechanism have been removed.
 
-         if(s_par%problem /= cavity .or. s_par%tRamp /= -1) then
+         if(s_par%problem /= cavity .or. tRamp /= -1) then
             write(*,*) "Error: unsupported configuration in '",filename,"'."
             write(*,*) "  This build only supports the lid-driven cavity:"
             write(*,*) "    problem = 2 (cavity), tRamp = -1 (no ramp)"
-            write(*,*) "  Got: problem = ",s_par%problem,", tRamp = ",s_par%tRamp
+            write(*,*) "  Got: problem = ",s_par%problem,", tRamp = ",tRamp
             write(*,*) "Exiting ... "
             stop
          endif
@@ -313,7 +314,6 @@ end subroutine gather_output
          write(*,'(a12,i4,i4,i4)') 'Problem size',   s_par%gx(1),s_par%gx(2),s_par%gx(3)
          write(*,'(a12,i8)')     'Max Tstep   ',   s_par%tMax
          write(*,'(a12,i8)')     'Out Tstep   ',   s_par%tOut
-         write(*,'(a12,i8)')     'Ramp until  ',   s_par%tRamp
          write(*,'(a12,i8)')     'Beg Out at  ',   s_par%tOutBeg
          write(*,'(a12,i8)')     'Init until  ',   s_par%tInitial
          if(s_par%setObstacles .EQV. .TRUE.) write(*,*) 'Insert regular obstacles ', s_par%setObstacles 
@@ -350,7 +350,6 @@ end subroutine gather_output
    call MPI_BCAST(s_par%save_output ,1,MPI_LOGICAL,0,MPI_COMM_WORLD,prc%ierr)
    call MPI_BCAST(s_par%tMax,1,MPI_INTEGER,0,MPI_COMM_WORLD,prc%ierr)
    call MPI_BCAST(s_par%tOut,1,MPI_INTEGER,0,MPI_COMM_WORLD,prc%ierr)
-   call MPI_BCAST(s_par%tRamp,1,MPI_INTEGER,0,MPI_COMM_WORLD,prc%ierr)
    call MPI_BCAST(s_par%tOutBeg,1,MPI_INTEGER,0,MPI_COMM_WORLD,prc%ierr)
    call MPI_BCAST(s_par%tInitial,1,MPI_INTEGER,0,MPI_COMM_WORLD,prc%ierr)
    call MPI_BCAST(s_par%problem,1,MPI_INTEGER,0,MPI_COMM_WORLD,prc%ierr)

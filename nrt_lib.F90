@@ -57,10 +57,10 @@ module nrt_lib
       ! position of obstacle 
       integer         :: obst_x,obst_y,obst_z,obst_r
       ! max iteration, interval of output
-      integer         :: tMax,tOut,tRamp,tOutBeg,tInitial
+      integer         :: tMax,tOut,tOutBeg,tInitial
 
       ! problem parameters
-      real(R8B)            :: Re,omega,umax,umaxRamp,nu
+      real(R8B)            :: Re,omega,umax,nu
       real(R8B)            :: rhoges,lchar,obst_l
       ! number of Obstacles. Will be assigned in read_params
       integer         :: nObs

@@ -274,8 +274,6 @@ end subroutine gather_output
          s_par%problem_name = "flute"
       elseif(s_par%problem == corotating_vortex ) then
          s_par%problem_name = "crvp"
-      elseif(s_par%problem == plate_trail ) then
-         s_par%problem_name = "plate_trail"
       elseif(s_par%problem == taylor_vortex) then
          s_par%problem_name = "taylor_vortex"
       elseif(s_par%problem == planar_standing_wave) then

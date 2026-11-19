@@ -1100,8 +1100,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
 
       select case(s_par%problem)
 
-      case(plate_trail)
-
       case(gaussian)
 
       case(gauss_convect)

@@ -1186,18 +1186,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
    ! Standard Zou / He boundary conditions (only working for 2d so far) 
 
 !----------------------------------------
-! Flute 
-
-      case(flute)
-
-        pos = (/ lb_dom%lx(1)/2+1, lb_dom%lx(2)-10, lb_dom%lx(3)/2+1    /)
-        call microphone(lb_dom,pos,fIn,s_par,prc,tstep,1)
-
-#ifdef OLD
-#endif
-
-
-!----------------------------------------
 ! Lid-driven cavity
 
      case(cavity)

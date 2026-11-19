@@ -1261,36 +1261,6 @@ contains
          write(*,*) "todo: implement cylinder"
 
 
-      case(flute   )
-         lb_dom%state(:,lb_dom%lx(2),:)      = ibset(lb_dom%state(:,lb_dom%lx(2),:),outlet)
-         lb_dom%state(1:lb_dom%lx(1)/5,:,:)  = ibset(lb_dom%state(1:lb_dom%lx(1)/5,:,:),wall)
-         lb_dom%state(lb_dom%lx(1)/10:lb_dom%lx(1)/5, lb_dom%lx(2)/4+8:lb_dom%lx(2),:) = & 
-         ibset(lb_dom%state(lb_dom%lx(1)/10:lb_dom%lx(1)/5, lb_dom%lx(2)/4+8:lb_dom%lx(2),:),fluid)
-         lb_dom%state(lb_dom%lx(1),:,:)      = ibset(lb_dom%state(lb_dom%lx(1),:,:),wall)
-      do j=lb_dom%lx(2)/4+2,lb_dom%lx(2)
-          ! outlet rechts
-          lb_dom%state(lb_dom%lx(1),j,:)     = ibset(lb_dom%state(lb_dom%lx(1),j,:),nr_wall)
-       end do
-
-       do j=lb_dom%lx(2)/4-4,lb_dom%lx(2)/4+4
-          ! inlet links 
-          lb_dom%state(1,j,:)                 = ibset(lb_dom%state(1,j,:),inlet)
-          lb_dom%state(2:lb_dom%lx(1)/5 ,j,:) = ibset(lb_dom%state(2:lb_dom%lx(1)/5 ,j,:),fluid )
-       end do
-       ! wall boundaries
-       lb_dom%state(1:lb_dom%lx(1),1,:)        = ibset(lb_dom%state(1:lb_dom%lx(1),1,:),wall)
-       lb_dom%state(1:lb_dom%lx(1),lb_dom%lx(2),:)  = ibset(lb_dom%state(1:lb_dom%lx(1),lb_dom%lx(2),:),wall)
-
-       ! flute labium 
-       xs = lb_dom%lx(1)/10*2.4d0
-       xe = lb_dom%lx(1)/10*3.1
-       ys = lb_dom%lx(2)/4-2+2
-       ye = lb_dom%lx(2)/4+8-1
-       do j=int(ys),int(ye)
-         x_pos = xs + (xe-xs)/(ye-ys)*(j-ys) 
-         lb_dom%state(int(x_pos):lb_dom%lx(1),j,1) = ibset(lb_dom%state(int(x_pos):lb_dom%lx(1),j,1),wall)
-       end do
-
 !----------------------------------------
 ! Lid driven Cavity 
 

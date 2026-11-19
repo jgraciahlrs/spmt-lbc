@@ -26,7 +26,6 @@ module nrt_lib
 
    ! set in params File which problem to solve
    integer, parameter                  :: cylinder=1,cavity=2
-   integer, parameter                  :: flute=6
    integer, parameter                  :: corotating_vortex=7
    integer, parameter                  :: channel=14
    integer, parameter                  :: fluid=0,wall=4,inlet=1,outlet=2

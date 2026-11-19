@@ -229,11 +229,6 @@ end subroutine gather_output
          s_par%obst_y=int(real(s_par%gx(2))*(7.d0/12.d0))
          s_par%obst_z=int(real(s_par%gx(3))*(1.d0/2.d0))
          s_par%obst_r=int(real(s_par%gx(2))*(1.d0/15.d0))+1
-         elseif(s_par%problem==flute) then
-         s_par%obst_x=s_par%gx(1)/5
-         s_par%obst_r=int(real(s_par%gx(2))/90.)
-         s_par%obst_y=s_par%gx(2)/4-s_par%obst_r
-         s_par%obst_z=0
          elseif(s_par%problem==corotating_vortex) then
          s_par%obst_r = s_par%gx(1)/100*s_par%obst_l+1
          endif    
@@ -242,7 +237,7 @@ end subroutine gather_output
          s_par%sponge_size = 20
  
      ! set characteristic length lchar
-         if(s_par%problem==cylinder .or. s_par%problem==flute) then
+         if(s_par%problem==cylinder) then
             s_par%lchar = real(s_par%obst_r)*2.
          else
          if(NDIM==2) then
@@ -260,8 +255,6 @@ end subroutine gather_output
          s_par%problem_name = "cylinder"
       elseif(s_par%problem == cavity) then
          s_par%problem_name = "cavity"
-      elseif(s_par%problem == flute ) then
-         s_par%problem_name = "flute"
       elseif(s_par%problem == corotating_vortex ) then
          s_par%problem_name = "crvp"
       else

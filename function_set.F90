@@ -236,7 +236,7 @@ end subroutine gather_output
          s_par%obst_z=0
          elseif(s_par%problem==corotating_vortex) then
          s_par%obst_r = s_par%gx(1)/100*s_par%obst_l+1
-         elseif(s_par%problem==gaussian .or. s_par%problem==gauss_convect) then
+         elseif(s_par%problem==gaussian) then
             if(s_par%obst_l < 1.0) then
                s_par%obst_r = s_par%gx(1)/100 +1
             else 
@@ -268,8 +268,6 @@ end subroutine gather_output
          s_par%problem_name = "cavity"
       elseif(s_par%problem == gaussian) then
          s_par%problem_name = "gaussian"
-      elseif(s_par%problem == gauss_convect) then
-         s_par%problem_name = "gauss_conv"
       elseif(s_par%problem == flute ) then
          s_par%problem_name = "flute"
       elseif(s_par%problem == corotating_vortex ) then

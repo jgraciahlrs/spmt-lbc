@@ -1102,8 +1102,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
 
       case(gaussian)
 
-      case(gauss_convect)
-
       case(corotating_vortex)
 
         ! read out pressure at stationary microphone

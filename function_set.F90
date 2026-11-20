@@ -201,7 +201,7 @@ end subroutine gather_output
          read(1,*) s_par%periodic(1),s_par%periodic(2),s_par%periodic(3) ! periodic settings
          read(1,*) prc%np(1),prc%np(2),prc%np(3)            ! # processes in each direction
          read(1,*) s_par%save_output                        ! save output t / f
-         read(1,*) s_par%obst_l                             ! Additional obstacle Parameter. For CRVP: Distance of vortices 
+         read(1,*) s_par%obst_l                             ! Additional obstacle Parameter
          read(1,*) s_par%read_obs                           ! Read obstacles from lbc.obs file??
          close(1)
 
@@ -223,10 +223,6 @@ end subroutine gather_output
       ! set characteristic lengths and problem lengths
 
          if(NDIM==2) s_par%gx(3) = 1
-     ! Set position for obstacle (only problem corotating_vortex)
-         if(s_par%problem==corotating_vortex) then
-         s_par%obst_r = s_par%gx(1)/100*s_par%obst_l+1
-         endif    
 
      ! Set sponge layer thickness
          s_par%sponge_size = 20
@@ -244,8 +240,6 @@ end subroutine gather_output
 
       if(s_par%problem == cavity) then
          s_par%problem_name = "cavity"
-      elseif(s_par%problem == corotating_vortex ) then
-         s_par%problem_name = "crvp"
       else
          s_par%problem_name = ""
       endif

@@ -945,85 +945,6 @@ endif
 
    end subroutine set_nrbc
    !------------------------------------------------------------------------
-
-
-
-
-
-   subroutine microphone(lb_dom,pos,fIn,s_par,prc,tstep,nr)
-   !------------------------------------------------------------------------
-   !
-   ! Get current density at a certain place 
-   ! 
-
-      implicit none
-      type(lb_block)       :: lb_dom
-      type(sim_parameter)  :: s_par 
-      type(mpl_var)        :: prc
-      integer              :: tstep,ll,nr
-      integer              :: xmin(3),xmax(3) 
-      integer,intent(in)   :: pos(3)
-      real(R8B)            :: rholoc
-      real(R8B),dimension(NDX(1:nnod,0:lb_dom%lx(1)+1,0:lb_dom%lx(2)+1,0:lb_dom%lx(3)+1))    :: fIn
-      character(len=8) :: ch_rank,ch_posx,ch_posy,ch_posz
-      logical :: record
-
-      xmin = lb_dom%lx*prc%crd+1
-      xmax = lb_dom%lx*(prc%crd+1)
-
-      record = .false.
-
-      if(xmin(1) .le. pos(1) .and. xmax(1) .ge. pos(1) .and. &
-         xmin(2) .le. pos(2) .and. xmax(2) .ge. pos(2).and. &
-         xmin(3) .le. pos(3) .and. xmax(3) .ge. pos(3)      &
-         ) record = .true. 
-
-      if(record .eqv. .true.) then
-         rholoc  = 0.0d0
-         do ll=1,nnod
-            if(record .eqv. .true. ) &
-            rholoc = rholoc+fIn(NDX(ll,pos(1)-xmin(1)+1,pos(2)-xmin(2)+1,pos(3)-xmin(3)+1))
-         enddo
-      if(tstep==1) then
-      write(ch_rank,'(i7)') prc%rk
-      write(ch_posx,'(i7)') pos(1) 
-      write(ch_posy,'(i7)') pos(2)
-      write(ch_posz,'(i7)') pos(3)
-      ch_rank = adjustl(ch_rank)
-      ch_posx = adjustl(ch_posx)
-      ch_posy = adjustl(ch_posy)
-      ch_posz = adjustl(ch_posz)
-
-      open(44+nr,file='mic_'//trim(ch_posx)//'_'//trim(ch_posy)//'_'//trim(ch_posz)//'_'//trim(ch_rank)//'.res',position='append')
-         write(44+nr,*) 
-         write(44+nr,*)
-         write(44+nr,*) "# Density Fluctuation for ",trim(s_par%problem_name)
-         if(record .eqv. .true. ) then
-         write(44+nr,*) "# Sensing pos 1    was x: ",pos(1),pos(1)-xmin(1)+1 
-         write(44+nr,*) "#                      y: ",pos(2),pos(2)-xmin(2)+1 
-         write(44+nr,*) "#                      z: ",pos(3),pos(3)-xmin(3)+1 
-         endif
-      write(44+nr,*) "#                  Omega: ",s_par%omega
-      write(44+nr,*) "#                   umax: ",s_par%umax 
-      write(44+nr,*) "#                     dx: ",s_par%gx(1)
-      write(44+nr,*) "#                   dist: ",s_par%obst_l
-      write(44+nr,*) "#       Relaxation model: ",s_par%modelname
-      write(44+nr,*) "# tstep     dens   " 
-   endif
-   if(tstep>0) then
-      write(44+nr,'(i10,3e18.10)') tstep,rholoc
-   endif
-      if(s_par%goend .eqv. .true. .or. gtstep_cur == s_par%tMax) then
-         close(44+nr)
-      endif
-   endif
-
-end subroutine microphone
-
-
-
-
-
 subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
 
 !------------------------------------------------------------------------
@@ -1041,7 +962,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
    integer              :: state(lb_dom%lx(1),lb_dom%lx(2),lb_dom%lx(3))
    integer              :: i,j,k,l,x_start,x_end,y_start,y_end,z_start,z_end
    integer              :: incr_x,incr_y,incr_z,lx,ly,lz
-   integer              :: pos(3) 
    real(R8B),dimension(NDX(1:nnod,0:lb_dom%lx(1)+1,0:lb_dom%lx(2)+1,0:lb_dom%lx(3)+1))    :: fIn
    real(R8B),dimension(NDX(1:NDIM,0:lb_dom%lx(1)+1,0:lb_dom%lx(2)+1,0:lb_dom%lx(3)+1))    :: u
    real(R8B),dimension(0:lb_dom%lx(1)+1,0:lb_dom%lx(2)+1,0:lb_dom%lx(3)+1)    :: rho
@@ -1099,16 +1019,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
 ! Select defined problem  
 
       select case(s_par%problem)
-
-      case(corotating_vortex)
-
-        ! read out pressure at stationary microphone
-        pos = (/ int(5.d0/8.d0*real(s_par%gx(1))), s_par%gx(2)/2, s_par%gx(3)/2+1    /)
-        call microphone(lb_dom,pos,fIn,s_par,prc,tstep,1)
-        pos = (/ int(6.d0/8.d0*real(s_par%gx(1))), s_par%gx(2)/2, s_par%gx(3)/2+1    /)
-        call microphone(lb_dom,pos,fIn,s_par,prc,tstep,2)
-        pos = (/ int(7.d0/8.d0*real(s_par%gx(1))), s_par%gx(2)/2, s_par%gx(3)/2+1    /)
-        call microphone(lb_dom,pos,fIn,s_par,prc,tstep,3)
 
 
 !----------------------------------------

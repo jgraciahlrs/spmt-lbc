@@ -26,7 +26,6 @@ module nrt_lib
 
    ! set in params File which problem to solve
    integer, parameter                  :: cavity=2
-   integer, parameter                  :: corotating_vortex=7
    integer, parameter                  :: fluid=0,wall=4,inlet=1,outlet=2
    ! special bcs including lid, non reflecting bc
    integer, parameter                  :: lid=3,sponge_wall=5,reset_wall=6,nr_wall=7
@@ -63,7 +62,6 @@ module nrt_lib
       logical         :: setObstacles,save_output,read_obs
       logical         :: goend,initial 
       logical         :: calc_rho_inc 
-      integer         :: crvp_period,crvp_av_start 
       logical         :: periodic(3)   
       integer         :: gx(3)
       ! global dimensions of domain

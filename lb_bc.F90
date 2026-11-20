@@ -1022,14 +1022,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
 
 
 !----------------------------------------
-! Cylinder in channel
-
-      case(100)
-
-   !---------------------------
-   ! Standard Zou / He boundary conditions (only working for 2d so far) 
-
-!----------------------------------------
 ! Lid-driven cavity
 
      case(cavity)

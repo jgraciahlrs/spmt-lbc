@@ -73,61 +73,6 @@ contains
   end subroutine init_field_each
 
 
-   subroutine init_vector(lb_dom,s_par,prc)
-
-!------------------------------------------------------------------------
-! create a vector for the boundary conditions containing the coordinates 
-! of the boundary node (and additionally first and second neighbors for nrbc)
-!
-
-
-      implicit none
-      type(lb_block)                :: lb_dom
-      type(sim_parameter)           :: s_par
-      type(mpl_var)                 :: prc  
-#ifdef SPARSE /* SPARSE */
-! this is a preparation for the usage of indirect addressing. 
-! not used until now
-   ! allocate the number of (nodes + ghost nodes - solid nodes)*nnod
-   allocate(lb_dom%fsIn(((lb_dom%lx(1)+2*prc%n_ghost_nodes)*&
-      & (lb_dom%lx(1)+2*prc%n_ghost_nodes)*(lb_dom%lx(1)+2*prc%n_ghost_nodes)-lb_dom%nobs)*nnod)
-   ! assign the densities one by one
-      counter = 0
-      do k=1-prc%n_ghost_nodes,lb_dom%lx(3)+prc%n_ghost_nodes
-         do j=1-prc%n_ghost_nodes,lb_dom%lx(2)+prc%n_ghost_nodes
-            do i=1-prc%n_ghost_nodes,lb_dom%lx(1)+prc%n_ghost_nodes
-               if(btest(lb_dom%state(i,j,k),fluid)) then
-                  counter = counter+1
-                   
-               end if
-            end do
-         end do
-      end do
-
-   ! assign adjacency list
-!FIXME ghost nodes also have to be defined as fluid nodes
-      ! create the target vector
-      counter = 0
-      do k=1,lb_dom%lx(3)
-         do j=1,lb_dom%lx(2)
-            do i=1,lb_dom%lx(1)
-               counter = counter+1
-               do l=1,nnod
-                  lb_dom%f_sparse((counter*nnod-1)+l) = lb_dom%fIn(NDX(l,i,j,k))
-               end do
-            end do
-         end do
-      end do
-#endif
-
-  end subroutine init_vector
-  !------------------------------------------------------------------------
-  
-
-
-
-
-
    subroutine calc_rho_ges(lb_dom,fIn,rho_ges,tStep,prc)
 !------------------------------------------------------------------------
 ! calculate the total density of the domain

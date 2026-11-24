@@ -28,7 +28,7 @@ module nrt_lib
    integer, parameter                  :: cavity=2
    integer, parameter                  :: fluid=0,wall=4,inlet=1,outlet=2
    ! special bcs including lid, non reflecting bc
-   integer, parameter                  :: lid=3,sponge_wall=5,reset_wall=6
+   integer, parameter                  :: lid=3
 
    ! Model constants
    real(R8B), parameter :: cs  = 0.577350318431854_R8B  !1./sqrt(3.) !LU dx=dy=dt=1
@@ -83,7 +83,7 @@ module nrt_lib
       ! mean values for communication measurement
       real(R8B)            :: mean_total,max_total
       real(R8B)            :: mean_comm,mean_sbnd,mean_cceq
-      real(R8B)            :: mean_coll,mean_prop,mean_ccmv,mean_bncb
+      real(R8B)            :: mean_coll,mean_prop,mean_ccmv
       real(R8B)            :: mean_mpl_cp_buf, mean_mpl_cp_buf_back, mean_mpl_exch, mean_mpl_comm_size 
       real(R8B)            :: mean_mpl_sync 
        ! memory consumption, global, per thread, and additional costs for master

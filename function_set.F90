@@ -387,8 +387,6 @@ subroutine  dealloc_mem(lb_dom,s_par)
    type(lb_block)             :: lb_dom
    type(sim_parameter)        :: s_par 
    integer                    :: alloc_stat
-!   deallocate(lb_dom%nrfplus,stat=alloc_stat)
-!      if(alloc_stat /=0) write(*,*) "Error deallocating nrfplus    "
 
    deallocate(lb_dom%fIn,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%fin "
@@ -410,9 +408,6 @@ endif
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%y  "
    deallocate(lb_dom%z,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%z  "
-#ifdef SPARSE
-   deallocate(lb_dom%fsIn,stat=alloc_stat)
-#endif
 
 end subroutine dealloc_mem
 
@@ -557,8 +552,6 @@ end subroutine dealloc_mem
 & meas%mean_coll," s", meas%mean_coll/meas%mean_total*100.,"%    (",coll_min,coll_max,")"
       write(*,'(a35,f8.3,a2,f8.3,a7,2e9.2,a2)') "Propagation   duration          ",  &
 & meas%mean_prop," s", meas%mean_prop/meas%mean_total*100.,"%    (",prop_min,prop_max,")"
-      write(*,'(a35,f8.3,a2,f8.3,a2)') "Bounceback    duration          ",  &
-& meas%mean_bncb," s", meas%mean_bncb/meas%mean_total*100.,"%"
       write(*,'(a35,f8.3,a2,f8.3,a2)') "Calcmacr vals duration          ",  &
 & meas%mean_ccmv," s", meas%mean_ccmv/meas%mean_total*100.,"%"
          write(*,*)

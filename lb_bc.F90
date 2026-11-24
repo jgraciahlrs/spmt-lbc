@@ -26,7 +26,6 @@ contains
    subroutine set_periodic(lb_dom,fIn,s_par,prc,meas)
    !------------------------------------------------------------------------
    !
-   ! Treat periodic boundaries according to init_vector
    ! Tested and ok
    !
       implicit none
@@ -119,20 +118,6 @@ subroutine set_bnd(lb_dom,state,fIn,rho,u,s_par,prc,meas,tStep)
 !--------------------------------------------------------------------
 ! Treat non-reflecting and periodic boundaries 
 
-!if (gtstep_cur==0) then
-!   call nrbc_init(lb_dom,fIn,s_par,prc)
-!  do ind=1,nnod
-!     lb_dom%fplus(i,ind) = 0.5*(fIn(NDX(ind,xc(0),yc(0),zc(0))) + fIn(NDX(opp(ind),xc(0),yc(0),zc(0))))
-!  enddo
-!endif
- 
-
-!   call set_nrbc_antibb(lb_dom,pnt_nxt,pnt_cur,s_par,prc,meas)
-!   call set_nrbc(lb_dom,fIn,s_par,prc,meas)
-   call set_periodic(lb_dom,fIn,s_par,prc,meas)
- 
-! calculate initial fplus for nrbc
-      ! calculate correction term fplus
 
  
 ! Treat inlet / outlet 

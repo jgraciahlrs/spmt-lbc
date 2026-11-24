@@ -110,8 +110,6 @@ endif
    call init_field_each(lb_dom,s_par,prc)
    call calc_fEq(lb_dom,lb_dom%rho,lb_dom%u,lb_dom%fIn,0,0,0,0,0,0,s_par)
    !---------------------------
-   ! Initialize the obstacle and boundary vectors
-   call init_vector(lb_dom,s_par,prc)
 
    call set_bnd(lb_dom,lb_dom%state,lb_dom%fIn,lb_dom%rho,lb_dom%u,s_par,prc,meas,0)
 

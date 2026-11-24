@@ -213,8 +213,6 @@ endif
 #endif
   
 ! Calculate Momentum
-
-              if(s_par%initial .eqv. .false.) then
     u(1) = fIn(NDX(I__E,i,j,k)) - fIn(NDX(I__W,i,j,k)) + &
                       fIn(NDX(I_NE,i,j,k)) - fIn(NDX(I_SW,i,j,k)) + &
                       fIn(NDX(I_SE,i,j,k)) - fIn(NDX(I_NW,i,j,k)) + &
@@ -231,12 +229,6 @@ endif
                       fIn(NDX(I_TN,i,j,k)) - fIn(NDX(I_BS,i,j,k))  + &
                       fIn(NDX(I_TS,i,j,k)) - fIn(NDX(I_BN,i,j,k))
    u=u/rho0
-               else
-         ! Decide, if a constant velocity field is used for initial relaxation process
-                  u(1) = lb_dom%u0(NDX(1,i,j,k))
-                  u(2) = lb_dom%u0(NDX(2,i,j,k))
-                  u(3) = lb_dom%u0(NDX(3,i,j,k))
-               endif
  
                usq =  (u(1)**2 + u(2)**2 + u(3)**2)*t2cs2inv
 

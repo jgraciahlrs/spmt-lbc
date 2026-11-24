@@ -219,8 +219,6 @@ contains
                do i=1,lb_dom%lx(1)
                if(count_error > 10) exit
                if(btest(lb_dom%state(i,j,k),wall)    .eqv. .false.) then ! .and. &
-               if(btest(lb_dom%state(i,j,k),nr_wall) .eqv. .false.) then 
-               if(btest(lb_dom%state(i,j,k),nr_wall_in) .eqv. .false.) then 
                   do l= 1,nnod
                      if(lb_dom%fIn(NDX(l,i,j,k)) == 0.) then
                         write(*,*) rank,"zero at ",i,j,k,l,lb_dom%fIn(NDX(l,i,j,k))
@@ -235,8 +233,6 @@ contains
                         endif
                      end if
                   end do
-               endif
-               endif
                endif
                end do
             end do

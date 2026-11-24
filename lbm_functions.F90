@@ -645,50 +645,6 @@ else
 
 
 
-!------------------------------------------------------------------------
-subroutine bounceback(lb_dom,fOut,fIn,meas,s_par,prc) !
-! calculate bounce-back routine for the treatment of wall boundaries
-!
-   type(sim_parameter),intent(inout)  :: s_par
-   type(mpl_var),intent(inout)  :: prc
-   type(lb_block),intent(inout)  :: lb_dom
-   real(R8B),pointer,dimension(:,:,:,:),intent(in)     :: fIn
-   real(R8B),pointer,dimension(:,:,:,:),intent(inout)  :: fOut
-   type(measure )                :: meas  
-   integer                 :: ii
-   integer                 :: cdx(3)
-
-   call cpu_time_measure(meas%tSt_comm) 
-
-   do ii=1,lb_dom%nobs
-      cdx(1:3) = lb_dom%obs(ii,1:3)
-      fOut(NDX(1,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(1),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(2,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(2),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(3,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(3),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(4,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(4),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(5,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(5),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(6,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(6),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(7,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(7),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(8,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(8),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(9,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(9),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(10,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(10),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(11,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(11),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(12,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(12),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(13,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(13),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(14,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(14),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(15,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(15),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(16,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(16),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(17,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(17),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(18,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(18),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(19,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(19),cdx(1),cdx(2),cdx(3))) 
-
-   end do
-
-      call cpu_time_measure(meas%tEnd_comm)
-      meas%bncb_duration = meas%tEnd_comm - meas%tSt_comm + meas%bncb_duration
-
-end subroutine bounceback
-!------------------------------------------------------------------------
 
 
 

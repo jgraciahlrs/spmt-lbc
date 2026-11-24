@@ -387,14 +387,6 @@ subroutine  dealloc_mem(lb_dom,s_par)
    type(lb_block)             :: lb_dom
    type(sim_parameter)        :: s_par 
    integer                    :: alloc_stat
-   deallocate(lb_dom%obs,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating obs       "
-   deallocate(lb_dom%obs_nrwall,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating obs_nrwall"
-   deallocate(lb_dom%nrwall_0val,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating nrwall_0val"
-   deallocate(lb_dom%nrwall_prev,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating nrwall_prev"
 !   deallocate(lb_dom%nrfplus,stat=alloc_stat)
 !      if(alloc_stat /=0) write(*,*) "Error deallocating nrfplus    "
 

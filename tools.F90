@@ -219,8 +219,6 @@ contains
                do i=1,lb_dom%lx(1)
                if(count_error > 10) exit
                if(btest(lb_dom%state(i,j,k),wall)    .eqv. .false.) then ! .and. &
-               if(btest(lb_dom%state(i,j,k),nr_wall) .eqv. .false.) then 
-               if(btest(lb_dom%state(i,j,k),nr_wall_in) .eqv. .false.) then 
                   do l= 1,nnod
                      if(lb_dom%fIn(NDX(l,i,j,k)) == 0.) then
                         write(*,*) rank,"zero at ",i,j,k,l,lb_dom%fIn(NDX(l,i,j,k))
@@ -235,8 +233,6 @@ contains
                         endif
                      end if
                   end do
-               endif
-               endif
                endif
                end do
             end do
@@ -265,19 +261,6 @@ contains
       write(*,'(a35,f28.3)') "Total Memory needed          [MB]",meas%mem_thread*real(prc%size)+meas%mem_master
 
    end subroutine calc_mem 
-
-   subroutine ramp_u(s_par,tstep)
-      type(sim_parameter),intent(inout) :: s_par
-      integer,intent(in)                :: tstep
-      if(tstep == 1) then
-         s_par%umaxRamp = s_par%umax 
-      endif
-      if(tstep <= s_par%tRamp) then
-         s_par%umax = s_par%umaxRamp*real(tstep)/real(s_par%tRamp)
-      endif
-   end subroutine ramp_u
-
-
 
 
 end module tools

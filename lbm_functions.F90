@@ -213,8 +213,6 @@ endif
 #endif
   
 ! Calculate Momentum
-
-              if(s_par%initial .eqv. .false.) then
     u(1) = fIn(NDX(I__E,i,j,k)) - fIn(NDX(I__W,i,j,k)) + &
                       fIn(NDX(I_NE,i,j,k)) - fIn(NDX(I_SW,i,j,k)) + &
                       fIn(NDX(I_SE,i,j,k)) - fIn(NDX(I_NW,i,j,k)) + &
@@ -231,12 +229,6 @@ endif
                       fIn(NDX(I_TN,i,j,k)) - fIn(NDX(I_BS,i,j,k))  + &
                       fIn(NDX(I_TS,i,j,k)) - fIn(NDX(I_BN,i,j,k))
    u=u/rho0
-               else
-         ! Decide, if a constant velocity field is used for initial relaxation process
-                  u(1) = lb_dom%u0(NDX(1,i,j,k))
-                  u(2) = lb_dom%u0(NDX(2,i,j,k))
-                  u(3) = lb_dom%u0(NDX(3,i,j,k))
-               endif
  
                usq =  (u(1)**2 + u(2)**2 + u(3)**2)*t2cs2inv
 
@@ -645,50 +637,6 @@ else
 
 
 
-!------------------------------------------------------------------------
-subroutine bounceback(lb_dom,fOut,fIn,meas,s_par,prc) !
-! calculate bounce-back routine for the treatment of wall boundaries
-!
-   type(sim_parameter),intent(inout)  :: s_par
-   type(mpl_var),intent(inout)  :: prc
-   type(lb_block),intent(inout)  :: lb_dom
-   real(R8B),pointer,dimension(:,:,:,:),intent(in)     :: fIn
-   real(R8B),pointer,dimension(:,:,:,:),intent(inout)  :: fOut
-   type(measure )                :: meas  
-   integer                 :: ii
-   integer                 :: cdx(3)
-
-   call cpu_time_measure(meas%tSt_comm) 
-
-   do ii=1,lb_dom%nobs
-      cdx(1:3) = lb_dom%obs(ii,1:3)
-      fOut(NDX(1,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(1),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(2,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(2),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(3,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(3),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(4,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(4),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(5,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(5),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(6,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(6),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(7,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(7),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(8,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(8),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(9,cdx(1),cdx(2),cdx(3))) = fIn(NDX(opp(9),cdx(1),cdx(2),cdx(3)))
-      fOut(NDX(10,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(10),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(11,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(11),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(12,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(12),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(13,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(13),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(14,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(14),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(15,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(15),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(16,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(16),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(17,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(17),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(18,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(18),cdx(1),cdx(2),cdx(3))) 
-      fOut(NDX(19,cdx(1),cdx(2),cdx(3))) =fIn(NDX(opp(19),cdx(1),cdx(2),cdx(3))) 
-
-   end do
-
-      call cpu_time_measure(meas%tEnd_comm)
-      meas%bncb_duration = meas%tEnd_comm - meas%tSt_comm + meas%bncb_duration
-
-end subroutine bounceback
-!------------------------------------------------------------------------
 
 
 

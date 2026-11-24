@@ -32,3 +32,23 @@ setup () {
 
     tail -n 1 ${BATS_TEST_TMPDIR}/performance.res >> "${BATS_TEST_DIRNAME}/performance.res"
 }
+
+@test "LBC rejects tRamp != -1" {
+    MPIEXEC_OPTS="-n 1 -ppn 4 -depth 24 --cpu-bind depth --gpu-bind per_task:1 "
+    cd "${BATS_TEST_TMPDIR}"
+    cp ${BATS_TEST_DIRNAME}/tRamp-lbc.params ./lbc.params
+    assert_file_exists ./lbc.params
+    run mpiexec ${MPIEXEC_OPTS} ${BATS_TEST_DIRNAME}/lbc-bats
+    assert_output --partial "unsupported configuration"
+    assert_output --partial "Exiting"
+}
+
+@test "LBC rejects problem != 2" {
+    MPIEXEC_OPTS="-n 1 -ppn 4 -depth 24 --cpu-bind depth --gpu-bind per_task:1 "
+    cd "${BATS_TEST_TMPDIR}"
+    cp ${BATS_TEST_DIRNAME}/cavity-lbc.params ./lbc.params
+    assert_file_exists ./lbc.params
+    run mpiexec ${MPIEXEC_OPTS} ${BATS_TEST_DIRNAME}/lbc-bats
+    assert_output --partial "unsupported configuration"
+    assert_output --partial "Exiting"
+}

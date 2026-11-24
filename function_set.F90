@@ -112,7 +112,7 @@ end subroutine gather_output
    ! umax         the max velocity, here: of the lid
    ! Re           Reynolds number 
    ! tMax         max. timesteps), tOut (interval for writing out results
-   ! problem      1=cylinder, 2=cavity
+   ! problem      2=cavity
    ! s_par%gx(1),s_par%gx(2),s_par%gx(3)  global domain size
    ! s_par%setObstacles set small obstacles in equal distance in the whole domain
    ! prc%np(1:3)   number of processes/threads in each direction (cartesian topolos_par%gx(2))
@@ -123,6 +123,7 @@ end subroutine gather_output
       character(10), intent(in)           :: filename
       character(10)           :: temp_name 
       logical :: file_exists     
+      integer :: tRamp           ! read from params, must be -1 (no ramp)
 
       !------------------------------------
       ! Reset some variables and set Name variables for output
@@ -193,84 +194,52 @@ end subroutine gather_output
          open(1,file=filename)
          read(1,*) s_par%umax                               ! boundary condition, lid speed (0.01<u<0.1)
          read(1,*) s_par%omega                              ! Reynolds number Re<5000?
-         read(1,*) s_par%tMax,s_par%tOut,s_par%tRamp,s_par%tOutBeg,s_par%tInitial   ! max timesteps, output interval,ramp tmax, tOutBegin, tInitial
+         read(1,*) s_par%tMax,s_par%tOut,tRamp,s_par%tOutBeg,s_par%tInitial   ! max timesteps, output interval, tRamp (must be -1), tOutBegin, tInitial
          read(1,*) s_par%problem                            
-! problem: 1 cylinder in channel, 2 cavity, 3 shock,gaussian=4, cavity_same=5 
+! problem: 2 cavity
          read(1,*) s_par%gx(1),s_par%gx(2),s_par%gx(3)      ! global domain size x, y, z
          read(1,*) s_par%periodic(1),s_par%periodic(2),s_par%periodic(3) ! periodic settings
          read(1,*) prc%np(1),prc%np(2),prc%np(3)            ! # processes in each direction
          read(1,*) s_par%save_output                        ! save output t / f
-         read(1,*) s_par%obst_l                             ! Additional obstacle Parameter. For CRVP: Distance of vortices 
+         read(1,*) s_par%obst_l                             ! Additional obstacle Parameter
          read(1,*) s_par%read_obs                           ! Read obstacles from lbc.obs file??
          close(1)
 
       !------------------------------------
-      ! set characteristic lengths and problem lengths (cylinder radius etc.) 
+      ! Enforced invariants: this codebase only supports the lid-driven cavity
+      ! (problem=2) without a velocity ramp (tRamp=-1). All other problem
+      ! cases and the ramp mechanism have been removed.
+
+         if(s_par%problem /= cavity .or. tRamp /= -1) then
+            write(*,*) "Error: unsupported configuration in '",filename,"'."
+            write(*,*) "  This build only supports the lid-driven cavity:"
+            write(*,*) "    problem = 2 (cavity), tRamp = -1 (no ramp)"
+            write(*,*) "  Got: problem = ",s_par%problem,", tRamp = ",tRamp
+            write(*,*) "Exiting ... "
+            stop
+         endif
+
+      !------------------------------------
+      ! set characteristic lengths and problem lengths
 
          if(NDIM==2) s_par%gx(3) = 1
-     ! Set position for obstacle (only problem cylinder)
-         if(s_par%problem==cylinder) then
-         s_par%obst_x=s_par%gx(1)/5+1
-         s_par%obst_y=int(real(s_par%gx(2))*(7.d0/12.d0))
-         s_par%obst_z=int(real(s_par%gx(3))*(1.d0/2.d0))
-         s_par%obst_r=int(real(s_par%gx(2))*(1.d0/15.d0))+1
-         elseif(s_par%problem==flute) then
-         s_par%obst_x=s_par%gx(1)/5
-         s_par%obst_r=int(real(s_par%gx(2))/90.)
-         s_par%obst_y=s_par%gx(2)/4-s_par%obst_r
-         s_par%obst_z=0
-         elseif(s_par%problem==corotating_vortex) then
-         s_par%obst_r = s_par%gx(1)/100*s_par%obst_l+1
-         elseif(s_par%problem==gaussian .or. s_par%problem==gauss_convect) then
-            if(s_par%obst_l < 1.0) then
-               s_par%obst_r = s_par%gx(1)/100 +1
-            else 
-               s_par%obst_r = int(s_par%obst_l) 
-            endif
-         endif    
 
      ! Set sponge layer thickness
          s_par%sponge_size = 20
  
      ! set characteristic length lchar
-         if(s_par%problem==cylinder .or. s_par%problem==flute) then
-            s_par%lchar = real(s_par%obst_r)*2.
-         else
          if(NDIM==2) then
             s_par%lchar = real(MAX(s_par%gx(1),s_par%gx(2)))
          else
             s_par%lchar = real(MAX(s_par%gx(1),s_par%gx(2),s_par%gx(3)))
          endif
-      endif
 
 
       !------------------------------------
       ! set problem names for output 
 
-      if(s_par%problem == cylinder) then
-         s_par%problem_name = "cylinder"
-      elseif(s_par%problem == cavity) then
+      if(s_par%problem == cavity) then
          s_par%problem_name = "cavity"
-      elseif(s_par%problem == shock) then
-         s_par%problem_name = "shock"
-      elseif(s_par%problem == gaussian) then
-         s_par%problem_name = "gaussian"
-      elseif(s_par%problem == gauss_convect) then
-         s_par%problem_name = "gauss_conv"
-      elseif(s_par%problem == cavity_same) then
-         s_par%problem_name = "cavity_same"
-      elseif(s_par%problem == flute ) then
-         s_par%problem_name = "flute"
-      elseif(s_par%problem == corotating_vortex ) then
-         s_par%problem_name = "crvp"
-      elseif(s_par%problem == cylinder_impulse ) then
-         s_par%problem_name = "cyl_imp"
-      elseif(s_par%problem == plate_trail ) then
-         s_par%problem_name = "plate_trail"
-      elseif(s_par%problem == taylor_vortex) then
-         s_par%problem_name = "taylor_vortex"
-      elseif(s_par%problem == planar_standing_wave) then
-         s_par%problem_name = "plane_wave"
       else
          s_par%problem_name = ""
       endif
@@ -299,7 +268,6 @@ end subroutine gather_output
          write(*,'(a12,i4,i4,i4)') 'Problem size',   s_par%gx(1),s_par%gx(2),s_par%gx(3)
          write(*,'(a12,i8)')     'Max Tstep   ',   s_par%tMax
          write(*,'(a12,i8)')     'Out Tstep   ',   s_par%tOut
-         write(*,'(a12,i8)')     'Ramp until  ',   s_par%tRamp
          write(*,'(a12,i8)')     'Beg Out at  ',   s_par%tOutBeg
          write(*,'(a12,i8)')     'Init until  ',   s_par%tInitial
          if(s_par%setObstacles .EQV. .TRUE.) write(*,*) 'Insert regular obstacles ', s_par%setObstacles 
@@ -336,7 +304,6 @@ end subroutine gather_output
    call MPI_BCAST(s_par%save_output ,1,MPI_LOGICAL,0,MPI_COMM_WORLD,prc%ierr)
    call MPI_BCAST(s_par%tMax,1,MPI_INTEGER,0,MPI_COMM_WORLD,prc%ierr)
    call MPI_BCAST(s_par%tOut,1,MPI_INTEGER,0,MPI_COMM_WORLD,prc%ierr)
-   call MPI_BCAST(s_par%tRamp,1,MPI_INTEGER,0,MPI_COMM_WORLD,prc%ierr)
    call MPI_BCAST(s_par%tOutBeg,1,MPI_INTEGER,0,MPI_COMM_WORLD,prc%ierr)
    call MPI_BCAST(s_par%tInitial,1,MPI_INTEGER,0,MPI_COMM_WORLD,prc%ierr)
    call MPI_BCAST(s_par%problem,1,MPI_INTEGER,0,MPI_COMM_WORLD,prc%ierr)
@@ -420,16 +387,6 @@ subroutine  dealloc_mem(lb_dom,s_par)
    type(lb_block)             :: lb_dom
    type(sim_parameter)        :: s_par 
    integer                    :: alloc_stat
-   deallocate(lb_dom%obs,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating obs       "
-   deallocate(lb_dom%obs_nrwall,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating obs_nrwall"
-   deallocate(lb_dom%nrwall_0val,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating nrwall_0val"
-   deallocate(lb_dom%nrwall_prev,stat=alloc_stat)
-      if(alloc_stat /=0) write(*,*) "Error deallocating nrwall_prev"
-!   deallocate(lb_dom%nrfplus,stat=alloc_stat)
-!      if(alloc_stat /=0) write(*,*) "Error deallocating nrfplus    "
 
    deallocate(lb_dom%fIn,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%fin "
@@ -451,9 +408,6 @@ endif
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%y  "
    deallocate(lb_dom%z,stat=alloc_stat)
       if(alloc_stat /=0) write(*,*) "Error deallocating lb_dom%z  "
-#ifdef SPARSE
-   deallocate(lb_dom%fsIn,stat=alloc_stat)
-#endif
 
 end subroutine dealloc_mem
 
@@ -598,8 +552,6 @@ end subroutine dealloc_mem
 & meas%mean_coll," s", meas%mean_coll/meas%mean_total*100.,"%    (",coll_min,coll_max,")"
       write(*,'(a35,f8.3,a2,f8.3,a7,2e9.2,a2)') "Propagation   duration          ",  &
 & meas%mean_prop," s", meas%mean_prop/meas%mean_total*100.,"%    (",prop_min,prop_max,")"
-      write(*,'(a35,f8.3,a2,f8.3,a2)') "Bounceback    duration          ",  &
-& meas%mean_bncb," s", meas%mean_bncb/meas%mean_total*100.,"%"
       write(*,'(a35,f8.3,a2,f8.3,a2)') "Calcmacr vals duration          ",  &
 & meas%mean_ccmv," s", meas%mean_ccmv/meas%mean_total*100.,"%"
          write(*,*)

@@ -368,14 +368,6 @@ subroutine mpl_divide_and_set_domain_size(lb_dom,s_par,prc)
 #ifdef USE_MPI
       end if
       call MPI_BCAST(prc%bnd,prc%np(1)*prc%np(2)*prc%np(3)*3*2,MPI_INTEGER,0,prc%cart_comm,prc%ierr)
-      if(s_par%problem==cavity_same) then
-         ! if the complete cavity is calculated on each process (for benchmarking reasons),
-         ! each process uses the globally defined domain size.
-         prc%bnd(prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1,:,1) = 1
-         prc%bnd(prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1,1,2) = s_par%gx(1)
-         prc%bnd(prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1,2,2) = s_par%gx(2)
-         prc%bnd(prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1,3,2) = s_par%gx(3)
-      end if
 #endif 
       ! get the size of each subdomain
       lb_dom%lx(1) = prc%bnd(prc%crd(1)+1,prc%crd(2)+1,prc%crd(3)+1,1,2) &

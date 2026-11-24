@@ -110,10 +110,6 @@ endif
    call init_field_each(lb_dom,s_par,prc)
    call calc_fEq(lb_dom,lb_dom%rho,lb_dom%u,lb_dom%fIn,0,0,0,0,0,0,s_par)
    !---------------------------
-   ! Initialize the obstacle and boundary vectors
-   call init_vector(lb_dom,s_par,prc)
-
-   call ramp_u(s_par,0)
 
    call set_bnd(lb_dom,lb_dom%state,lb_dom%fIn,lb_dom%rho,lb_dom%u,s_par,prc,meas,0)
 
@@ -154,7 +150,6 @@ endif
 
       tstep_cnt = tstep_cnt+1
 
-      call ramp_u(s_par,tstep)
       ! swap work array pointers
       swapper => lb_dom%pnt_cur; lb_dom%pnt_cur => lb_dom%pnt_nxt; lb_dom%pnt_nxt => swapper
 

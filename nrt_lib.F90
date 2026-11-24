@@ -25,16 +25,10 @@ module nrt_lib
     integer, parameter :: R8B = selected_real_kind(8)
 
    ! set in params File which problem to solve
-   integer, parameter                  :: cylinder=1,cavity=2,shock=3
-   integer, parameter                  :: gaussian=4,cavity_same=5,flute=6
-   integer, parameter                  :: corotating_vortex=7,cylinder_impulse=8
-   integer, parameter                  :: caa_cavity=9,plate_trail=10,taylor_vortex=11
-   integer, parameter                  :: gauss_convect=12,planar_standing_wave=13
-   integer, parameter                  :: channel=14,gauss1d=15
+   integer, parameter                  :: cavity=2
    integer, parameter                  :: fluid=0,wall=4,inlet=1,outlet=2
    ! special bcs including lid, non reflecting bc
-   integer, parameter                  :: lid=3,sponge_wall=5,reset_wall=6,nr_wall=7
-   integer, parameter                  :: per_wall=8,nr_wall_in=9,nr_wall_out=10 
+   integer, parameter                  :: lid=3
 
    ! Model constants
    real(R8B), parameter :: cs  = 0.577350318431854_R8B  !1./sqrt(3.) !LU dx=dy=dt=1
@@ -57,17 +51,16 @@ module nrt_lib
       ! position of obstacle 
       integer         :: obst_x,obst_y,obst_z,obst_r
       ! max iteration, interval of output
-      integer         :: tMax,tOut,tRamp,tOutBeg,tInitial
+      integer         :: tMax,tOut,tOutBeg,tInitial
 
       ! problem parameters
-      real(R8B)            :: Re,omega,umax,umaxRamp,nu
+      real(R8B)            :: Re,omega,umax,nu
       real(R8B)            :: rhoges,lchar,obst_l
       ! number of Obstacles. Will be assigned in read_params
       integer         :: nObs
       logical         :: setObstacles,save_output,read_obs
       logical         :: goend,initial 
       logical         :: calc_rho_inc 
-      integer         :: crvp_period,crvp_av_start 
       logical         :: periodic(3)   
       integer         :: gx(3)
       ! global dimensions of domain
@@ -90,7 +83,7 @@ module nrt_lib
       ! mean values for communication measurement
       real(R8B)            :: mean_total,max_total
       real(R8B)            :: mean_comm,mean_sbnd,mean_cceq
-      real(R8B)            :: mean_coll,mean_prop,mean_ccmv,mean_bncb
+      real(R8B)            :: mean_coll,mean_prop,mean_ccmv
       real(R8B)            :: mean_mpl_cp_buf, mean_mpl_cp_buf_back, mean_mpl_exch, mean_mpl_comm_size 
       real(R8B)            :: mean_mpl_sync 
        ! memory consumption, global, per thread, and additional costs for master
@@ -109,9 +102,6 @@ module nrt_lib
       integer                              :: lx(3),num_in(3)
       ! densities fIn, equilibrium densities, macr. speed
       ! macr. density
-      integer :: nobs                            ! number of obstacles
-      integer :: nnr_wall                        ! number of non-reflecting boundary nodes
-      integer :: nper_wall                       ! number of periodic boundary nodes  
 #ifdef F2003_ALLOC_DERIVED_TYPE
       real(R8B),dimension(:,:,:,:), allocatable :: u,u0
       real(R8B),dimension(:,:,:,:), pointer :: fOut => NULL()
@@ -123,11 +113,6 @@ module nrt_lib
       real(R8B),dimension(:,:,:,:), pointer :: pnt_nxt => NULL()
       real(R8B),dimension(:,:,:),   allocatable :: rho
       integer,dimension(:,:,:),allocatable      :: state
-      integer,dimension(:,:),allocatable        :: obs  ! obstacle vector
-      integer,dimension(:,:),allocatable        :: obs_nrwall  ! obstacle vector
-      integer,dimension(:,:),allocatable        :: obs_per  ! periodic vector
-      real(R8B),dimension(:,:),allocatable      :: nrwall_0val  ! 0 values for nrbc
-      real(R8B),dimension(:,:),allocatable      :: nrwall_prev  ! 0 values for nrbc
       ! coordinates
       real(R8B), dimension(:),allocatable      :: x,y,z
       real(R8B),pointer  :: fIn(:,:,:,:) => NULL()
@@ -141,11 +126,6 @@ module nrt_lib
       real(R8B),dimension(:,:,:,:), pointer :: pnt_nxt => NULL()
       real(R8B),dimension(:,:,:),   pointer :: rho  => NULL(), rho_inc => NULL() 
       integer,dimension(:,:,:),pointer      :: state => NULL() 
-      integer,dimension(:,:),pointer        :: obs => NULL()   ! obstacle vector
-      integer,dimension(:,:),pointer        :: obs_nrwall => NULL()   ! obstacle vector
-      integer,dimension(:,:),pointer        :: obs_per => NULL()   ! periodic vector
-      real(R8B),dimension(:,:),pointer      :: nrwall_0val => NULL()   ! 0 values for nrbc
-      real(R8B),dimension(:,:),pointer      :: nrwall_prev => NULL()   ! 0 values for nrbc
       ! coordinates
       real(R8B), dimension(:),pointer       :: x => NULL(), y => NULL() ,z => NULL() 
       real(R8B),pointer                     :: fIn(:,:,:,:) => NULL() 

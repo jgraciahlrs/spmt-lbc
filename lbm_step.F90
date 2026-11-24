@@ -45,7 +45,6 @@ contains
 #endif
 
     ! do boundary conditions after stream and collide steps
-    call set_nrbc_antibb(lb_dom,pnt_nxt,pnt_cur,s_par,prc,meas)
     call set_bnd(lb_dom,lb_dom%state,pnt_nxt,lb_dom%rho,lb_dom%u,s_par,prc,meas,tStep)
     
   end subroutine lb_step

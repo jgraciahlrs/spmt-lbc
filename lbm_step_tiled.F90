@@ -363,7 +363,6 @@ contains
     integer, intent(in)                    :: tStep
 
     ! do boundary conditions after stream and collide steps
-    call set_nrbc_antibb(lb_dom,lb_dom%pnt_nxt,lb_dom%pnt_cur,s_par,prc,meas)
     call set_bnd(lb_dom,lb_dom%state,lb_dom%pnt_nxt,lb_dom%rho,lb_dom%u,s_par,prc,meas,tStep)
 
   end subroutine set_bnds_task
